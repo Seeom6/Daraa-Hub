@@ -3,10 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { AccountModule } from './account/account.module';
-import { UsersModule } from './users/users.module';
-import { SmsModule } from './sms/sms.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { AccountModule } from './modules/account/account.module';
+import { SmsModule } from './infrastructure/sms/sms.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -29,7 +28,6 @@ import configuration from './config/configuration';
     // Feature Modules
     AuthModule,
     AccountModule,
-    UsersModule,
     SmsModule,
   ],
   controllers: [AppController],

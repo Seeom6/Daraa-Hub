@@ -18,9 +18,8 @@ export class TokenService {
    */
   generateAccessToken(payload: any): string {
     return this.jwtService.sign(payload, {
-      expiresIn:
-        this.configService.get<string>('jwt.accessTokenExpiry') ||
-        SECURITY_CONSTANTS.ACCESS_TOKEN_EXPIRY,
+      expiresIn: (this.configService.get<string>('jwt.accessTokenExpiry') ||
+        SECURITY_CONSTANTS.ACCESS_TOKEN_EXPIRY) as any,
     });
   }
 
@@ -29,9 +28,8 @@ export class TokenService {
    */
   generateRefreshToken(payload: any): string {
     return this.jwtService.sign(payload, {
-      expiresIn:
-        this.configService.get<string>('jwt.refreshTokenExpiry') ||
-        SECURITY_CONSTANTS.REFRESH_TOKEN_EXPIRY,
+      expiresIn: (this.configService.get<string>('jwt.refreshTokenExpiry') ||
+        SECURITY_CONSTANTS.REFRESH_TOKEN_EXPIRY) as any,
     });
   }
 

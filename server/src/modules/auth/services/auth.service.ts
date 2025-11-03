@@ -10,8 +10,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { AccountService } from '../../../account/account.service';
-import { ISmsService } from '../../../infrastructure/sms/sms.interface';
+import { AccountService } from '../../account/services/account.service';
+import type { ISmsService } from '../../../infrastructure/sms/sms.interface';
 import { Otp, OtpDocument } from '../entities/otp.entity';
 import { RegisterStep1Dto } from '../dto/register-step1.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
@@ -94,7 +94,7 @@ export class AuthService {
 
     if (!isValid) {
       // Increment attempts
-      await this.otpService.incrementAttempts(otpRecord._id.toString());
+      await this.otpService.incrementAttempts((otpRecord._id as any).toString());
 
       throw new BadRequestException(
         `Invalid OTP. ${3 - (otpRecord.attempts + 1)} attempt(s) remaining.`,
@@ -102,7 +102,7 @@ export class AuthService {
     }
 
     // Mark OTP as used
-    await this.otpService.markAsUsed(otpRecord._id.toString());
+    await this.otpService.markAsUsed((otpRecord._id as any).toString());
 
     // Verify phone and create customer profile
     await this.accountService.verifyPhoneAndCreateProfile(phoneNumber);
@@ -268,7 +268,7 @@ export class AuthService {
     const isValid = await this.otpService.verifyOtp(otp, otpRecord.otp);
 
     if (!isValid) {
-      await this.otpService.incrementAttempts(otpRecord._id.toString());
+      await this.otpService.incrementAttempts((otpRecord._id as any).toString());
 
       throw new BadRequestException(
         `Invalid OTP. ${3 - (otpRecord.attempts + 1)} attempt(s) remaining.`,
@@ -276,7 +276,7 @@ export class AuthService {
     }
 
     // Mark as used
-    await this.otpService.markAsUsed(otpRecord._id.toString());
+    await this.otpService.markAsUsed((otpRecord._id as any).toString());
 
     return {
       message: 'OTP verified successfully. You can now reset your password.',

@@ -9,7 +9,7 @@ import { AuthService } from './services/auth.service';
 import { OtpService } from './services/otp.service';
 import { TokenService } from './services/token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { Otp, OtpSchema } from './entities/otp.entity';
+import { Otp, OtpSchema } from '../../database/schemas';
 import { AccountModule } from '../account/account.module';
 import { SmsModule } from '../../infrastructure/sms/sms.module';
 
@@ -21,7 +21,7 @@ import { SmsModule } from '../../infrastructure/sms/sms.module';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.accessTokenExpiry') || '7d',
+          expiresIn: (configService.get<string>('jwt.accessTokenExpiry') || '7d') as any,
         },
       }),
       inject: [ConfigService],
