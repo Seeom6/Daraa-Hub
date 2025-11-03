@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # MongoDB Database Service
+  mongodb:
+    image: mongo:7.0
+    container_name: daraa-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      # Optional: Uncomment to enable authentication
+      # MONGO_INITDB_ROOT_USERNAME: admin
+      # MONGO_INITDB_ROOT_PASSWORD: your_secure_password
+      MONGO_INITDB_DATABASE: daraa-auth
+    volumes:
+      # Named volume for data persistence
+      - daraa-mongodb-data:/data/db
+      # Optional: MongoDB configuration
+      - daraa-mongodb-config:/data/configdb
+    networks:
+      - daraa-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/daraa-auth --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # NestJS Server Service
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: daraa-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Server Configuration
+      NODE_ENV: production
+      PORT: 3001
+      CLIENT_URL: http://localhost:3000
+      
+      # Database Configuration
+      MONGODB_URI: mongodb://daraa-mongodb:27017/daraa-auth
+      
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      JWT_EXPIRES_IN: 7d
+      
+      # Cookie Configuration
+      COOKIE_SECRET: ${COOKIE_SECRET:-your-super-secret-cookie-key-change-this-in-production}
+      
+      # Twilio Configuration (Optional)
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-your_twilio_account_sid}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-your_twilio_auth_token}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-your_twilio_phone_number}
+      
+      # OTP Configuration
+      OTP_EXPIRY_MINUTES: 5
+      OTP_MAX_ATTEMPTS: 3
+      OTP_LENGTH: 6
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - daraa-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+# Named volumes for data persistence
+volumes:
+  daraa-mongodb-data:
+    driver: local
+  daraa-mongodb-config:
+    driver: local
+
+# Custom network for service communication
+networks:
+  daraa-network:
+    driver: bridge
+
