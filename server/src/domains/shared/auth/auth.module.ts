@@ -12,7 +12,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { Otp, OtpSchema } from '../../../database/schemas';
 import { AccountModule } from '../accounts/account.module';
 import { SmsModule } from '../../../infrastructure/sms/sms.module';
-import { OTPRepository } from './repositories/o-t-p.repository';
+import { OTPRepository } from './repositories/otp.repository';
 
 @Module({
   imports: [

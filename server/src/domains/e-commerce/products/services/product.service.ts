@@ -8,13 +8,14 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Product, ProductDocument, ProductStatus } from '../../../../database/schemas/product.schema';
+import { ProductDocument, ProductStatus } from '../../../../database/schemas/product.schema';
 import { ProductVariant, ProductVariantDocument } from '../../../../database/schemas/product-variant.schema';
 import { StoreSubscription, StoreSubscriptionDocument, SubscriptionStatus } from '../../../../database/schemas/store-subscription.schema';
 import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
 import { SystemSettings, SystemSettingsDocument } from '../../../../database/schemas/system-settings.schema';
 import { CreateProductDto, UpdateProductDto, QueryProductDto, CreateVariantDto, UpdateVariantDto } from '../dto';
 import { CategoryService } from '../../categories/services/category.service';
+import { ProductRepository } from '../repositories/product.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -22,8 +23,7 @@ export class ProductService {
   private readonly logger = new Logger(ProductService.name);
 
   constructor(
-    @InjectModel(Product.name)
-    private readonly productModel: Model<ProductDocument>,
+    private readonly productRepository: ProductRepository,
     @InjectModel(ProductVariant.name)
     private readonly variantModel: Model<ProductVariantDocument>,
     @InjectModel(StoreSubscription.name)
@@ -41,14 +41,14 @@ export class ProductService {
     await this.checkSubscriptionLimits(createProductDto.storeId, createProductDto.images?.length || 0);
 
     // Check if slug already exists
-    const existingSlug = await this.productModel.findOne({ slug: createProductDto.slug }).exec();
+    const existingSlug = await this.productRepository.findOne({ slug: createProductDto.slug });
     if (existingSlug) {
       throw new ConflictException(`Product with slug '${createProductDto.slug}' already exists`);
     }
 
     // Check if SKU already exists (if provided)
     if (createProductDto.sku) {
-      const existingSku = await this.productModel.findOne({ sku: createProductDto.sku }).exec();
+      const existingSku = await this.productRepository.findOne({ sku: createProductDto.sku });
       if (existingSku) {
         throw new ConflictException(`Product with SKU '${createProductDto.sku}' already exists`);
       }
@@ -57,8 +57,7 @@ export class ProductService {
     // Verify category exists
     await this.categoryService.findOne(createProductDto.categoryId);
 
-    const product = new this.productModel(createProductDto);
-    const saved = await product.save();
+    const saved = await this.productRepository.create(createProductDto as any);
 
     // Increment category product count
     await this.categoryService.incrementProductCount(createProductDto.categoryId);
@@ -134,7 +133,7 @@ export class ProductService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
-      this.productModel
+      this.productRepository.getModel()
         .find(filter)
         .sort(sort)
         .skip(skip)
@@ -142,7 +141,7 @@ export class ProductService {
         .populate('storeId', 'storeName')
         .populate('categoryId', 'name slug')
         .exec(),
-      this.productModel.countDocuments(filter).exec(),
+      this.productRepository.getModel().countDocuments(filter).exec(),
     ]);
 
     return {
@@ -158,7 +157,7 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
     }
 
-    const product = await this.productModel
+    const product = await this.productRepository.getModel()
       .findById(id)
       .populate('storeId', 'storeName storeDescription')
       .populate('categoryId', 'name slug')
@@ -170,13 +169,13 @@ export class ProductService {
     }
 
     // Increment view count
-    await this.productModel.findByIdAndUpdate(id, { $inc: { viewCount: 1 } }).exec();
+    await this.productRepository.getModel().findByIdAndUpdate(id, { $inc: { viewCount: 1 } }).exec();
 
     return product;
   }
 
   async findBySlug(slug: string): Promise<ProductDocument> {
-    const product = await this.productModel
+    const product = await this.productRepository.getModel()
       .findOne({ slug })
       .populate('storeId', 'storeName storeDescription')
       .populate('categoryId', 'name slug')
@@ -188,7 +187,7 @@ export class ProductService {
     }
 
     // Increment view count
-    await this.productModel.findByIdAndUpdate(product._id, { $inc: { viewCount: 1 } }).exec();
+    await this.productRepository.getModel().findByIdAndUpdate(product._id, { $inc: { viewCount: 1 } }).exec();
 
     return product;
   }
@@ -198,14 +197,14 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
     }
 
-    const product = await this.productModel.findById(id).exec();
+    const product = await this.productRepository.getModel().findById(id).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
     // Check slug uniqueness if being updated
     if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
-      const existingSlug = await this.productModel.findOne({ slug: updateProductDto.slug }).exec();
+      const existingSlug = await this.productRepository.getModel().findOne({ slug: updateProductDto.slug }).exec();
       if (existingSlug) {
         throw new ConflictException(`Product with slug '${updateProductDto.slug}' already exists`);
       }
@@ -213,7 +212,7 @@ export class ProductService {
 
     // Check SKU uniqueness if being updated
     if (updateProductDto.sku && updateProductDto.sku !== product.sku) {
-      const existingSku = await this.productModel.findOne({ sku: updateProductDto.sku }).exec();
+      const existingSku = await this.productRepository.getModel().findOne({ sku: updateProductDto.sku }).exec();
       if (existingSku) {
         throw new ConflictException(`Product with SKU '${updateProductDto.sku}' already exists`);
       }
@@ -238,7 +237,7 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
     }
 
-    const product = await this.productModel.findById(id).exec();
+    const product = await this.productRepository.getModel().findById(id).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -249,7 +248,7 @@ export class ProductService {
     // Decrement category product count
     await this.categoryService.decrementProductCount(product.categoryId.toString());
 
-    await this.productModel.findByIdAndDelete(id).exec();
+    await this.productRepository.getModel().findByIdAndDelete(id).exec();
     this.logger.log(`Product deleted: ${product.name} (${id}) by user: ${userId}`);
   }
 
@@ -258,7 +257,7 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
     }
 
-    const product = await this.productModel.findById(id).exec();
+    const product = await this.productRepository.getModel().findById(id).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -278,7 +277,7 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
     }
 
-    const product = await this.productModel.findById(id).exec();
+    const product = await this.productRepository.getModel().findById(id).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -295,7 +294,7 @@ export class ProductService {
 
   // Variant methods
   async createVariant(createVariantDto: CreateVariantDto): Promise<ProductVariantDocument> {
-    const product = await this.productModel.findById(createVariantDto.productId).exec();
+    const product = await this.productRepository.getModel().findById(createVariantDto.productId).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -362,14 +361,14 @@ export class ProductService {
     // Check if product still has variants
     const remainingVariants = await this.variantModel.countDocuments({ productId: variant.productId }).exec();
     if (remainingVariants === 0) {
-      await this.productModel.findByIdAndUpdate(variant.productId, { hasVariants: false }).exec();
+      await this.productRepository.getModel().findByIdAndUpdate(variant.productId, { hasVariants: false }).exec();
     }
 
     this.logger.log(`Variant deleted: ${id}`);
   }
 
   async verifyOwnership(productId: string, storeId: string): Promise<boolean> {
-    const product = await this.productModel.findById(productId).exec();
+    const product = await this.productRepository.getModel().findById(productId).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }

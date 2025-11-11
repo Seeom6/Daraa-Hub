@@ -22,6 +22,7 @@ import {
   StoreCategory,
   StoreCategoryDocument,
 } from '../../../../database/schemas';
+import { AccountRepository } from '../repositories/account.repository';
 
 /**
  * Account Service
@@ -33,7 +34,7 @@ export class AccountService {
   private readonly saltRounds = 12;
 
   constructor(
-    @InjectModel(Account.name) private accountModel: Model<AccountDocument>,
+    private readonly accountRepository: AccountRepository,
     @InjectModel(SecurityProfile.name) private securityProfileModel: Model<SecurityProfileDocument>,
     @InjectModel(CustomerProfile.name) private customerProfileModel: Model<CustomerProfileDocument>,
     @InjectModel(StoreOwnerProfile.name) private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
@@ -49,13 +50,13 @@ export class AccountService {
     phone: string;
   }): Promise<AccountDocument> {
     // Check if account already exists
-    const existingAccount = await this.accountModel.findOne({ phone: data.phone });
+    const existingAccount = await this.accountRepository.getModel().findOne({ phone: data.phone });
     if (existingAccount) {
       throw new ConflictException('Account with this phone number already exists');
     }
 
     // Create account
-    const account = await this.accountModel.create({
+    const account = await this.accountRepository.create({
       fullName: data.fullName,
       phone: data.phone,
       role: 'customer',
@@ -89,7 +90,7 @@ export class AccountService {
     securityProfile: SecurityProfileDocument;
     customerProfile: CustomerProfileDocument;
   }> {
-    const account = await this.accountModel.findOne({ phone });
+    const account = await this.accountRepository.getModel().findOne({ phone });
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -132,7 +133,7 @@ export class AccountService {
    * Set password for account
    */
   async setPassword(phone: string, password: string, email?: string): Promise<AccountDocument> {
-    const account = await this.accountModel.findOne({ phone });
+    const account = await this.accountRepository.getModel().findOne({ phone });
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -159,14 +160,14 @@ export class AccountService {
    * Find account by phone
    */
   async findByPhone(phone: string): Promise<AccountDocument | null> {
-    return this.accountModel.findOne({ phone, isActive: true });
+    return this.accountRepository.getModel().findOne({ phone, isActive: true });
   }
 
   /**
    * Find account by ID
    */
   async findById(id: string | Types.ObjectId): Promise<AccountDocument | null> {
-    return this.accountModel.findById(id);
+    return this.accountRepository.getModel().findById(id);
   }
 
   /**
@@ -183,7 +184,7 @@ export class AccountService {
    * Update password
    */
   async updatePassword(phone: string, newPassword: string): Promise<void> {
-    const account = await this.accountModel.findOne({ phone });
+    const account = await this.accountRepository.getModel().findOne({ phone });
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -263,7 +264,7 @@ export class AccountService {
    * Get account with profile
    */
   async getAccountWithProfile(accountId: Types.ObjectId): Promise<any> {
-    const account = await this.accountModel.findById(accountId);
+    const account = await this.accountRepository.getModel().findById(accountId);
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -304,7 +305,7 @@ export class AccountService {
     accountId: Types.ObjectId,
     newRole: 'store_owner' | 'courier',
   ): Promise<AccountDocument> {
-    const account = await this.accountModel.findById(accountId);
+    const account = await this.accountRepository.getModel().findById(accountId);
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -375,7 +376,7 @@ export class AccountService {
   ): Promise<StoreOwnerProfileDocument> {
     const profile = await this.storeOwnerProfileModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+      ;
 
     if (!profile) {
       throw new NotFoundException('Store owner profile not found');
@@ -399,7 +400,7 @@ export class AccountService {
           _id: { $in: categoriesToValidate.map(id => new Types.ObjectId(id)) },
           isActive: true,
         })
-        .exec();
+        ;
 
       if (validCategories.length !== categoriesToValidate.length) {
         throw new BadRequestException('أحد التصنيفات المحددة غير موجود أو غير نشط');
@@ -449,7 +450,7 @@ export class AccountService {
       .findOne({ accountId: new Types.ObjectId(accountId) })
       .populate('primaryCategory')
       .populate('storeCategories')
-      .exec();
+      ;
 
     if (!profile) {
       throw new NotFoundException('Store owner profile not found');

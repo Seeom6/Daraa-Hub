@@ -8,16 +8,18 @@ import { UpdateReturnDto } from '../dto/update-return.dto';
 import { StoreResponseDto } from '../dto/store-response.dto';
 import { AdminReviewDto } from '../dto/admin-review.dto';
 import { QueryReturnDto } from '../dto/query-return.dto';
+import { ReturnRepository } from '../repositories/return.repository';
 
 @Injectable()
 export class ReturnService {
   constructor(
-    @InjectModel(Return.name) private returnModel: Model<ReturnDocument>,
+    private readonly returnRepository: ReturnRepository,
     private eventEmitter: EventEmitter2,
   ) {}
 
   async create(createReturnDto: CreateReturnDto, customerId: string): Promise<Return> {
-    const returnRequest = new this.returnModel({
+    const ReturnModel = this.returnRepository.getModel();
+    const returnRequest = new ReturnModel({
       ...createReturnDto,
       customerId: new Types.ObjectId(customerId),
       orderId: new Types.ObjectId(createReturnDto.orderId),
@@ -48,15 +50,16 @@ export class ReturnService {
     if (filters.customerId) filter.customerId = new Types.ObjectId(filters.customerId);
 
     const [data, total] = await Promise.all([
-      this.returnModel
+      (this.returnRepository)
+        .getModel()
         .find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('customerId', 'name phone')
         .populate('items.productId', 'name')
-        .exec(),
-      this.returnModel.countDocuments(filter),
+        ,
+      this.returnRepository.count(filter),
     ]);
 
     return {
@@ -75,11 +78,12 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel
+    const returnRequest = await (this.returnRepository)
+      .getModel()
       .findById(id)
       .populate('customerId', 'name phone')
       .populate('items.productId', 'name price')
-      .exec();
+      ;
 
     if (!returnRequest) {
       throw new NotFoundException('Return request not found');
@@ -98,14 +102,15 @@ export class ReturnService {
     if (filters.status) filter.status = filters.status;
 
     const [data, total] = await Promise.all([
-      this.returnModel
+      (this.returnRepository)
+        .getModel()
         .find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('items.productId', 'name price')
-        .exec(),
-      this.returnModel.countDocuments(filter),
+        ,
+      this.returnRepository.count(filter),
     ]);
 
     return {
@@ -124,7 +129,8 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel
+    const returnRequest = await this.returnRepository
+      .getModel()
       .findByIdAndUpdate(id, updateReturnDto, { new: true })
       .exec();
 
@@ -145,7 +151,7 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel.findById(id);
+    const returnRequest = await this.returnRepository.getModel().findById(id);
     if (!returnRequest) {
       throw new NotFoundException('Return request not found');
     }
@@ -179,7 +185,7 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel.findById(id);
+    const returnRequest = await this.returnRepository.getModel().findById(id);
     if (!returnRequest) {
       throw new NotFoundException('Return request not found');
     }
@@ -213,7 +219,7 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel.findById(id);
+    const returnRequest = await this.returnRepository.getModel().findById(id);
     if (!returnRequest) {
       throw new NotFoundException('Return request not found');
     }
@@ -239,7 +245,7 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel.findById(id);
+    const returnRequest = await this.returnRepository.getModel().findById(id);
     if (!returnRequest) {
       throw new NotFoundException('Return request not found');
     }
@@ -265,7 +271,7 @@ export class ReturnService {
       throw new BadRequestException('Invalid return ID');
     }
 
-    const returnRequest = await this.returnModel.findById(id);
+    const returnRequest = await this.returnRepository.getModel().findById(id);
     if (!returnRequest) {
       throw new NotFoundException('Return request not found');
     }
@@ -296,7 +302,7 @@ export class ReturnService {
       if (filters.endDate) matchStage.createdAt.$lte = new Date(filters.endDate);
     }
 
-    const stats = await this.returnModel.aggregate([
+    const stats = await this.returnRepository.getModel().aggregate([
       ...(Object.keys(matchStage).length > 0 ? [{ $match: matchStage }] : []),
       {
         $group: {

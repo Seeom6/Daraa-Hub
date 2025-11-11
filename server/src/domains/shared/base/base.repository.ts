@@ -48,6 +48,14 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
   constructor(protected readonly model: Model<T>) {}
 
   /**
+   * Get the underlying Mongoose model for complex queries
+   * Use this when you need to use Mongoose query chaining or aggregation
+   */
+  getModel(): Model<T> {
+    return this.model;
+  }
+
+  /**
    * Create a new document
    */
   async create(data: Partial<T>): Promise<T> {

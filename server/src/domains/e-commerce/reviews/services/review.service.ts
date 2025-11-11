@@ -34,14 +34,14 @@ import {
   ModerateReviewDto,
   StoreResponseDto,
 } from '../dto';
+import { ReviewRepository } from '../repositories/review.repository';
 
 @Injectable()
 export class ReviewService {
   private readonly logger = new Logger(ReviewService.name);
 
   constructor(
-    @InjectModel(Review.name)
-    private reviewModel: Model<ReviewDocument>,
+    private readonly reviewRepository: ReviewRepository,
     @InjectModel(Order.name)
     private orderModel: Model<OrderDocument>,
     @InjectModel(Product.name)
@@ -62,7 +62,7 @@ export class ReviewService {
     // Get customer profile
     const customerProfile = await this.customerProfileModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+      ;
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -79,7 +79,7 @@ export class ReviewService {
           customerId: new Types.ObjectId(customerId),
           orderStatus: 'delivered',
         })
-        .exec();
+        ;
 
       if (!order) {
         throw new BadRequestException('Order not found or not delivered');
@@ -106,14 +106,15 @@ export class ReviewService {
       isVerifiedPurchase = true;
 
       // Check if review already exists for this order and target
-      const existingReview = await this.reviewModel
+      const existingReview = await (this.reviewRepository)
+        .getModel()
         .findOne({
           customerId: new Types.ObjectId(customerId),
           targetType: createDto.targetType,
           targetId: new Types.ObjectId(createDto.targetId),
           orderId: new Types.ObjectId(createDto.orderId),
         })
-        .exec();
+        ;
 
       if (existingReview) {
         throw new BadRequestException('You have already reviewed this item for this order');
@@ -124,7 +125,8 @@ export class ReviewService {
     await this.verifyTargetExists(createDto.targetType, createDto.targetId);
 
     // Create review
-    const review = new this.reviewModel({
+    const ReviewModel = this.reviewRepository.getModel();
+    const review = new ReviewModel({
       customerId: new Types.ObjectId(customerId),
       targetType: createDto.targetType,
       targetId: new Types.ObjectId(createDto.targetId),
@@ -163,7 +165,7 @@ export class ReviewService {
     updateDto: UpdateReviewDto,
     accountId: string,
   ): Promise<ReviewDocument> {
-    const review = await this.reviewModel.findById(reviewId).exec();
+    const review = await this.reviewRepository.getModel().findById(reviewId);
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -172,7 +174,7 @@ export class ReviewService {
     // Get customer profile
     const customerProfile = await this.customerProfileModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+      ;
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -210,7 +212,7 @@ export class ReviewService {
   }
 
   async deleteReview(reviewId: string, accountId: string): Promise<void> {
-    const review = await this.reviewModel.findById(reviewId).exec();
+    const review = await this.reviewRepository.getModel().findById(reviewId);
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -219,7 +221,7 @@ export class ReviewService {
     // Get customer profile
     const customerProfile = await this.customerProfileModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+      ;
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -233,7 +235,7 @@ export class ReviewService {
     const targetType = review.targetType;
     const targetId = review.targetId.toString();
 
-    await this.reviewModel.findByIdAndDelete(reviewId).exec();
+    await this.reviewRepository.delete(reviewId);
 
     // Update target rating
     await this.updateTargetRating(targetType, targetId);
@@ -249,10 +251,11 @@ export class ReviewService {
   }
 
   async getReviewById(reviewId: string): Promise<ReviewDocument> {
-    const review = await this.reviewModel
+    const review = await (this.reviewRepository)
+      .getModel()
       .findById(reviewId)
       .populate('customerId', 'accountId')
-      .exec();
+      ;
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -290,24 +293,26 @@ export class ReviewService {
       query.isVerifiedPurchase = true;
     }
 
-    const total = await this.reviewModel.countDocuments(query).exec();
-    const reviews = await this.reviewModel
+    const total = await this.reviewRepository.count(query);
+    const reviews = await (this.reviewRepository)
+      .getModel()
       .find(query)
       .populate('customerId', 'accountId')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .exec();
+      ;
 
     // Calculate average rating and distribution
-    const allReviews = await this.reviewModel
+    const allReviews = await (this.reviewRepository)
+      .getModel()
       .find({
         targetType,
         targetId: new Types.ObjectId(targetId),
         status: ReviewStatus.APPROVED,
       })
       .select('rating')
-      .exec();
+      ;
 
     const averageRating =
       allReviews.length > 0
@@ -331,17 +336,17 @@ export class ReviewService {
 
   private async verifyTargetExists(targetType: ReviewTargetType, targetId: string): Promise<void> {
     if (targetType === ReviewTargetType.PRODUCT) {
-      const product = await this.productModel.findById(targetId).exec();
+      const product = await this.productModel.findById(targetId);
       if (!product) {
         throw new NotFoundException('Product not found');
       }
     } else if (targetType === ReviewTargetType.STORE) {
-      const store = await this.storeProfileModel.findById(targetId).exec();
+      const store = await this.storeProfileModel.findById(targetId);
       if (!store) {
         throw new NotFoundException('Store not found');
       }
     } else if (targetType === ReviewTargetType.COURIER) {
-      const courier = await this.courierProfileModel.findById(targetId).exec();
+      const courier = await this.courierProfileModel.findById(targetId);
       if (!courier) {
         throw new NotFoundException('Courier not found');
       }
@@ -349,14 +354,15 @@ export class ReviewService {
   }
 
   private async updateTargetRating(targetType: ReviewTargetType, targetId: string): Promise<void> {
-    const reviews = await this.reviewModel
+    const reviews = await (this.reviewRepository)
+      .getModel()
       .find({
         targetType,
         targetId: new Types.ObjectId(targetId),
         status: ReviewStatus.APPROVED,
       })
       .select('rating')
-      .exec();
+      ;
 
     const totalReviews = reviews.length;
     const averageRating =
@@ -368,21 +374,21 @@ export class ReviewService {
           rating: Math.round(averageRating * 10) / 10,
           reviewCount: totalReviews,
         })
-        .exec();
+        ;
     } else if (targetType === ReviewTargetType.STORE) {
       await this.storeProfileModel
         .findByIdAndUpdate(targetId, {
           rating: Math.round(averageRating * 10) / 10,
           totalReviews: totalReviews,
         })
-        .exec();
+        ;
     } else if (targetType === ReviewTargetType.COURIER) {
       await this.courierProfileModel
         .findByIdAndUpdate(targetId, {
           rating: Math.round(averageRating * 10) / 10,
           totalReviews: totalReviews,
         })
-        .exec();
+        ;
     }
 
     this.logger.log(
@@ -396,7 +402,7 @@ export class ReviewService {
     moderateDto: ModerateReviewDto,
     adminId: string,
   ): Promise<ReviewDocument> {
-    const review = await this.reviewModel.findById(reviewId).exec();
+    const review = await this.reviewRepository.getModel().findById(reviewId);
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -429,7 +435,7 @@ export class ReviewService {
     responseDto: StoreResponseDto,
     accountId: string,
   ): Promise<ReviewDocument> {
-    const review = await this.reviewModel.findById(reviewId).exec();
+    const review = await this.reviewRepository.getModel().findById(reviewId);
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -443,7 +449,7 @@ export class ReviewService {
     // Get store profile
     const storeProfile = await this.storeProfileModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+      ;
 
     if (!storeProfile) {
       throw new NotFoundException('Store profile not found');
@@ -453,7 +459,7 @@ export class ReviewService {
 
     // Verify ownership
     if (review.targetType === ReviewTargetType.PRODUCT) {
-      const product = await this.productModel.findById(review.targetId).exec();
+      const product = await this.productModel.findById(review.targetId);
       if (!product || product.storeId.toString() !== storeId) {
         throw new ForbiddenException('You can only respond to reviews of your products');
       }
@@ -488,7 +494,7 @@ export class ReviewService {
     helpful: boolean,
     accountId: string,
   ): Promise<ReviewDocument> {
-    const review = await this.reviewModel.findById(reviewId).exec();
+    const review = await this.reviewRepository.getModel().findById(reviewId);
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -523,7 +529,7 @@ export class ReviewService {
   }> {
     const customerProfile = await this.customerProfileModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+      ;
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -531,16 +537,17 @@ export class ReviewService {
 
     const customerId = (customerProfile._id as Types.ObjectId).toString();
 
-    const total = await this.reviewModel
-      .countDocuments({ customerId: new Types.ObjectId(customerId) })
-      .exec();
+    const total = await this.reviewRepository
+      .count({ customerId: new Types.ObjectId(customerId) })
+      ;
 
-    const reviews = await this.reviewModel
+    const reviews = await (this.reviewRepository)
+      .getModel()
       .find({ customerId: new Types.ObjectId(customerId) })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .exec();
+      ;
 
     return {
       reviews,
@@ -572,14 +579,15 @@ export class ReviewService {
       query.targetType = targetType;
     }
 
-    const total = await this.reviewModel.countDocuments(query).exec();
-    const reviews = await this.reviewModel
+    const total = await this.reviewRepository.count(query);
+    const reviews = await (this.reviewRepository)
+      .getModel()
       .find(query)
       .populate('customerId', 'accountId')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .exec();
+      ;
 
     return {
       reviews,

@@ -8,16 +8,18 @@ import { UpdateDisputeDto } from '../dto/update-dispute.dto';
 import { AddMessageDto } from '../dto/add-message.dto';
 import { ResolveDisputeDto } from '../dto/resolve-dispute.dto';
 import { QueryDisputeDto } from '../dto/query-dispute.dto';
+import { DisputeRepository } from '../repositories/dispute.repository';
 
 @Injectable()
 export class DisputeService {
   constructor(
-    @InjectModel(Dispute.name) private disputeModel: Model<DisputeDocument>,
+    private readonly disputeRepository: DisputeRepository,
     private eventEmitter: EventEmitter2,
   ) {}
 
   async create(createDisputeDto: CreateDisputeDto, userId: string): Promise<Dispute> {
-    const dispute = new this.disputeModel({
+    const DisputeModel = this.disputeRepository.getModel();
+    const dispute = new DisputeModel({
       ...createDisputeDto,
       reportedBy: new Types.ObjectId(userId),
       orderId: new Types.ObjectId(createDisputeDto.orderId),
@@ -49,7 +51,8 @@ export class DisputeService {
     if (filters.assignedTo) filter.assignedTo = new Types.ObjectId(filters.assignedTo);
 
     const [data, total] = await Promise.all([
-      this.disputeModel
+      (this.disputeRepository)
+        .getModel()
         .find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -57,8 +60,8 @@ export class DisputeService {
         .populate('reportedBy', 'phone')
         .populate('reportedAgainst', 'phone')
         .populate('assignedTo', 'name')
-        .exec(),
-      this.disputeModel.countDocuments(filter),
+        ,
+      this.disputeRepository.count(filter),
     ]);
 
     return {
@@ -77,12 +80,13 @@ export class DisputeService {
       throw new BadRequestException('Invalid dispute ID');
     }
 
-    const dispute = await this.disputeModel
+    const dispute = await (this.disputeRepository)
+      .getModel()
       .findById(id)
       .populate('reportedBy', 'phone')
       .populate('reportedAgainst', 'phone')
       .populate('assignedTo', 'name')
-      .exec();
+      ;
 
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
@@ -102,15 +106,16 @@ export class DisputeService {
     if (filters.type) filter.type = filters.type;
 
     const [data, total] = await Promise.all([
-      this.disputeModel
+      (this.disputeRepository)
+        .getModel()
         .find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('reportedAgainst', 'phone')
         .populate('assignedTo', 'name')
-        .exec(),
-      this.disputeModel.countDocuments(filter),
+        ,
+      this.disputeRepository.count(filter),
     ]);
 
     return {
@@ -134,7 +139,8 @@ export class DisputeService {
       updateData.assignedTo = new Types.ObjectId(updateDisputeDto.assignedTo);
     }
 
-    const dispute = await this.disputeModel
+    const dispute = await this.disputeRepository
+      .getModel()
       .findByIdAndUpdate(id, updateData, { new: true })
       .exec();
 
@@ -155,7 +161,7 @@ export class DisputeService {
       throw new BadRequestException('Invalid dispute ID');
     }
 
-    const dispute = await this.disputeModel.findById(id);
+    const dispute = await this.disputeRepository.getModel().findById(id);
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -186,7 +192,7 @@ export class DisputeService {
       throw new BadRequestException('Invalid dispute ID');
     }
 
-    const dispute = await this.disputeModel.findById(id);
+    const dispute = await this.disputeRepository.getModel().findById(id);
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -220,7 +226,7 @@ export class DisputeService {
       throw new BadRequestException('Invalid dispute ID');
     }
 
-    const dispute = await this.disputeModel.findById(id);
+    const dispute = await this.disputeRepository.getModel().findById(id);
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -248,7 +254,7 @@ export class DisputeService {
       if (filters.endDate) matchStage.createdAt.$lte = new Date(filters.endDate);
     }
 
-    const stats = await this.disputeModel.aggregate([
+    const stats = await this.disputeRepository.getModel().aggregate([
       ...(Object.keys(matchStage).length > 0 ? [{ $match: matchStage }] : []),
       {
         $group: {

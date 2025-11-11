@@ -10,13 +10,14 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Payment, PaymentDocument, PaymentStatusType, PaymentMethodType } from '../../../../database/schemas/payment.schema';
 import { Order, OrderDocument, PaymentStatus } from '../../../../database/schemas/order.schema';
 import { ProcessPaymentDto, RefundPaymentDto } from '../dto';
+import { PaymentRepository } from '../repositories/payment.repository';
 
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
 
   constructor(
-    @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
+    private readonly paymentRepository: PaymentRepository,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private eventEmitter: EventEmitter2,
   ) {}
@@ -25,18 +26,18 @@ export class PaymentService {
    * Create payment record for order
    */
   async createPayment(orderId: string, paymentMethod: PaymentMethodType): Promise<PaymentDocument> {
-    const order = await this.orderModel.findById(orderId).exec();
+    const order = await this.orderModel.findById(orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
 
     // Check if payment already exists
-    const existingPayment = await this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
+    const existingPayment = await this.paymentRepository.getModel().findOne({ orderId: new Types.ObjectId(orderId) });
     if (existingPayment) {
       throw new BadRequestException('Payment already exists for this order');
     }
 
-    const payment = await this.paymentModel.create({
+    const payment = await this.paymentRepository.create({
       orderId: new Types.ObjectId(orderId),
       customerId: order.customerId,
       storeId: order.storeId,
@@ -57,7 +58,7 @@ export class PaymentService {
     const { orderId, paymentMethod, paymentBreakdown, gatewayResponse } = processDto;
 
     // Get or create payment
-    const existingPayment = await this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
+    const existingPayment = await this.paymentRepository.getModel().findOne({ orderId: new Types.ObjectId(orderId) });
 
     let payment: PaymentDocument;
     if (!existingPayment) {
@@ -90,7 +91,7 @@ export class PaymentService {
     await payment.save();
 
     // Update order payment status - always PENDING at this stage
-    const order = await this.orderModel.findById(orderId).exec();
+    const order = await this.orderModel.findById(orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -117,7 +118,7 @@ export class PaymentService {
    * Confirm payment (for online payments)
    */
   async confirmPayment(paymentId: string, transactionId: string): Promise<PaymentDocument> {
-    const payment = await this.paymentModel.findById(paymentId).exec();
+    const payment = await this.paymentRepository.getModel().findById(paymentId);
 
     if (!payment) {
       throw new NotFoundException('Payment not found');
@@ -133,7 +134,7 @@ export class PaymentService {
     await payment.save();
 
     // Update order
-    const order = await this.orderModel.findById(payment.orderId).exec();
+    const order = await this.orderModel.findById(payment.orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -162,7 +163,7 @@ export class PaymentService {
    * يؤكد عامل التوصيل استلام الدفع النقدي عند التوصيل
    */
   async confirmCashPaymentByOrderId(orderId: string, confirmedBy: string): Promise<PaymentDocument> {
-    const payment = await this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
+    const payment = await this.paymentRepository.getModel().findOne({ orderId: new Types.ObjectId(orderId) });
 
     if (!payment) {
       throw new NotFoundException('Payment not found for this order');
@@ -183,7 +184,7 @@ export class PaymentService {
     await payment.save();
 
     // Update order
-    const order = await this.orderModel.findById(payment.orderId).exec();
+    const order = await this.orderModel.findById(payment.orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -212,7 +213,7 @@ export class PaymentService {
    * Mark payment as failed
    */
   async failPayment(paymentId: string, reason: string): Promise<PaymentDocument> {
-    const payment = await this.paymentModel.findById(paymentId).exec();
+    const payment = await this.paymentRepository.getModel().findById(paymentId);
     
     if (!payment) {
       throw new NotFoundException('Payment not found');
@@ -223,7 +224,7 @@ export class PaymentService {
     await payment.save();
 
     // Update order
-    const order = await this.orderModel.findById(payment.orderId).exec();
+    const order = await this.orderModel.findById(payment.orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -255,7 +256,7 @@ export class PaymentService {
     refundDto: RefundPaymentDto,
     refundedBy: string,
   ): Promise<PaymentDocument> {
-    const payment = await this.paymentModel.findById(paymentId).exec();
+    const payment = await this.paymentRepository.getModel().findById(paymentId);
     
     if (!payment) {
       throw new NotFoundException('Payment not found');
@@ -290,7 +291,7 @@ export class PaymentService {
     await payment.save();
 
     // Update order
-    const order = await this.orderModel.findById(payment.orderId).exec();
+    const order = await this.orderModel.findById(payment.orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -321,14 +322,14 @@ export class PaymentService {
    * Get payment by order ID
    */
   async getPaymentByOrderId(orderId: string): Promise<PaymentDocument | null> {
-    return this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
+    return this.paymentRepository.getModel().findOne({ orderId: new Types.ObjectId(orderId) });
   }
 
   /**
    * Get payment by ID
    */
   async getPaymentById(paymentId: string): Promise<PaymentDocument> {
-    const payment = await this.paymentModel.findById(paymentId).exec();
+    const payment = await this.paymentRepository.getModel().findById(paymentId);
 
     if (!payment) {
       throw new NotFoundException('Payment not found');
@@ -341,30 +342,33 @@ export class PaymentService {
    * Get all payments (Admin only)
    */
   async getAllPayments(): Promise<PaymentDocument[]> {
-    return this.paymentModel
+    return (this.paymentRepository)
+      .getModel()
       .find()
       .sort({ createdAt: -1 })
-      .exec();
+      ;
   }
 
   /**
    * Get customer's payments
    */
   async getCustomerPayments(customerId: string): Promise<PaymentDocument[]> {
-    return this.paymentModel
+    return (this.paymentRepository)
+      .getModel()
       .find({ customerId: new Types.ObjectId(customerId) })
       .sort({ createdAt: -1 })
-      .exec();
+      ;
   }
 
   /**
    * Get store's payments
    */
   async getStorePayments(storeId: string): Promise<PaymentDocument[]> {
-    return this.paymentModel
+    return (this.paymentRepository)
+      .getModel()
       .find({ storeId: new Types.ObjectId(storeId) })
       .sort({ createdAt: -1 })
-      .exec();
+      ;
   }
 }
 

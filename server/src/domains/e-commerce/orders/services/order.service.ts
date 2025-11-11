@@ -10,7 +10,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Order, OrderDocument, OrderStatus, PaymentStatus, OrderItem } from '../../../../database/schemas/order.schema';
+import { OrderDocument, OrderStatus, PaymentStatus, OrderItem } from '../../../../database/schemas/order.schema';
 import { Cart, CartDocument } from '../../../../database/schemas/cart.schema';
 import { Product, ProductDocument } from '../../../../database/schemas/product.schema';
 import { ProductVariant, ProductVariantDocument } from '../../../../database/schemas/product-variant.schema';
@@ -20,13 +20,14 @@ import { CustomerProfile, CustomerProfileDocument } from '../../../../database/s
 import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from '../dto';
 import { PaymentService } from '../../payment/services/payment.service';
 import { StoreSettingsService } from '../../../shared/store-settings/services/store-settings.service';
+import { OrderRepository } from '../repositories/order.repository';
 
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
 
   constructor(
-    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    private readonly orderRepository: OrderRepository,
     @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(ProductVariant.name) private productVariantModel: Model<ProductVariantDocument>,
@@ -50,7 +51,7 @@ export class OrderService {
       .findOne({ customerId: new Types.ObjectId(customerId) })
       .populate('items.productId')
       .populate('items.variantId')
-      .exec();
+      ;
 
     if (!cart || cart.items.length === 0) {
       throw new BadRequestException('Cart is empty');
@@ -64,7 +65,7 @@ export class OrderService {
     }
 
     // Validate store
-    const store = await this.storeProfileModel.findById(storeId).exec();
+    const store = await this.storeProfileModel.findById(storeId);
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -87,7 +88,7 @@ export class OrderService {
           productId: product._id,
           ...(variant && { variantId: variant._id }),
         })
-        .exec();
+        ;
 
       if (!inventory || inventory.availableQuantity < cartItem.quantity) {
         throw new BadRequestException(`Insufficient stock for ${product.name}`);
@@ -128,7 +129,7 @@ export class OrderService {
     const orderNumber = await this.generateOrderNumber();
 
     // Create order
-    const order = await this.orderModel.create({
+    const order = await this.orderRepository.create({
       orderNumber,
       customerId: new Types.ObjectId(customerId),
       storeId: new Types.ObjectId(storeId),
@@ -176,12 +177,13 @@ export class OrderService {
    * Get order by ID
    */
   async findOne(orderId: string): Promise<OrderDocument> {
-    const order = await this.orderModel
+    const order = await (this.orderRepository)
+      .getModel()
       .findById(orderId)
       .populate('customerId', 'accountId')
       .populate('storeId', 'businessName')
       .populate('courierId', 'accountId')
-      .exec();
+      ;
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -205,14 +207,15 @@ export class OrderService {
     }
 
     const [data, total] = await Promise.all([
-      this.orderModel
+      (this.orderRepository)
+        .getModel()
         .find(query)
         .populate('storeId', 'businessName storeLogo')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .exec(),
-      this.orderModel.countDocuments(query).exec(),
+        ,
+      this.orderRepository.count(query),
     ]);
 
     return { data, total, page, limit };
@@ -233,15 +236,16 @@ export class OrderService {
     }
 
     const [data, total] = await Promise.all([
-      this.orderModel
+      (this.orderRepository)
+        .getModel()
         .find(query)
         .populate('customerId')
         .populate('courierId')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .exec(),
-      this.orderModel.countDocuments(query).exec(),
+        ,
+      this.orderRepository.count(query),
     ]);
 
     return { data, total, page, limit };
@@ -339,7 +343,7 @@ export class OrderService {
           productId: item.productId,
           ...(item.variantId && { variantId: item.variantId }),
         })
-        .exec();
+        ;
 
       if (inventory) {
         inventory.reservedQuantity -= item.quantity;
@@ -373,11 +377,11 @@ export class OrderService {
     const startOfDay = new Date(date.setHours(0, 0, 0, 0));
     const endOfDay = new Date(date.setHours(23, 59, 59, 999));
     
-    const count = await this.orderModel
-      .countDocuments({
+    const count = await this.orderRepository
+      .count({
         createdAt: { $gte: startOfDay, $lte: endOfDay },
       })
-      .exec();
+      ;
 
     const orderNum = (count + 1).toString().padStart(4, '0');
     return `ORD-${dateStr}-${orderNum}`;
@@ -395,7 +399,7 @@ export class OrderService {
           productId: item.productId,
           ...(item.variantId && { variantId: item.variantId }),
         })
-        .exec();
+        ;
 
       if (inventory) {
         // Deduct from reserved quantity and total quantity

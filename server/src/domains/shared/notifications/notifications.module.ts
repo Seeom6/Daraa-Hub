@@ -60,15 +60,27 @@ import { NotificationTemplateRepository } from './repositories/notification-temp
     AdminModule,
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService,
+  providers: [
+    NotificationsService,
     NotificationPreferenceService,
     DeviceTokenService,
     RecipientContactResolverService,
     NotificationProcessor,
-    NotificationsGateway,, NotificationRepository, NotificationPreferenceRepository, DeviceTokenRepository, NotificationTemplateRepository],
-  exports: [NotificationsService,
+    NotificationsGateway,
+    NotificationRepository,
+    NotificationPreferenceRepository,
+    DeviceTokenRepository,
+    NotificationTemplateRepository,
+  ],
+  exports: [
+    NotificationsService,
     NotificationPreferenceService,
-    DeviceTokenService,, NotificationRepository, NotificationPreferenceRepository, DeviceTokenRepository, NotificationTemplateRepository],
+    DeviceTokenService,
+    NotificationRepository,
+    NotificationPreferenceRepository,
+    DeviceTokenRepository,
+    NotificationTemplateRepository,
+  ],
 })
 export class NotificationsModule {}
 

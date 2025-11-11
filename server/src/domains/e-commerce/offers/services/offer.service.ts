@@ -7,14 +7,14 @@ import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../databa
 import { CreateOfferDto } from '../dto/create-offer.dto';
 import { UpdateOfferDto } from '../dto/update-offer.dto';
 import { QueryOfferDto } from '../dto/query-offer.dto';
+import { OfferRepository } from '../repositories/offer.repository';
 
 @Injectable()
 export class OfferService {
   private readonly logger = new Logger(OfferService.name);
 
   constructor(
-    @InjectModel(Offer.name)
-    private offerModel: Model<OfferDocument>,
+    private readonly offerRepository: OfferRepository,
     @InjectModel(StoreOwnerProfile.name)
     private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
     private eventEmitter: EventEmitter2,
@@ -29,7 +29,7 @@ export class OfferService {
     }
 
     // Verify store exists
-    const store = await this.storeOwnerProfileModel.findById(storeId).exec();
+    const store = await this.storeOwnerProfileModel.findById(storeId);
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -44,7 +44,7 @@ export class OfferService {
       throw new BadRequestException('Percentage discount cannot exceed 100%');
     }
 
-    const offer = await this.offerModel.create({
+    const offer = await this.offerRepository.create({
       ...createDto,
       storeId: new Types.ObjectId(storeId),
       applicableProducts: createDto.applicableProducts?.map(id => new Types.ObjectId(id)) || [],
@@ -108,7 +108,8 @@ export class OfferService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
-      this.offerModel
+      this.offerRepository
+        .getModel()
         .find(filter)
         .sort(sort)
         .skip(skip)
@@ -116,7 +117,7 @@ export class OfferService {
         .populate('storeId', 'storeName storeDescription')
         .populate('applicableProducts', 'name slug price mainImage')
         .exec(),
-      this.offerModel.countDocuments(filter).exec(),
+      this.offerRepository.count(filter),
     ]);
 
     return {
@@ -135,7 +136,8 @@ export class OfferService {
       throw new BadRequestException('Invalid offer ID');
     }
 
-    const offer = await this.offerModel
+    const offer = await this.offerRepository
+      .getModel()
       .findById(id)
       .populate('storeId', 'storeName storeDescription')
       .populate('applicableProducts', 'name slug price mainImage')
@@ -146,7 +148,7 @@ export class OfferService {
     }
 
     // Increment view count
-    await this.offerModel.findByIdAndUpdate(id, { $inc: { viewCount: 1 } }).exec();
+    await this.offerRepository.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
 
     return offer;
   }
@@ -159,7 +161,7 @@ export class OfferService {
       throw new BadRequestException('Invalid offer ID');
     }
 
-    const offer = await this.offerModel.findById(id).exec();
+    const offer = await this.offerRepository.getModel().findById(id);
     if (!offer) {
       throw new NotFoundException('Offer not found');
     }
@@ -204,7 +206,7 @@ export class OfferService {
       throw new BadRequestException('Invalid offer ID');
     }
 
-    const offer = await this.offerModel.findById(id).exec();
+    const offer = await this.offerRepository.getModel().findById(id);
     if (!offer) {
       throw new NotFoundException('Offer not found');
     }
@@ -214,7 +216,7 @@ export class OfferService {
       throw new ForbiddenException('You do not have permission to delete this offer');
     }
 
-    await this.offerModel.findByIdAndDelete(id).exec();
+    await this.offerRepository.delete(id);
 
     this.logger.log(`Offer deleted: ${id}`);
   }
@@ -229,7 +231,8 @@ export class OfferService {
 
     const now = new Date();
 
-    const offers = await this.offerModel
+    const offers = await this.offerRepository
+      .getModel()
       .find({
         storeId: new Types.ObjectId(storeId),
         isActive: true,
@@ -253,7 +256,8 @@ export class OfferService {
 
     const now = new Date();
 
-    const offers = await this.offerModel
+    const offers = await this.offerRepository
+      .getModel()
       .find({
         isActive: true,
         startDate: { $lte: now },
@@ -278,7 +282,7 @@ export class OfferService {
       throw new BadRequestException('Invalid offer ID');
     }
 
-    await this.offerModel.findByIdAndUpdate(offerId, { $inc: { usageCount: 1 } }).exec();
+    await this.offerRepository.findByIdAndUpdate(offerId, { $inc: { usageCount: 1 } });
 
     this.logger.log(`Offer usage incremented: ${offerId}`);
   }
@@ -295,7 +299,7 @@ export class OfferService {
       throw new BadRequestException('Invalid offer ID');
     }
 
-    const offer = await this.offerModel.findById(id).exec();
+    const offer = await this.offerRepository.getModel().findById(id);
     if (!offer) {
       throw new NotFoundException('Offer not found');
     }
@@ -322,7 +326,7 @@ export class OfferService {
       throw new BadRequestException('Invalid offer ID');
     }
 
-    const result = await this.offerModel.findByIdAndDelete(id).exec();
+    const result = await this.offerRepository.delete(id);
     if (!result) {
       throw new NotFoundException('Offer not found');
     }

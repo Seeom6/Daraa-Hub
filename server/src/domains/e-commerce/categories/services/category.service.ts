@@ -3,19 +3,19 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Category, CategoryDocument } from '../../../../database/schemas/category.schema';
 import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto } from '../dto';
+import { CategoryRepository } from '../repositories/category.repository';
 
 @Injectable()
 export class CategoryService {
   private readonly logger = new Logger(CategoryService.name);
 
   constructor(
-    @InjectModel(Category.name)
-    private readonly categoryModel: Model<CategoryDocument>,
+    private readonly categoryRepository: CategoryRepository,
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto): Promise<CategoryDocument> {
     // Check if slug already exists
-    const existingSlug = await this.categoryModel.findOne({ slug: createCategoryDto.slug }).exec();
+    const existingSlug = await this.categoryRepository.findOne({ slug: createCategoryDto.slug });
     if (existingSlug) {
       throw new ConflictException(`Category with slug '${createCategoryDto.slug}' already exists`);
     }
@@ -23,19 +23,17 @@ export class CategoryService {
     // If parentCategory is provided, validate it exists and calculate level
     let level = 0;
     if (createCategoryDto.parentCategory) {
-      const parent = await this.categoryModel.findById(createCategoryDto.parentCategory).exec();
+      const parent = await this.categoryRepository.findById(createCategoryDto.parentCategory);
       if (!parent) {
         throw new NotFoundException('Parent category not found');
       }
       level = parent.level + 1;
     }
 
-    const category = new this.categoryModel({
+    const saved = await this.categoryRepository.create({
       ...createCategoryDto,
       level,
-    });
-
-    const saved = await category.save();
+    } as any);
     this.logger.log(`Category created: ${saved.name} (${saved._id})`);
     return saved;
   }
@@ -66,14 +64,15 @@ export class CategoryService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
-      this.categoryModel
+      this.categoryRepository
+        .getModel()
         .find(filter)
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .populate('parentCategory', 'name slug')
         .exec(),
-      this.categoryModel.countDocuments(filter).exec(),
+      this.categoryRepository.count(filter),
     ]);
 
     return {
@@ -89,7 +88,8 @@ export class CategoryService {
       throw new BadRequestException('Invalid category ID');
     }
 
-    const category = await this.categoryModel
+    const category = await this.categoryRepository
+      .getModel()
       .findById(id)
       .populate('parentCategory', 'name slug')
       .populate('subcategories')
@@ -103,7 +103,8 @@ export class CategoryService {
   }
 
   async findBySlug(slug: string): Promise<CategoryDocument> {
-    const category = await this.categoryModel
+    const category = await this.categoryRepository
+      .getModel()
       .findOne({ slug })
       .populate('parentCategory', 'name slug')
       .populate('subcategories')
@@ -121,14 +122,14 @@ export class CategoryService {
       throw new BadRequestException('Invalid category ID');
     }
 
-    const category = await this.categoryModel.findById(id).exec();
+    const category = await this.categoryRepository.findById(id);
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
     // Check slug uniqueness if being updated
     if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
-      const existingSlug = await this.categoryModel.findOne({ slug: updateCategoryDto.slug }).exec();
+      const existingSlug = await this.categoryRepository.findOne({ slug: updateCategoryDto.slug });
       if (existingSlug) {
         throw new ConflictException(`Category with slug '${updateCategoryDto.slug}' already exists`);
       }
@@ -142,7 +143,7 @@ export class CategoryService {
           throw new BadRequestException('Category cannot be its own parent');
         }
 
-        const parent = await this.categoryModel.findById(updateCategoryDto.parentCategory).exec();
+        const parent = await this.categoryRepository.findById(updateCategoryDto.parentCategory);
         if (!parent) {
           throw new NotFoundException('Parent category not found');
         }
@@ -171,13 +172,13 @@ export class CategoryService {
       throw new BadRequestException('Invalid category ID');
     }
 
-    const category = await this.categoryModel.findById(id).exec();
+    const category = await this.categoryRepository.findById(id);
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
     // Check if category has subcategories
-    const subcategories = await this.categoryModel.countDocuments({ parentCategory: id }).exec();
+    const subcategories = await this.categoryRepository.count({ parentCategory: id });
     if (subcategories > 0) {
       throw new BadRequestException('Cannot delete category with subcategories');
     }
@@ -187,12 +188,13 @@ export class CategoryService {
       throw new BadRequestException('Cannot delete category with products');
     }
 
-    await this.categoryModel.findByIdAndDelete(id).exec();
+    await this.categoryRepository.delete(id);
     this.logger.log(`Category deleted: ${category.name} (${id})`);
   }
 
   async getCategoryTree(): Promise<CategoryDocument[]> {
-    const rootCategories = await this.categoryModel
+    const rootCategories = await this.categoryRepository
+      .getModel()
       .find({ parentCategory: null, isActive: true })
       .sort({ order: 1 })
       .populate({
@@ -206,11 +208,11 @@ export class CategoryService {
   }
 
   async incrementProductCount(categoryId: string, increment: number = 1): Promise<void> {
-    await this.categoryModel.findByIdAndUpdate(categoryId, { $inc: { productCount: increment } }).exec();
+    await this.categoryRepository.findByIdAndUpdate(categoryId, { $inc: { productCount: increment } });
   }
 
   async decrementProductCount(categoryId: string, decrement: number = 1): Promise<void> {
-    await this.categoryModel.findByIdAndUpdate(categoryId, { $inc: { productCount: -decrement } }).exec();
+    await this.categoryRepository.findByIdAndUpdate(categoryId, { $inc: { productCount: -decrement } });
   }
 
   private async checkCircularReference(categoryId: string, parentId: string): Promise<boolean> {
@@ -221,7 +223,7 @@ export class CategoryService {
         return true;
       }
 
-      const parent = await this.categoryModel.findById(currentParentId).exec();
+      const parent = await this.categoryRepository.findById(currentParentId);
       if (!parent || !parent.parentCategory) {
         break;
       }

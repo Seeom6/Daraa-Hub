@@ -16,14 +16,14 @@ import {
   StockMovementDto,
   QueryInventoryDto,
 } from '../dto';
+import { InventoryRepository } from '../repositories/inventory.repository';
 
 @Injectable()
 export class InventoryService {
   private readonly logger = new Logger(InventoryService.name);
 
   constructor(
-    @InjectModel(Inventory.name)
-    private readonly inventoryModel: Model<InventoryDocument>,
+    private readonly inventoryRepository: InventoryRepository,
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
     private readonly eventEmitter: EventEmitter2,
@@ -31,25 +31,27 @@ export class InventoryService {
 
   async create(createInventoryDto: CreateInventoryDto, userId: string): Promise<InventoryDocument> {
     // Check if inventory already exists for this product/variant
-    const existing = await this.inventoryModel
+    const existing = await (this.inventoryRepository)
+      .getModel()
       .findOne({
         productId: createInventoryDto.productId,
         storeId: createInventoryDto.storeId,
         ...(createInventoryDto.variantId && { variantId: createInventoryDto.variantId }),
       })
-      .exec();
+      ;
 
     if (existing) {
       throw new ConflictException('Inventory already exists for this product');
     }
 
     // Verify product exists
-    const product = await this.productModel.findById(createInventoryDto.productId).exec();
+    const product = await this.productModel.findById(createInventoryDto.productId);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
-    const inventory = new this.inventoryModel({
+    const InventoryModel = this.inventoryRepository.getModel();
+    const inventory = new InventoryModel({
       productId: new Types.ObjectId(createInventoryDto.productId),
       storeId: new Types.ObjectId(createInventoryDto.storeId),
       ...(createInventoryDto.variantId && { variantId: new Types.ObjectId(createInventoryDto.variantId) }),
@@ -117,7 +119,8 @@ export class InventoryService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
-      this.inventoryModel
+      (this.inventoryRepository)
+        .getModel()
         .find(filter)
         .sort(sort)
         .skip(skip)
@@ -125,8 +128,8 @@ export class InventoryService {
         .populate('productId', 'name slug mainImage price')
         .populate('variantId', 'name attributes')
         .populate('storeId', 'storeName')
-        .exec(),
-      this.inventoryModel.countDocuments(filter).exec(),
+        ,
+      this.inventoryRepository.count(filter),
     ]);
 
     return {
@@ -142,12 +145,13 @@ export class InventoryService {
       throw new BadRequestException('Invalid inventory ID');
     }
 
-    const inventory = await this.inventoryModel
+    const inventory = await (this.inventoryRepository)
+      .getModel()
       .findById(id)
       .populate('productId', 'name slug mainImage price')
       .populate('variantId', 'name attributes')
       .populate('storeId', 'storeName')
-      .exec();
+      ;
 
     if (!inventory) {
       throw new NotFoundException('Inventory not found');
@@ -162,7 +166,7 @@ export class InventoryService {
       filter.variantId = new Types.ObjectId(variantId);
     }
 
-    const inventory = await this.inventoryModel.findOne(filter).exec();
+    const inventory = await this.inventoryRepository.getModel().findOne(filter);
     if (!inventory) {
       throw new NotFoundException('Inventory not found for this product');
     }
@@ -175,7 +179,7 @@ export class InventoryService {
       throw new BadRequestException('Invalid inventory ID');
     }
 
-    const inventory = await this.inventoryModel.findById(id).exec();
+    const inventory = await this.inventoryRepository.getModel().findById(id);
     if (!inventory) {
       throw new NotFoundException('Inventory not found');
     }
@@ -213,7 +217,7 @@ export class InventoryService {
       throw new BadRequestException('Invalid inventory ID');
     }
 
-    const inventory = await this.inventoryModel.findById(id).exec();
+    const inventory = await this.inventoryRepository.getModel().findById(id);
     if (!inventory) {
       throw new NotFoundException('Inventory not found');
     }
@@ -249,7 +253,7 @@ export class InventoryService {
       throw new BadRequestException('Invalid inventory ID');
     }
 
-    const inventory = await this.inventoryModel.findById(id).exec();
+    const inventory = await this.inventoryRepository.getModel().findById(id);
     if (!inventory) {
       throw new NotFoundException('Inventory not found');
     }
@@ -292,7 +296,7 @@ export class InventoryService {
       filter.variantId = new Types.ObjectId(variantId);
     }
 
-    const inventory = await this.inventoryModel.findOne(filter).exec();
+    const inventory = await this.inventoryRepository.getModel().findOne(filter);
     if (!inventory) {
       throw new NotFoundException('Inventory not found');
     }
@@ -313,7 +317,7 @@ export class InventoryService {
       filter.variantId = new Types.ObjectId(variantId);
     }
 
-    const inventory = await this.inventoryModel.findOne(filter).exec();
+    const inventory = await this.inventoryRepository.getModel().findOne(filter);
     if (!inventory) {
       throw new NotFoundException('Inventory not found');
     }
@@ -341,7 +345,7 @@ export class InventoryService {
   }
 
   private async updateProductStatus(inventory: InventoryDocument): Promise<void> {
-    const product = await this.productModel.findById(inventory.productId).exec();
+    const product = await this.productModel.findById(inventory.productId);
     if (!product) return;
 
     if (inventory.availableQuantity === 0 && product.status === ProductStatus.ACTIVE) {

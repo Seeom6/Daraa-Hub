@@ -8,14 +8,14 @@ import { CreateCouponDto } from '../dto/create-coupon.dto';
 import { UpdateCouponDto } from '../dto/update-coupon.dto';
 import { QueryCouponDto } from '../dto/query-coupon.dto';
 import { ValidateCouponDto } from '../dto/validate-coupon.dto';
+import { CouponRepository } from '../repositories/coupon.repository';
 
 @Injectable()
 export class CouponService {
   private readonly logger = new Logger(CouponService.name);
 
   constructor(
-    @InjectModel(Coupon.name)
-    private couponModel: Model<CouponDocument>,
+    private readonly couponRepository: CouponRepository,
     @InjectModel(CustomerProfile.name)
     private customerProfileModel: Model<CustomerProfileDocument>,
     private eventEmitter: EventEmitter2,
@@ -29,7 +29,7 @@ export class CouponService {
     const code = createDto.code.toUpperCase();
 
     // Check if code already exists
-    const existing = await this.couponModel.findOne({ code }).exec();
+    const existing = await this.couponRepository.getModel().findOne({ code });
     if (existing) {
       throw new BadRequestException('Coupon code already exists');
     }
@@ -44,7 +44,7 @@ export class CouponService {
       throw new BadRequestException('Percentage discount cannot exceed 100%');
     }
 
-    const coupon = await this.couponModel.create({
+    const coupon = await this.couponRepository.create({
       ...createDto,
       code,
       createdBy: new Types.ObjectId(createdBy),
@@ -119,14 +119,15 @@ export class CouponService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
-      this.couponModel
+      this.couponRepository
+        .getModel()
         .find(filter)
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .populate('createdBy', 'fullName email')
         .exec(),
-      this.couponModel.countDocuments(filter).exec(),
+      this.couponRepository.count(filter),
     ]);
 
     return {
@@ -145,10 +146,11 @@ export class CouponService {
       throw new BadRequestException('Invalid coupon ID');
     }
 
-    const coupon = await this.couponModel
+    const coupon = await (this.couponRepository)
+      .getModel()
       .findById(id)
       .populate('createdBy', 'fullName email')
-      .exec();
+      ;
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
@@ -161,7 +163,7 @@ export class CouponService {
    * Get coupon by code
    */
   async findByCode(code: string): Promise<CouponDocument> {
-    const coupon = await this.couponModel.findOne({ code: code.toUpperCase() }).exec();
+    const coupon = await this.couponRepository.getModel().findOne({ code: code.toUpperCase() });
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
@@ -178,7 +180,7 @@ export class CouponService {
       throw new BadRequestException('Invalid coupon ID');
     }
 
-    const coupon = await this.couponModel.findById(id).exec();
+    const coupon = await this.couponRepository.getModel().findById(id);
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
     }
@@ -224,7 +226,7 @@ export class CouponService {
       throw new BadRequestException('Invalid coupon ID');
     }
 
-    const result = await this.couponModel.findByIdAndDelete(id).exec();
+    const result = await this.couponRepository.delete(id);
     if (!result) {
       throw new NotFoundException('Coupon not found');
     }
@@ -244,7 +246,7 @@ export class CouponService {
     const { code, customerId, orderAmount, storeId, categoryId, productId } = validateDto;
 
     // Find coupon
-    const coupon = await this.couponModel.findOne({ code: code.toUpperCase() }).exec();
+    const coupon = await this.couponRepository.getModel().findOne({ code: code.toUpperCase() });
     if (!coupon) {
       return { valid: false, message: 'Coupon not found' };
     }
@@ -296,7 +298,7 @@ export class CouponService {
     }
 
     // Get customer profile
-    const customer = await this.customerProfileModel.findById(customerId).exec();
+    const customer = await this.customerProfileModel.findById(customerId);
     if (!customer) {
       return { valid: false, message: 'Customer not found' };
     }
@@ -405,14 +407,15 @@ export class CouponService {
       throw new BadRequestException('Invalid customer ID');
     }
 
-    const customer = await this.customerProfileModel.findById(customerId).exec();
+    const customer = await this.customerProfileModel.findById(customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
 
     const now = new Date();
 
-    const coupons = await this.couponModel
+    const coupons = await (this.couponRepository)
+      .getModel()
       .find({
         isActive: true,
         validFrom: { $lte: now },
@@ -422,7 +425,7 @@ export class CouponService {
           { 'applicableTo.userTiers': customer.tier },
         ],
       })
-      .exec();
+      ;
 
     // Filter coupons based on usage limits
     const availableCoupons = coupons.filter(coupon => {
@@ -465,7 +468,7 @@ export class CouponService {
       throw new BadRequestException('Invalid coupon ID');
     }
 
-    const coupon = await this.couponModel.findById(id).exec();
+    const coupon = await this.couponRepository.getModel().findById(id);
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
     }
