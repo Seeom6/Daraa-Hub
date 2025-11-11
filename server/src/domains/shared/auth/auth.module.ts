@@ -12,6 +12,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { Otp, OtpSchema } from '../../../database/schemas';
 import { AccountModule } from '../accounts/account.module';
 import { SmsModule } from '../../../infrastructure/sms/sms.module';
+import { OTPRepository } from './repositories/o-t-p.repository';
 
 @Module({
   imports: [
@@ -31,8 +32,8 @@ import { SmsModule } from '../../../infrastructure/sms/sms.module';
     SmsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, OtpService, TokenService, JwtStrategy],
-  exports: [AuthService, OtpService, TokenService, JwtStrategy, PassportModule],
+  providers: [AuthService, OtpService, TokenService, JwtStrategy, OTPRepository],
+  exports: [AuthService, OtpService, TokenService, JwtStrategy, PassportModule, OTPRepository],
 })
 export class AuthModule {}
 

@@ -4,6 +4,7 @@ import { Category, CategorySchema } from '../../../database/schemas/category.sch
 import { CategoryService } from './services/category.service';
 import { CategoryController } from './controllers/category.controller';
 import { StorageModule } from '../../../infrastructure/storage/storage.module';
+import { CategoryRepository } from './repositories/category.repository';
 
 @Module({
   imports: [
@@ -11,8 +12,8 @@ import { StorageModule } from '../../../infrastructure/storage/storage.module';
     StorageModule,
   ],
   controllers: [CategoryController],
-  providers: [CategoryService],
-  exports: [CategoryService],
+  providers: [CategoryService, CategoryRepository],
+  exports: [CategoryService, CategoryRepository],
 })
 export class CategoryModule {}
 

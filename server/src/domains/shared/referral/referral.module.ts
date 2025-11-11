@@ -4,6 +4,7 @@ import { Referral, ReferralSchema } from '../../../database/schemas/referral.sch
 import { CustomerProfile, CustomerProfileSchema } from '../../../database/schemas/customer-profile.schema';
 import { ReferralService } from './services/referral.service';
 import { ReferralController } from './controllers/referral.controller';
+import { ReferralRepository } from './repositories/referral.repository';
 
 @Module({
   imports: [
@@ -13,8 +14,8 @@ import { ReferralController } from './controllers/referral.controller';
     ]),
   ],
   controllers: [ReferralController],
-  providers: [ReferralService],
-  exports: [ReferralService],
+  providers: [ReferralService, ReferralRepository],
+  exports: [ReferralService, ReferralRepository],
 })
 export class ReferralModule {}
 

@@ -4,6 +4,7 @@ import { AuditLog, AuditLogSchema } from '../../../database/schemas/audit-log.sc
 import { AuditLogsController } from './controllers/audit-logs.controller';
 import { AuditLogsService } from './services/audit-logs.service';
 import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
+import { AuditLogRepository } from './repositories/audit-log.repository';
 
 @Module({
   imports: [
@@ -12,8 +13,8 @@ import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
     ]),
   ],
   controllers: [AuditLogsController],
-  providers: [AuditLogsService, AuditLogInterceptor],
-  exports: [AuditLogsService, AuditLogInterceptor],
+  providers: [AuditLogsService, AuditLogInterceptor, AuditLogRepository],
+  exports: [AuditLogsService, AuditLogInterceptor, AuditLogRepository],
 })
 export class AuditLogsModule {}
 

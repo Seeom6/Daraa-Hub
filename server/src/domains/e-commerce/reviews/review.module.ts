@@ -19,6 +19,7 @@ import { ReviewService } from './services/review.service';
 import { ReviewController } from './controllers/review.controller';
 import { ReviewAdminController } from './controllers/review-admin.controller';
 import { ReviewEventsListener } from './listeners/review-events.listener';
+import { ReviewRepository } from './repositories/review.repository';
 
 @Module({
   imports: [
@@ -32,8 +33,8 @@ import { ReviewEventsListener } from './listeners/review-events.listener';
     ]),
   ],
   controllers: [ReviewController, ReviewAdminController],
-  providers: [ReviewService, ReviewEventsListener],
-  exports: [ReviewService],
+  providers: [ReviewService, ReviewEventsListener, ReviewRepository],
+  exports: [ReviewService, ReviewRepository],
 })
 export class ReviewModule {}
 

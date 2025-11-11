@@ -5,6 +5,7 @@ import { SettingsController } from './controllers/settings.controller';
 import { SettingsService } from './services/settings.service';
 import { RedisModule } from '../../../infrastructure/redis/redis.module';
 import { AdminModule } from '../admin/admin.module';
+import { SystemSettingsRepository } from './repositories/settings.repository';
 
 @Module({
   imports: [
@@ -15,8 +16,8 @@ import { AdminModule } from '../admin/admin.module';
     AdminModule,
   ],
   controllers: [SettingsController],
-  providers: [SettingsService],
-  exports: [SettingsService],
+  providers: [SettingsService, SystemSettingsRepository],
+  exports: [SettingsService, SystemSettingsRepository],
 })
 export class SettingsModule {}
 

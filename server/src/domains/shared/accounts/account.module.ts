@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AccountController } from './controllers/account.controller';
 import { AccountService } from './services/account.service';
 import {
+import { AccountRepository } from './repositories/account.repository';
   Account,
   AccountSchema,
   SecurityProfile,
@@ -30,8 +31,8 @@ import {
     ]),
   ],
   controllers: [AccountController],
-  providers: [AccountService],
-  exports: [AccountService],
+  providers: [AccountService, AccountRepository],
+  exports: [AccountService, AccountRepository],
 })
 export class AccountModule {}
 

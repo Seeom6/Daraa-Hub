@@ -22,6 +22,7 @@ import { SubscriptionCronService } from './services/subscription-cron.service';
 import { SubscriptionEventsListener } from './listeners/subscription-events.listener';
 import { SubscriptionController } from './controllers/subscription.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SubscriptionRepository } from './repositories/subscription.repository';
 
 @Module({
   imports: [
@@ -35,8 +36,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [SubscriptionController],
-  providers: [SubscriptionService, SubscriptionCronService, SubscriptionEventsListener],
-  exports: [SubscriptionService],
+  providers: [SubscriptionService, SubscriptionCronService, SubscriptionEventsListener, SubscriptionRepository],
+  exports: [SubscriptionService, SubscriptionRepository],
 })
 export class SubscriptionModule {}
 

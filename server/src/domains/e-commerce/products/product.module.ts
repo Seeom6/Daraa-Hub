@@ -7,6 +7,7 @@ import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/sc
 import { SystemSettings, SystemSettingsSchema } from '../../../database/schemas/system-settings.schema';
 import { ProductService } from './services/product.service';
 import { ProductController } from './controllers/product.controller';
+import { ProductRepository } from './repositories/product.repository';
 import { StorageModule } from '../../../infrastructure/storage/storage.module';
 import { CategoryModule } from '../categories/category.module';
 
@@ -23,8 +24,8 @@ import { CategoryModule } from '../categories/category.module';
     CategoryModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService],
-  exports: [ProductService],
+  providers: [ProductService, ProductRepository],
+  exports: [ProductService, ProductRepository],
 })
 export class ProductModule {}
 

@@ -7,6 +7,7 @@ import { VerificationController } from './controllers/verification.controller';
 import { VerificationService } from './services/verification.service';
 import { StorageModule } from '../../../infrastructure/storage/storage.module';
 import { AdminModule } from '../admin/admin.module';
+import { VerificationRepository } from './repositories/verification.repository';
 
 @Module({
   imports: [
@@ -19,8 +20,8 @@ import { AdminModule } from '../admin/admin.module';
     AdminModule,
   ],
   controllers: [VerificationController],
-  providers: [VerificationService],
-  exports: [VerificationService],
+  providers: [VerificationService, VerificationRepository],
+  exports: [VerificationService, VerificationRepository],
 })
 export class VerificationModule {}
 

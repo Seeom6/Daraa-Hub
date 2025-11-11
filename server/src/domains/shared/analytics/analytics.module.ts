@@ -5,6 +5,8 @@ import { ProductAnalytics, ProductAnalyticsSchema } from '../../../database/sche
 import { StoreAnalytics, StoreAnalyticsSchema } from '../../../database/schemas/store-analytics.schema';
 import { AnalyticsService } from './services/analytics.service';
 import { AnalyticsController } from './controllers/analytics.controller';
+import { ProductAnalyticsRepository } from './repositories/product-analytics.repository';
+import { StoreAnalyticsRepository } from './repositories/store-analytics.repository';
 
 @Module({
   imports: [
@@ -15,8 +17,8 @@ import { AnalyticsController } from './controllers/analytics.controller';
     ]),
   ],
   controllers: [AnalyticsController],
-  providers: [AnalyticsService],
-  exports: [AnalyticsService],
+  providers: [AnalyticsService, ProductAnalyticsRepository, StoreAnalyticsRepository],
+  exports: [AnalyticsService, ProductAnalyticsRepository, StoreAnalyticsRepository],
 })
 export class AnalyticsModule {}
 

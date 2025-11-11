@@ -4,6 +4,7 @@ import { Inventory, InventorySchema } from '../../../database/schemas/inventory.
 import { Product, ProductSchema } from '../../../database/schemas/product.schema';
 import { InventoryService } from './services/inventory.service';
 import { InventoryController } from './controllers/inventory.controller';
+import { InventoryRepository } from './repositories/inventory.repository';
 
 @Module({
   imports: [
@@ -13,8 +14,8 @@ import { InventoryController } from './controllers/inventory.controller';
     ]),
   ],
   controllers: [InventoryController],
-  providers: [InventoryService],
-  exports: [InventoryService],
+  providers: [InventoryService, InventoryRepository],
+  exports: [InventoryService, InventoryRepository],
 })
 export class InventoryModule {}
 

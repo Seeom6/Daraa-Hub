@@ -23,6 +23,10 @@ import { PushModule } from '../../../infrastructure/push/push.module';
 import { AdminModule } from '../admin/admin.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NotificationRepository } from './repositories/notification.repository';
+import { NotificationPreferenceRepository } from './repositories/notification-preference.repository';
+import { DeviceTokenRepository } from './repositories/device-token.repository';
+import { NotificationTemplateRepository } from './repositories/notification-template.repository';
 
 @Module({
   imports: [
@@ -56,19 +60,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     AdminModule,
   ],
   controllers: [NotificationsController],
-  providers: [
-    NotificationsService,
+  providers: [NotificationsService,
     NotificationPreferenceService,
     DeviceTokenService,
     RecipientContactResolverService,
     NotificationProcessor,
-    NotificationsGateway,
-  ],
-  exports: [
-    NotificationsService,
+    NotificationsGateway,, NotificationRepository, NotificationPreferenceRepository, DeviceTokenRepository, NotificationTemplateRepository],
+  exports: [NotificationsService,
     NotificationPreferenceService,
-    DeviceTokenService,
-  ],
+    DeviceTokenService,, NotificationRepository, NotificationPreferenceRepository, DeviceTokenRepository, NotificationTemplateRepository],
 })
 export class NotificationsModule {}
 

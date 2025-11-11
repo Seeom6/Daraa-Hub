@@ -5,6 +5,7 @@ import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/sc
 import { StoreCategoriesService } from './services/store-categories.service';
 import { StoreCategoriesController } from './controllers/store-categories.controller';
 import { RedisModule } from '../../../infrastructure/redis/redis.module';
+import { StoreCategoryRepository } from './repositories/store-category.repository';
 
 @Module({
   imports: [
@@ -15,8 +16,8 @@ import { RedisModule } from '../../../infrastructure/redis/redis.module';
     RedisModule,
   ],
   controllers: [StoreCategoriesController],
-  providers: [StoreCategoriesService],
-  exports: [StoreCategoriesService],
+  providers: [StoreCategoriesService, StoreCategoryRepository],
+  exports: [StoreCategoriesService, StoreCategoryRepository],
 })
 export class StoreCategoriesModule {}
 

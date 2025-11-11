@@ -4,6 +4,7 @@ import { PointsTransaction, PointsTransactionSchema } from '../../../database/sc
 import { CustomerProfile, CustomerProfileSchema } from '../../../database/schemas/customer-profile.schema';
 import { PointsTransactionService } from './services/points-transaction.service';
 import { PointsTransactionController } from './controllers/points-transaction.controller';
+import { PointsTransactionRepository } from './repositories/points-transaction.repository';
 
 @Module({
   imports: [
@@ -13,8 +14,8 @@ import { PointsTransactionController } from './controllers/points-transaction.co
     ]),
   ],
   controllers: [PointsTransactionController],
-  providers: [PointsTransactionService],
-  exports: [PointsTransactionService],
+  providers: [PointsTransactionService, PointsTransactionRepository],
+  exports: [PointsTransactionService, PointsTransactionRepository],
 })
 export class PointsTransactionModule {}
 

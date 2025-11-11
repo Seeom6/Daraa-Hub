@@ -14,6 +14,7 @@ import { OrderEventsListener } from './listeners/order-events.listener';
 import { NotificationsModule } from '../../shared/notifications/notifications.module';
 import { PaymentModule } from '../payment/payment.module';
 import { StoreSettingsModule } from '../../shared/store-settings/store-settings.module';
+import { OrderRepository } from './repositories/order.repository';
 
 @Module({
   imports: [
@@ -32,8 +33,8 @@ import { StoreSettingsModule } from '../../shared/store-settings/store-settings.
     forwardRef(() => PaymentModule), // Use forwardRef to avoid circular dependency
   ],
   controllers: [OrderController],
-  providers: [OrderService, OrderEventsListener],
-  exports: [OrderService],
+  providers: [OrderService, OrderEventsListener, OrderRepository],
+  exports: [OrderService, OrderRepository],
 })
 export class OrderModule {}
 

@@ -4,6 +4,7 @@ import { Offer, OfferSchema } from '../../../database/schemas/offer.schema';
 import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/schemas/store-owner-profile.schema';
 import { OfferService } from './services/offer.service';
 import { OfferController } from './controllers/offer.controller';
+import { OfferRepository } from './repositories/offer.repository';
 
 @Module({
   imports: [
@@ -13,8 +14,8 @@ import { OfferController } from './controllers/offer.controller';
     ]),
   ],
   controllers: [OfferController],
-  providers: [OfferService],
-  exports: [OfferService],
+  providers: [OfferService, OfferRepository],
+  exports: [OfferService, OfferRepository],
 })
 export class OfferModule {}
 

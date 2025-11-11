@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Dispute, DisputeSchema } from '../../../database/schemas/dispute.schema';
 import { DisputeService } from './services/dispute.service';
 import { DisputeController } from './controllers/dispute.controller';
+import { DisputeRepository } from './repositories/dispute.repository';
 
 @Module({
   imports: [
@@ -11,8 +12,8 @@ import { DisputeController } from './controllers/dispute.controller';
     ]),
   ],
   controllers: [DisputeController],
-  providers: [DisputeService],
-  exports: [DisputeService],
+  providers: [DisputeService, DisputeRepository],
+  exports: [DisputeService, DisputeRepository],
 })
 export class DisputeModule {}
 

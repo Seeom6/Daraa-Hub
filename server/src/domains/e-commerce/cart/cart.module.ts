@@ -6,6 +6,7 @@ import { ProductVariant, ProductVariantSchema } from '../../../database/schemas/
 import { Inventory, InventorySchema } from '../../../database/schemas/inventory.schema';
 import { CartService } from './cart.service';
 import { CartController } from './cart.controller';
+import { CartRepository } from './repositories/cart.repository';
 
 @Module({
   imports: [
@@ -17,8 +18,8 @@ import { CartController } from './cart.controller';
     ]),
   ],
   controllers: [CartController],
-  providers: [CartService],
-  exports: [CartService],
+  providers: [CartService, CartRepository],
+  exports: [CartService, CartRepository],
 })
 export class CartModule {}
 

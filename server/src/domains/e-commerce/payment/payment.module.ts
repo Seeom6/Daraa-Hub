@@ -8,6 +8,7 @@ import { PaymentService } from './services/payment.service';
 import { PaymentController } from './payment.controller';
 import { PaymentEventsListener } from './listeners/payment-events.listener';
 import { NotificationsModule } from '../../shared/notifications/notifications.module';
+import { PaymentRepository } from './repositories/payment.repository';
 
 @Module({
   imports: [
@@ -20,8 +21,8 @@ import { NotificationsModule } from '../../shared/notifications/notifications.mo
     NotificationsModule,
   ],
   controllers: [PaymentController],
-  providers: [PaymentService, PaymentEventsListener],
-  exports: [PaymentService],
+  providers: [PaymentService, PaymentEventsListener, PaymentRepository],
+  exports: [PaymentService, PaymentRepository],
 })
 export class PaymentModule {}
 

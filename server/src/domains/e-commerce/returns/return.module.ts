@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Return, ReturnSchema } from '../../../database/schemas/return.schema';
 import { ReturnService } from './services/return.service';
 import { ReturnController } from './controllers/return.controller';
+import { ReturnRepository } from './repositories/return.repository';
 
 @Module({
   imports: [
@@ -11,8 +12,8 @@ import { ReturnController } from './controllers/return.controller';
     ]),
   ],
   controllers: [ReturnController],
-  providers: [ReturnService],
-  exports: [ReturnService],
+  providers: [ReturnService, ReturnRepository],
+  exports: [ReturnService, ReturnRepository],
 })
 export class ReturnModule {}
 
