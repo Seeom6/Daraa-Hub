@@ -176,16 +176,29 @@ export class OrderService {
   }
 
   /**
-   * Get order by ID
+   * Get order by ID (without populate)
    */
   async findOne(orderId: string): Promise<OrderDocument> {
+    const order = await this.orderRepository.findById(orderId);
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
+  }
+
+  /**
+   * Get order by ID with populated fields (for display purposes)
+   */
+  async findOneWithDetails(orderId: string): Promise<OrderDocument> {
     const order = await (this.orderRepository)
       .getModel()
       .findById(orderId)
       .populate('customerId', 'accountId')
       .populate('storeId', 'businessName')
       .populate('courierId', 'accountId')
-      ;
+      .exec();
 
     if (!order) {
       throw new NotFoundException('Order not found');

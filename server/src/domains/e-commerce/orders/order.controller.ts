@@ -107,7 +107,8 @@ export class OrderController {
   @Get(':id')
   @Roles('customer', 'store_owner', 'admin')
   async getOrder(@CurrentUser() user: any, @Param('id') id: string) {
-    const order = await this.orderService.findOne(id);
+    // Use findOneWithDetails for display purposes (with populated fields)
+    const order = await this.orderService.findOneWithDetails(id);
 
     // Authorization check
     // customerId and storeId are populated, so we need to get the _id
