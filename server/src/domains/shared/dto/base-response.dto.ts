@@ -1,23 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-
 /**
  * Base Response DTO
  * Standard response format for all API endpoints
  */
 export class BaseResponseDto<T = any> {
-  @ApiProperty({ description: 'Success status' })
   success: boolean;
-
-  @ApiProperty({ description: 'Response message' })
   message: string;
-
-  @ApiProperty({ description: 'Response data' })
   data?: T;
-
-  @ApiProperty({ description: 'Error details', required: false })
   error?: any;
-
-  @ApiProperty({ description: 'Response timestamp' })
   timestamp: string;
 
   constructor(success: boolean, message: string, data?: T, error?: any) {
@@ -42,7 +31,6 @@ export class BaseResponseDto<T = any> {
  * Standard response format for paginated endpoints
  */
 export class PaginatedResponseDto<T = any> extends BaseResponseDto<T[]> {
-  @ApiProperty({ description: 'Pagination metadata' })
   meta: {
     total: number;
     page: number;
