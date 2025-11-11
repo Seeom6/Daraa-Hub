@@ -2,6 +2,8 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from '../../../database/schemas/order.schema';
 import { OrderService } from './services/order.service';
+import { OrderCreationService } from './services/order-creation.service';
+import { OrderStatusService } from './services/order-status.service';
 import { OrderController } from './order.controller';
 import { OrderEventsListener } from './listeners/order-events.listener';
 import { NotificationsModule } from '../../shared/notifications/notifications.module';
@@ -15,9 +17,7 @@ import { AccountModule } from '../../shared/accounts/account.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Order.name, schema: OrderSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     CartModule,
     ProductModule,
     InventoryModule,
@@ -27,8 +27,14 @@ import { AccountModule } from '../../shared/accounts/account.module';
     forwardRef(() => PaymentModule), // Use forwardRef to avoid circular dependency
   ],
   controllers: [OrderController],
-  providers: [OrderService, OrderEventsListener, OrderRepository],
-  exports: [OrderService, OrderRepository],
+  providers: [
+    OrderService,
+    OrderCreationService,
+    OrderStatusService,
+    OrderEventsListener,
+    OrderRepository,
+  ],
+  exports: [OrderService, OrderCreationService, OrderStatusService, OrderRepository],
 })
 export class OrderModule {}
 

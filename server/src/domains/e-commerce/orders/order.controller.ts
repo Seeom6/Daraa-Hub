@@ -16,13 +16,19 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { OrderService } from './services/order.service';
+import { OrderCreationService } from './services/order-creation.service';
+import { OrderStatusService } from './services/order-status.service';
 import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto';
 import { OrderStatus } from '../../../database/schemas/order.schema';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly orderCreationService: OrderCreationService,
+    private readonly orderStatusService: OrderStatusService,
+  ) {}
 
   /**
    * Create order from cart (Customer)
@@ -32,7 +38,7 @@ export class OrderController {
   @Roles('customer')
   @HttpCode(HttpStatus.CREATED)
   async createOrder(@CurrentUser() user: any, @Body() createOrderDto: CreateOrderDto) {
-    const order = await this.orderService.createOrder(user.profileId, createOrderDto);
+    const order = await this.orderCreationService.createOrder(user.profileId, createOrderDto);
     return {
       success: true,
       message: 'Order created successfully',
@@ -153,7 +159,7 @@ export class OrderController {
     @Param('id') id: string,
     @Body() updateDto: UpdateOrderStatusDto,
   ) {
-    const order = await this.orderService.updateStatus(id, updateDto, user.userId);
+    const order = await this.orderStatusService.updateStatus(id, updateDto, user.userId);
     return {
       success: true,
       message: 'Order status updated successfully',
@@ -172,7 +178,7 @@ export class OrderController {
     @Param('id') id: string,
     @Body() cancelDto: CancelOrderDto,
   ) {
-    const order = await this.orderService.cancelOrder(id, cancelDto, user.userId);
+    const order = await this.orderStatusService.cancelOrder(id, cancelDto, user.userId);
     return {
       success: true,
       message: 'Order cancelled successfully',
