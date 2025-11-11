@@ -8,6 +8,7 @@ import { SystemSettings, SystemSettingsSchema } from '../../../database/schemas/
 import { ProductService } from './services/product.service';
 import { ProductController } from './controllers/product.controller';
 import { ProductRepository } from './repositories/product.repository';
+import { ProductVariantRepository } from './repositories/product-variant.repository';
 import { StorageModule } from '../../../infrastructure/storage/storage.module';
 import { CategoryModule } from '../categories/category.module';
 
@@ -24,8 +25,8 @@ import { CategoryModule } from '../categories/category.module';
     CategoryModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository],
-  exports: [ProductService, ProductRepository],
+  providers: [ProductService, ProductRepository, ProductVariantRepository],
+  exports: [ProductService, ProductRepository, ProductVariantRepository],
 })
 export class ProductModule {}
 

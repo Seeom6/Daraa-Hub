@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Order, OrderDocument } from '../../../../database/schemas/order.schema';
-import { Account, AccountDocument } from '../../../../database/schemas/account.schema';
-import { CustomerProfile, CustomerProfileDocument } from '../../../../database/schemas/customer-profile.schema';
+import { Types } from 'mongoose';
+import { OrderRepository } from '../repositories/order.repository';
+import { AccountRepository } from '../../../shared/accounts/repositories/account.repository';
+import { CustomerProfileRepository } from '../../../shared/accounts/repositories/customer-profile.repository';
 import { NotificationsService } from '../../../shared/notifications/services/notifications.service';
 
 /**
@@ -45,13 +44,10 @@ export class OrderEventsListener {
   private readonly logger = new Logger(OrderEventsListener.name);
 
   constructor(
-    @InjectModel(Order.name)
-    private orderModel: Model<OrderDocument>,
-    @InjectModel(Account.name)
-    private accountModel: Model<AccountDocument>,
-    @InjectModel(CustomerProfile.name)
-    private customerProfileModel: Model<CustomerProfileDocument>,
-    private notificationsService: NotificationsService,
+    private readonly orderRepository: OrderRepository,
+    private readonly accountRepository: AccountRepository,
+    private readonly customerProfileRepository: CustomerProfileRepository,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -60,9 +56,7 @@ export class OrderEventsListener {
    */
   private async getCustomerAccountId(customerProfileId: string): Promise<string | null> {
     try {
-      const customerProfile = await this.customerProfileModel
-        .findById(customerProfileId)
-        .exec();
+      const customerProfile = await this.customerProfileRepository.findById(customerProfileId);
 
       if (!customerProfile) {
         this.logger.warn(`Customer profile not found: ${customerProfileId}`);
@@ -88,10 +82,13 @@ export class OrderEventsListener {
     try {
       // Get store owner account
       this.logger.debug(`Looking for store owner with storeId: ${event.storeId}`);
-      const storeOwner = await this.accountModel.findOne({
-        roleProfileId: new Types.ObjectId(event.storeId),
-        roleProfileRef: 'StoreOwnerProfile',
-      });
+      const storeOwner = await this.accountRepository
+        .getModel()
+        .findOne({
+          roleProfileId: new Types.ObjectId(event.storeId),
+          roleProfileRef: 'StoreOwnerProfile',
+        })
+        .exec();
 
       if (storeOwner) {
         this.logger.debug(`Store owner found: ${storeOwner._id}`);
@@ -219,10 +216,13 @@ export class OrderEventsListener {
 
     try {
       // Get store owner account
-      const storeOwner = await this.accountModel.findOne({
-        roleProfileId: new Types.ObjectId(event.storeId),
-        roleProfileRef: 'StoreOwnerProfile',
-      });
+      const storeOwner = await this.accountRepository
+        .getModel()
+        .findOne({
+          roleProfileId: new Types.ObjectId(event.storeId),
+          roleProfileRef: 'StoreOwnerProfile',
+        })
+        .exec();
 
       // Notification to customer
       // Get customer account ID from customer profile ID

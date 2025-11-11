@@ -1,5 +1,9 @@
 // Shared Domain Repositories
 export { AccountRepository } from './accounts/repositories/account.repository';
+export { CustomerProfileRepository } from './accounts/repositories/customer-profile.repository';
+export { StoreOwnerProfileRepository } from './accounts/repositories/store-owner-profile.repository';
+export { CourierProfileRepository } from './accounts/repositories/courier-profile.repository';
+export { SecurityProfileRepository } from './accounts/repositories/security-profile.repository';
 export { OTPRepository } from './auth/repositories/otp.repository';
 export { NotificationRepository } from './notifications/repositories/notification.repository';
 export { NotificationPreferenceRepository } from './notifications/repositories/notification-preference.repository';

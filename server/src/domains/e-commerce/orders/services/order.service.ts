@@ -7,20 +7,20 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderDocument, OrderStatus, PaymentStatus, OrderItem } from '../../../../database/schemas/order.schema';
-import { Cart, CartDocument } from '../../../../database/schemas/cart.schema';
-import { Product, ProductDocument } from '../../../../database/schemas/product.schema';
-import { ProductVariant, ProductVariantDocument } from '../../../../database/schemas/product-variant.schema';
-import { Inventory, InventoryDocument, MovementType } from '../../../../database/schemas/inventory.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
-import { CustomerProfile, CustomerProfileDocument } from '../../../../database/schemas/customer-profile.schema';
+import { MovementType } from '../../../../database/schemas/inventory.schema';
 import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from '../dto';
 import { PaymentService } from '../../payment/services/payment.service';
 import { StoreSettingsService } from '../../../shared/store-settings/services/store-settings.service';
 import { OrderRepository } from '../repositories/order.repository';
+import { CartRepository } from '../../cart/repositories/cart.repository';
+import { ProductRepository } from '../../products/repositories/product.repository';
+import { ProductVariantRepository } from '../../products/repositories/product-variant.repository';
+import { InventoryRepository } from '../../inventory/repositories/inventory.repository';
+import { StoreOwnerProfileRepository } from '../../../shared/accounts/repositories/store-owner-profile.repository';
+import { CustomerProfileRepository } from '../../../shared/accounts/repositories/customer-profile.repository';
 
 @Injectable()
 export class OrderService {
@@ -28,12 +28,12 @@ export class OrderService {
 
   constructor(
     private readonly orderRepository: OrderRepository,
-    @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
-    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-    @InjectModel(ProductVariant.name) private productVariantModel: Model<ProductVariantDocument>,
-    @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
-    @InjectModel(StoreOwnerProfile.name) private storeProfileModel: Model<StoreOwnerProfileDocument>,
-    @InjectModel(CustomerProfile.name) private customerProfileModel: Model<CustomerProfileDocument>,
+    private readonly cartRepository: CartRepository,
+    private readonly productRepository: ProductRepository,
+    private readonly productVariantRepository: ProductVariantRepository,
+    private readonly inventoryRepository: InventoryRepository,
+    private readonly storeOwnerProfileRepository: StoreOwnerProfileRepository,
+    private readonly customerProfileRepository: CustomerProfileRepository,
     private eventEmitter: EventEmitter2,
     @Inject(forwardRef(() => PaymentService))
     private paymentService: PaymentService,
@@ -47,11 +47,12 @@ export class OrderService {
     const { storeId, paymentMethod, deliveryAddress, appliedCoupon, customerNotes, pointsToUse } = createOrderDto;
 
     // Get customer cart
-    const cart = await this.cartModel
+    const cart = await this.cartRepository
+      .getModel()
       .findOne({ customerId: new Types.ObjectId(customerId) })
       .populate('items.productId')
       .populate('items.variantId')
-      ;
+      .exec();
 
     if (!cart || cart.items.length === 0) {
       throw new BadRequestException('Cart is empty');
@@ -65,7 +66,7 @@ export class OrderService {
     }
 
     // Validate store
-    const store = await this.storeProfileModel.findById(storeId);
+    const store = await this.storeOwnerProfileRepository.findById(storeId);
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -83,12 +84,13 @@ export class OrderService {
       const variant = cartItem.variantId as any;
 
       // Check inventory - use product._id since productId is populated
-      const inventory = await this.inventoryModel
+      const inventory = await this.inventoryRepository
+        .getModel()
         .findOne({
           productId: product._id,
           ...(variant && { variantId: variant._id }),
         })
-        ;
+        .exec();
 
       if (!inventory || inventory.availableQuantity < cartItem.quantity) {
         throw new BadRequestException(`Insufficient stock for ${product.name}`);
@@ -338,12 +340,13 @@ export class OrderService {
 
     // Release reserved inventory
     for (const item of order.items) {
-      const inventory = await this.inventoryModel
+      const inventory = await this.inventoryRepository
+        .getModel()
         .findOne({
           productId: item.productId,
           ...(item.variantId && { variantId: item.variantId }),
         })
-        ;
+        .exec();
 
       if (inventory) {
         inventory.reservedQuantity -= item.quantity;
@@ -394,12 +397,13 @@ export class OrderService {
     this.logger.log(`Deducting inventory for delivered order ${order.orderNumber}`);
 
     for (const item of order.items) {
-      const inventory = await this.inventoryModel
+      const inventory = await this.inventoryRepository
+        .getModel()
         .findOne({
           productId: item.productId,
           ...(item.variantId && { variantId: item.variantId }),
         })
-        ;
+        .exec();
 
       if (inventory) {
         // Deduct from reserved quantity and total quantity

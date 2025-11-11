@@ -1,5 +1,6 @@
 // E-commerce Domain Repositories
 export { ProductRepository } from './products/repositories/product.repository';
+export { ProductVariantRepository } from './products/repositories/product-variant.repository';
 export { OrderRepository } from './orders/repositories/order.repository';
 export { CartRepository } from './cart/repositories/cart.repository';
 export { InventoryRepository } from './inventory/repositories/inventory.repository';

@@ -18,6 +18,10 @@ import {
   StoreCategorySchema,
 } from '../../../database/schemas';
 import { AccountRepository } from './repositories/account.repository';
+import { CustomerProfileRepository } from './repositories/customer-profile.repository';
+import { StoreOwnerProfileRepository } from './repositories/store-owner-profile.repository';
+import { CourierProfileRepository } from './repositories/courier-profile.repository';
+import { SecurityProfileRepository } from './repositories/security-profile.repository';
 
 @Module({
   imports: [
@@ -31,8 +35,22 @@ import { AccountRepository } from './repositories/account.repository';
     ]),
   ],
   controllers: [AccountController],
-  providers: [AccountService, AccountRepository],
-  exports: [AccountService, AccountRepository],
+  providers: [
+    AccountService,
+    AccountRepository,
+    CustomerProfileRepository,
+    StoreOwnerProfileRepository,
+    CourierProfileRepository,
+    SecurityProfileRepository,
+  ],
+  exports: [
+    AccountService,
+    AccountRepository,
+    CustomerProfileRepository,
+    StoreOwnerProfileRepository,
+    CourierProfileRepository,
+    SecurityProfileRepository,
+  ],
 })
 export class AccountModule {}
 
