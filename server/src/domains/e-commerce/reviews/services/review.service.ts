@@ -9,60 +9,48 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
-  Review,
   ReviewDocument,
   ReviewTargetType,
   ReviewStatus,
 } from '../../../../database/schemas/review.schema';
 import { Order, OrderDocument } from '../../../../database/schemas/order.schema';
-import { Product, ProductDocument } from '../../../../database/schemas/product.schema';
-import {
-  StoreOwnerProfile,
-  StoreOwnerProfileDocument,
-} from '../../../../database/schemas/store-owner-profile.schema';
-import {
-  CourierProfile,
-  CourierProfileDocument,
-} from '../../../../database/schemas/courier-profile.schema';
 import {
   CustomerProfile,
   CustomerProfileDocument,
 } from '../../../../database/schemas/customer-profile.schema';
-import {
-  CreateReviewDto,
-  UpdateReviewDto,
-  ModerateReviewDto,
-  StoreResponseDto,
-} from '../dto';
+import { CreateReviewDto, UpdateReviewDto } from '../dto';
 import { ReviewRepository } from '../repositories/review.repository';
+import { ReviewRatingService } from './review-rating.service';
 
+/**
+ * Core Review Service
+ * Handles CRUD operations for reviews
+ */
 @Injectable()
 export class ReviewService {
   private readonly logger = new Logger(ReviewService.name);
 
   constructor(
     private readonly reviewRepository: ReviewRepository,
+    private readonly reviewRatingService: ReviewRatingService,
     @InjectModel(Order.name)
     private orderModel: Model<OrderDocument>,
-    @InjectModel(Product.name)
-    private productModel: Model<ProductDocument>,
-    @InjectModel(StoreOwnerProfile.name)
-    private storeProfileModel: Model<StoreOwnerProfileDocument>,
-    @InjectModel(CourierProfile.name)
-    private courierProfileModel: Model<CourierProfileDocument>,
     @InjectModel(CustomerProfile.name)
     private customerProfileModel: Model<CustomerProfileDocument>,
     private eventEmitter: EventEmitter2,
   ) {}
 
+  /**
+   * Create a new review
+   */
   async createReview(
     createDto: CreateReviewDto,
     accountId: string,
   ): Promise<ReviewDocument> {
     // Get customer profile
-    const customerProfile = await this.customerProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      ;
+    const customerProfile = await this.customerProfileModel.findOne({
+      accountId: new Types.ObjectId(accountId),
+    });
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -73,13 +61,11 @@ export class ReviewService {
     // Verify purchase if orderId is provided
     let isVerifiedPurchase = false;
     if (createDto.orderId) {
-      const order = await this.orderModel
-        .findOne({
-          _id: new Types.ObjectId(createDto.orderId),
-          customerId: new Types.ObjectId(customerId),
-          orderStatus: 'delivered',
-        })
-        ;
+      const order = await this.orderModel.findOne({
+        _id: new Types.ObjectId(createDto.orderId),
+        customerId: new Types.ObjectId(customerId),
+        orderStatus: 'delivered',
+      });
 
       if (!order) {
         throw new BadRequestException('Order not found or not delivered');
@@ -105,16 +91,13 @@ export class ReviewService {
 
       isVerifiedPurchase = true;
 
-      // Check if review already exists for this order and target
-      const existingReview = await (this.reviewRepository)
-        .getModel()
-        .findOne({
-          customerId: new Types.ObjectId(customerId),
-          targetType: createDto.targetType,
-          targetId: new Types.ObjectId(createDto.targetId),
-          orderId: new Types.ObjectId(createDto.orderId),
-        })
-        ;
+      // Check if already reviewed
+      const existingReview = await this.reviewRepository.findOne({
+        customerId: new Types.ObjectId(customerId),
+        targetType: createDto.targetType,
+        targetId: new Types.ObjectId(createDto.targetId),
+        orderId: new Types.ObjectId(createDto.orderId),
+      });
 
       if (existingReview) {
         throw new BadRequestException('You have already reviewed this item for this order');
@@ -122,7 +105,7 @@ export class ReviewService {
     }
 
     // Verify target exists
-    await this.verifyTargetExists(createDto.targetType, createDto.targetId);
+    await this.reviewRatingService.verifyTargetExists(createDto.targetType, createDto.targetId);
 
     // Create review
     const ReviewModel = this.reviewRepository.getModel();
@@ -142,7 +125,10 @@ export class ReviewService {
     await review.save();
 
     // Update target rating
-    await this.updateTargetRating(createDto.targetType, createDto.targetId);
+    await this.reviewRatingService.updateTargetRating(
+      createDto.targetType,
+      createDto.targetId,
+    );
 
     // Emit event
     this.eventEmitter.emit('review.created', {
@@ -160,6 +146,9 @@ export class ReviewService {
     return review;
   }
 
+  /**
+   * Update a review
+   */
   async updateReview(
     reviewId: string,
     updateDto: UpdateReviewDto,
@@ -172,9 +161,9 @@ export class ReviewService {
     }
 
     // Get customer profile
-    const customerProfile = await this.customerProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      ;
+    const customerProfile = await this.customerProfileModel.findOne({
+      accountId: new Types.ObjectId(accountId),
+    });
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -197,7 +186,10 @@ export class ReviewService {
     await review.save();
 
     // Update target rating
-    await this.updateTargetRating(review.targetType, review.targetId.toString());
+    await this.reviewRatingService.updateTargetRating(
+      review.targetType,
+      review.targetId.toString(),
+    );
 
     // Emit event
     this.eventEmitter.emit('review.updated', {
@@ -211,6 +203,9 @@ export class ReviewService {
     return review;
   }
 
+  /**
+   * Delete a review
+   */
   async deleteReview(reviewId: string, accountId: string): Promise<void> {
     const review = await this.reviewRepository.getModel().findById(reviewId);
 
@@ -219,9 +214,9 @@ export class ReviewService {
     }
 
     // Get customer profile
-    const customerProfile = await this.customerProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      ;
+    const customerProfile = await this.customerProfileModel.findOne({
+      accountId: new Types.ObjectId(accountId),
+    });
 
     if (!customerProfile) {
       throw new NotFoundException('Customer profile not found');
@@ -238,7 +233,7 @@ export class ReviewService {
     await this.reviewRepository.delete(reviewId);
 
     // Update target rating
-    await this.updateTargetRating(targetType, targetId);
+    await this.reviewRatingService.updateTargetRating(targetType, targetId);
 
     // Emit event
     this.eventEmitter.emit('review.deleted', {
@@ -250,12 +245,14 @@ export class ReviewService {
     this.logger.log(`Review ${reviewId} deleted`);
   }
 
+  /**
+   * Get review by ID
+   */
   async getReviewById(reviewId: string): Promise<ReviewDocument> {
     const review = await (this.reviewRepository)
       .getModel()
       .findById(reviewId)
-      .populate('customerId', 'accountId')
-      ;
+      .populate('customerId', 'accountId');
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -264,6 +261,9 @@ export class ReviewService {
     return review;
   }
 
+  /**
+   * Get reviews by target (product/store/courier)
+   */
   async getReviewsByTarget(
     targetType: ReviewTargetType,
     targetId: string,
@@ -300,300 +300,21 @@ export class ReviewService {
       .populate('customerId', 'accountId')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit)
-      ;
+      .limit(limit);
 
     // Calculate average rating and distribution
-    const allReviews = await (this.reviewRepository)
-      .getModel()
-      .find({
-        targetType,
-        targetId: new Types.ObjectId(targetId),
-        status: ReviewStatus.APPROVED,
-      })
-      .select('rating')
-      ;
-
-    const averageRating =
-      allReviews.length > 0
-        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
-        : 0;
-
-    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    allReviews.forEach((r) => {
-      ratingDistribution[r.rating]++;
-    });
-
-    return {
-      reviews,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-      averageRating: Math.round(averageRating * 10) / 10,
-      ratingDistribution,
-    };
-  }
-
-  private async verifyTargetExists(targetType: ReviewTargetType, targetId: string): Promise<void> {
-    if (targetType === ReviewTargetType.PRODUCT) {
-      const product = await this.productModel.findById(targetId);
-      if (!product) {
-        throw new NotFoundException('Product not found');
-      }
-    } else if (targetType === ReviewTargetType.STORE) {
-      const store = await this.storeProfileModel.findById(targetId);
-      if (!store) {
-        throw new NotFoundException('Store not found');
-      }
-    } else if (targetType === ReviewTargetType.COURIER) {
-      const courier = await this.courierProfileModel.findById(targetId);
-      if (!courier) {
-        throw new NotFoundException('Courier not found');
-      }
-    }
-  }
-
-  private async updateTargetRating(targetType: ReviewTargetType, targetId: string): Promise<void> {
-    const reviews = await (this.reviewRepository)
-      .getModel()
-      .find({
-        targetType,
-        targetId: new Types.ObjectId(targetId),
-        status: ReviewStatus.APPROVED,
-      })
-      .select('rating')
-      ;
-
-    const totalReviews = reviews.length;
-    const averageRating =
-      totalReviews > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0;
-
-    if (targetType === ReviewTargetType.PRODUCT) {
-      await this.productModel
-        .findByIdAndUpdate(targetId, {
-          rating: Math.round(averageRating * 10) / 10,
-          reviewCount: totalReviews,
-        })
-        ;
-    } else if (targetType === ReviewTargetType.STORE) {
-      await this.storeProfileModel
-        .findByIdAndUpdate(targetId, {
-          rating: Math.round(averageRating * 10) / 10,
-          totalReviews: totalReviews,
-        })
-        ;
-    } else if (targetType === ReviewTargetType.COURIER) {
-      await this.courierProfileModel
-        .findByIdAndUpdate(targetId, {
-          rating: Math.round(averageRating * 10) / 10,
-          totalReviews: totalReviews,
-        })
-        ;
-    }
-
-    this.logger.log(
-      `Updated ${targetType} ${targetId} rating to ${averageRating.toFixed(1)} (${totalReviews} reviews)`,
+    const ratingStats = await this.reviewRatingService.calculateRatingDistribution(
+      targetType,
+      targetId,
     );
-  }
-
-  // Admin: Moderate review
-  async moderateReview(
-    reviewId: string,
-    moderateDto: ModerateReviewDto,
-    adminId: string,
-  ): Promise<ReviewDocument> {
-    const review = await this.reviewRepository.getModel().findById(reviewId);
-
-    if (!review) {
-      throw new NotFoundException('Review not found');
-    }
-
-    review.status = moderateDto.status;
-    review.moderatedBy = new Types.ObjectId(adminId);
-    review.moderationNotes = moderateDto.moderationNotes;
-
-    await review.save();
-
-    // Update target rating
-    await this.updateTargetRating(review.targetType, review.targetId.toString());
-
-    // Emit event
-    this.eventEmitter.emit('review.moderated', {
-      reviewId: (review._id as Types.ObjectId).toString(),
-      status: moderateDto.status,
-      moderatedBy: adminId,
-    });
-
-    this.logger.log(`Review ${reviewId} moderated to ${moderateDto.status} by admin ${adminId}`);
-
-    return review;
-  }
-
-  // Store Owner: Respond to review
-  async addStoreResponse(
-    reviewId: string,
-    responseDto: StoreResponseDto,
-    accountId: string,
-  ): Promise<ReviewDocument> {
-    const review = await this.reviewRepository.getModel().findById(reviewId);
-
-    if (!review) {
-      throw new NotFoundException('Review not found');
-    }
-
-    // Verify review is for a product or store
-    if (review.targetType === ReviewTargetType.COURIER) {
-      throw new BadRequestException('Cannot respond to courier reviews');
-    }
-
-    // Get store profile
-    const storeProfile = await this.storeProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      ;
-
-    if (!storeProfile) {
-      throw new NotFoundException('Store profile not found');
-    }
-
-    const storeId = (storeProfile._id as Types.ObjectId).toString();
-
-    // Verify ownership
-    if (review.targetType === ReviewTargetType.PRODUCT) {
-      const product = await this.productModel.findById(review.targetId);
-      if (!product || product.storeId.toString() !== storeId) {
-        throw new ForbiddenException('You can only respond to reviews of your products');
-      }
-    } else if (review.targetType === ReviewTargetType.STORE) {
-      if (review.targetId.toString() !== storeId) {
-        throw new ForbiddenException('You can only respond to reviews of your store');
-      }
-    }
-
-    review.storeResponse = {
-      message: responseDto.message,
-      respondedAt: new Date(),
-      respondedBy: new Types.ObjectId(accountId),
-    };
-
-    await review.save();
-
-    // Emit event
-    this.eventEmitter.emit('review.store_response_added', {
-      reviewId: (review._id as Types.ObjectId).toString(),
-      storeId,
-    });
-
-    this.logger.log(`Store response added to review ${reviewId}`);
-
-    return review;
-  }
-
-  // Customer: Mark review as helpful/not helpful
-  async markHelpful(
-    reviewId: string,
-    helpful: boolean,
-    accountId: string,
-  ): Promise<ReviewDocument> {
-    const review = await this.reviewRepository.getModel().findById(reviewId);
-
-    if (!review) {
-      throw new NotFoundException('Review not found');
-    }
-
-    // TODO: Track which users marked as helpful to prevent duplicate votes
-    // For now, just increment the count
-
-    if (helpful) {
-      review.helpfulCount += 1;
-    } else {
-      review.notHelpfulCount += 1;
-    }
-
-    await review.save();
-
-    this.logger.log(`Review ${reviewId} marked as ${helpful ? 'helpful' : 'not helpful'}`);
-
-    return review;
-  }
-
-  // Get customer's reviews
-  async getCustomerReviews(
-    accountId: string,
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<{
-    reviews: ReviewDocument[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const customerProfile = await this.customerProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      ;
-
-    if (!customerProfile) {
-      throw new NotFoundException('Customer profile not found');
-    }
-
-    const customerId = (customerProfile._id as Types.ObjectId).toString();
-
-    const total = await this.reviewRepository
-      .count({ customerId: new Types.ObjectId(customerId) })
-      ;
-
-    const reviews = await (this.reviewRepository)
-      .getModel()
-      .find({ customerId: new Types.ObjectId(customerId) })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      ;
 
     return {
       reviews,
       total,
       page,
       totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  // Admin: Get all reviews for moderation
-  async getAllReviews(
-    page: number = 1,
-    limit: number = 10,
-    status?: ReviewStatus,
-    targetType?: ReviewTargetType,
-  ): Promise<{
-    reviews: ReviewDocument[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const query: any = {};
-
-    if (status) {
-      query.status = status;
-    }
-
-    if (targetType) {
-      query.targetType = targetType;
-    }
-
-    const total = await this.reviewRepository.count(query);
-    const reviews = await (this.reviewRepository)
-      .getModel()
-      .find(query)
-      .populate('customerId', 'accountId')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      ;
-
-    return {
-      reviews,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      averageRating: ratingStats.averageRating,
+      ratingDistribution: ratingStats.ratingDistribution,
     };
   }
 }

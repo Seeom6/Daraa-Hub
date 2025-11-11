@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { ReviewService } from '../services/review.service';
+import { ReviewInteractionService } from '../services/review-interaction.service';
 import {
   CreateReviewDto,
   UpdateReviewDto,
@@ -26,7 +27,10 @@ import { ReviewTargetType } from '../../../../database/schemas/review.schema';
 
 @Controller('reviews')
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(
+    private readonly reviewService: ReviewService,
+    private readonly reviewInteractionService: ReviewInteractionService,
+  ) {}
 
   // Customer: Create review
   @Post()
@@ -124,7 +128,7 @@ export class ReviewController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    const result = await this.reviewService.getCustomerReviews(
+    const result = await this.reviewInteractionService.getCustomerReviews(
       req.user.sub,
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 10,
@@ -146,7 +150,11 @@ export class ReviewController {
     @Body() responseDto: StoreResponseDto,
     @Req() req: any,
   ) {
-    const review = await this.reviewService.addStoreResponse(id, responseDto, req.user.sub);
+    const review = await this.reviewInteractionService.addStoreResponse(
+      id,
+      responseDto,
+      req.user.sub,
+    );
 
     return {
       success: true,
@@ -164,7 +172,11 @@ export class ReviewController {
     @Body() markDto: MarkHelpfulDto,
     @Req() req: any,
   ) {
-    const review = await this.reviewService.markHelpful(id, markDto.helpful, req.user.sub);
+    const review = await this.reviewInteractionService.markHelpful(
+      id,
+      markDto.helpful,
+      req.user.sub,
+    );
 
     return {
       success: true,

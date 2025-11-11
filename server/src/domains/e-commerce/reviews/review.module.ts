@@ -16,6 +16,9 @@ import {
   CustomerProfileSchema,
 } from '../../../database/schemas/customer-profile.schema';
 import { ReviewService } from './services/review.service';
+import { ReviewRatingService } from './services/review-rating.service';
+import { ReviewModerationService } from './services/review-moderation.service';
+import { ReviewInteractionService } from './services/review-interaction.service';
 import { ReviewController } from './controllers/review.controller';
 import { ReviewAdminController } from './controllers/review-admin.controller';
 import { ReviewEventsListener } from './listeners/review-events.listener';
@@ -33,8 +36,21 @@ import { ReviewRepository } from './repositories/review.repository';
     ]),
   ],
   controllers: [ReviewController, ReviewAdminController],
-  providers: [ReviewService, ReviewEventsListener, ReviewRepository],
-  exports: [ReviewService, ReviewRepository],
+  providers: [
+    ReviewService,
+    ReviewRatingService,
+    ReviewModerationService,
+    ReviewInteractionService,
+    ReviewEventsListener,
+    ReviewRepository,
+  ],
+  exports: [
+    ReviewService,
+    ReviewRatingService,
+    ReviewModerationService,
+    ReviewInteractionService,
+    ReviewRepository,
+  ],
 })
 export class ReviewModule {}
 
