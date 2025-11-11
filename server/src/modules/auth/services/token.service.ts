@@ -41,6 +41,13 @@ export class TokenService {
   }
 
   /**
+   * Verify refresh token
+   */
+  verifyRefreshToken(token: string): any {
+    return this.jwtService.verify(token);
+  }
+
+  /**
    * Decode token without verification
    */
   decodeToken(token: string): any {

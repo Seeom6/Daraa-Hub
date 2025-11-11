@@ -1,0 +1,386 @@
+### Phase 0 Testing - Daraa Platform
+### Base URL
+@baseUrl = http://localhost:3001/api
+@adminToken = 
+@userToken = 
+@storeOwnerToken = 
+@courierToken = 
+
+###############################################
+# 1. SETUP - Create Test Accounts
+###############################################
+
+### 1.1 Register Admin Account (Step 1)
+POST {{baseUrl}}/auth/register/step1
+Content-Type: application/json
+
+{
+  "phone": "+963991234567",
+  "fullName": "Admin User"
+}
+
+### 1.2 Verify OTP (use code from console)
+POST {{baseUrl}}/auth/register/verify-otp
+Content-Type: application/json
+
+{
+  "phone": "+963991234567",
+  "otp": "123456"
+}
+
+### 1.3 Complete Admin Profile
+POST {{baseUrl}}/auth/register/complete-profile
+Content-Type: application/json
+
+{
+  "phone": "+963991234567",
+  "password": "Admin@123456"
+}
+
+### 1.4 Login as Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "phone": "+963991234567",
+  "password": "Admin@123456"
+}
+
+### 1.5 Register Store Owner (Step 1)
+POST {{baseUrl}}/auth/register/step1
+Content-Type: application/json
+
+{
+  "phone": "+963991234568",
+  "fullName": "Store Owner Test"
+}
+
+### 1.6 Verify OTP
+POST {{baseUrl}}/auth/register/verify-otp
+Content-Type: application/json
+
+{
+  "phone": "+963991234568",
+  "otp": "123456"
+}
+
+### 1.7 Complete Store Owner Profile
+POST {{baseUrl}}/auth/register/complete-profile
+Content-Type: application/json
+
+{
+  "phone": "+963991234568",
+  "password": "Store@123456"
+}
+
+### 1.8 Login as Store Owner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "phone": "+963991234568",
+  "password": "Store@123456"
+}
+
+### 1.9 Upgrade to Store Owner Role
+POST {{baseUrl}}/account/upgrade-role
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "newRole": "store_owner"
+}
+
+### 1.10 Register Courier (Step 1)
+POST {{baseUrl}}/auth/register/step1
+Content-Type: application/json
+
+{
+  "phone": "+963991234569",
+  "fullName": "Courier Test"
+}
+
+### 1.11 Verify OTP
+POST {{baseUrl}}/auth/register/verify-otp
+Content-Type: application/json
+
+{
+  "phone": "+963991234569",
+  "otp": "123456"
+}
+
+### 1.12 Complete Courier Profile
+POST {{baseUrl}}/auth/register/complete-profile
+Content-Type: application/json
+
+{
+  "phone": "+963991234569",
+  "password": "Courier@123456"
+}
+
+### 1.13 Login as Courier
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "phone": "+963991234569",
+  "password": "Courier@123456"
+}
+
+### 1.14 Upgrade to Courier Role
+POST {{baseUrl}}/account/upgrade-role
+Content-Type: application/json
+Authorization: Bearer {{courierToken}}
+
+{
+  "newRole": "courier"
+}
+
+###############################################
+# 2. SETTINGS MODULE TESTS
+###############################################
+
+### 2.1 Get Public Setting (should work without auth)
+GET {{baseUrl}}/settings/public/app_name
+
+### 2.2 Initialize Default Settings (Admin only)
+POST {{baseUrl}}/settings/initialize-defaults
+Authorization: Bearer {{adminToken}}
+
+### 2.3 Get All Settings (Admin only)
+GET {{baseUrl}}/settings
+Authorization: Bearer {{adminToken}}
+
+### 2.4 Create New Setting (Admin only)
+POST {{baseUrl}}/settings
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "key": "test_setting",
+  "value": "test_value",
+  "description": "Test setting for Phase 0",
+  "isPublic": false
+}
+
+### 2.5 Update Setting Value (Admin only)
+PUT {{baseUrl}}/settings/test_setting/value
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "value": "updated_test_value"
+}
+
+### 2.6 Get Single Setting (Admin only)
+GET {{baseUrl}}/settings/test_setting
+Authorization: Bearer {{adminToken}}
+
+### 2.7 Delete Setting (Admin only)
+DELETE {{baseUrl}}/settings/test_setting
+Authorization: Bearer {{adminToken}}
+
+###############################################
+# 3. ADMIN MODULE TESTS
+###############################################
+
+### 3.1 Get Admin Profile
+GET {{baseUrl}}/admin/me
+Authorization: Bearer {{adminToken}}
+
+### 3.2 Get All Users (Admin only)
+GET {{baseUrl}}/admin/users?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+### 3.3 Search Users (Admin only)
+GET {{baseUrl}}/admin/users/search?query=Store
+Authorization: Bearer {{adminToken}}
+
+### 3.4 Get User by ID (replace :id with actual user ID)
+GET {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### 3.5 Suspend User (replace :id with actual user ID)
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE/suspend
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "reason": "Testing suspension feature",
+  "expiresAt": "2025-12-31T23:59:59.000Z"
+}
+
+### 3.6 Unsuspend User
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE/unsuspend
+Authorization: Bearer {{adminToken}}
+
+### 3.7 Ban User Permanently
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE/ban
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "reason": "Testing permanent ban feature"
+}
+
+### 3.8 Get Dashboard Stats
+GET {{baseUrl}}/admin/dashboard/stats
+Authorization: Bearer {{adminToken}}
+
+###############################################
+# 4. VERIFICATION MODULE TESTS
+###############################################
+
+### 4.1 Submit Store Owner Verification
+POST {{baseUrl}}/verification/submit
+Content-Type: application/json
+Authorization: Bearer {{storeOwnerToken}}
+
+{
+  "applicantType": "store_owner",
+  "personalInfo": {
+    "fullName": "Store Owner Test",
+    "nationalId": "12345678901",
+    "dateOfBirth": "1990-01-01",
+    "address": "Damascus, Syria",
+    "city": "Damascus"
+  },
+  "businessInfo": {
+    "businessName": "Test Store",
+    "businessType": "Retail",
+    "businessAddress": "Damascus Main Street",
+    "businessPhone": "+963991234568",
+    "taxId": "TAX123456",
+    "commercialRegister": "CR123456"
+  },
+  "additionalNotes": "This is a test verification request"
+}
+
+### 4.2 Get My Verification Status
+GET {{baseUrl}}/verification/my-status
+Authorization: Bearer {{storeOwnerToken}}
+
+### 4.3 Get All Verification Requests (Admin only)
+GET {{baseUrl}}/verification/requests?status=pending
+Authorization: Bearer {{adminToken}}
+
+### 4.4 Get Verification Request by ID (replace :id)
+GET {{baseUrl}}/verification/requests/VERIFICATION_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### 4.5 Approve Verification Request
+PATCH {{baseUrl}}/verification/requests/VERIFICATION_ID_HERE/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "action": "approve",
+  "notes": "All documents verified successfully"
+}
+
+### 4.6 Reject Verification Request
+PATCH {{baseUrl}}/verification/requests/VERIFICATION_ID_HERE/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "action": "reject",
+  "rejectionReason": "Missing required documents",
+  "notes": "Please upload your commercial register"
+}
+
+### 4.7 Request More Info
+PATCH {{baseUrl}}/verification/requests/VERIFICATION_ID_HERE/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "action": "request_info",
+  "infoRequired": "Please provide a clearer photo of your national ID"
+}
+
+###############################################
+# 5. NOTIFICATION MODULE TESTS
+###############################################
+
+### 5.1 Create Notification Template (Admin only)
+POST {{baseUrl}}/notifications/templates
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "code": "test_notification",
+  "name": "Test Notification",
+  "type": "system",
+  "targetRoles": ["customer", "store_owner"],
+  "inApp": {
+    "titleAr": "إشعار تجريبي",
+    "titleEn": "Test Notification",
+    "messageAr": "مرحباً {{name}}، هذا إشعار تجريبي",
+    "messageEn": "Hello {{name}}, this is a test notification",
+    "variables": ["name"]
+  },
+  "defaultChannels": ["in_app"]
+}
+
+### 5.2 Get All Templates (Admin only)
+GET {{baseUrl}}/notifications/templates
+Authorization: Bearer {{adminToken}}
+
+### 5.3 Send Notification from Template
+POST {{baseUrl}}/notifications/send
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "templateCode": "test_notification",
+  "recipientId": "USER_ID_HERE",
+  "variables": {
+    "name": "Test User"
+  }
+}
+
+### 5.4 Get My Notifications
+GET {{baseUrl}}/notifications/my?page=1&limit=10
+Authorization: Bearer {{userToken}}
+
+### 5.5 Get Unread Count
+GET {{baseUrl}}/notifications/my/unread-count
+Authorization: Bearer {{userToken}}
+
+### 5.6 Mark Notification as Read
+PATCH {{baseUrl}}/notifications/NOTIFICATION_ID_HERE/read
+Authorization: Bearer {{userToken}}
+
+### 5.7 Mark All as Read
+PATCH {{baseUrl}}/notifications/mark-all-read
+Authorization: Bearer {{userToken}}
+
+###############################################
+# 6. AUDIT LOGS MODULE TESTS
+###############################################
+
+### 6.1 Get All Audit Logs (Admin only)
+GET {{baseUrl}}/audit-logs?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### 6.2 Get Audit Logs by Category
+GET {{baseUrl}}/audit-logs/category/user_management
+Authorization: Bearer {{adminToken}}
+
+### 6.3 Get Audit Logs by User
+GET {{baseUrl}}/audit-logs/user/USER_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### 6.4 Get Audit Log Statistics
+GET {{baseUrl}}/audit-logs/statistics?startDate=2025-01-01&endDate=2025-12-31
+Authorization: Bearer {{adminToken}}
+
+### 6.5 Export Audit Logs (JSON)
+GET {{baseUrl}}/audit-logs/export?format=json
+Authorization: Bearer {{adminToken}}
+
+### 6.6 Export Audit Logs (CSV)
+GET {{baseUrl}}/audit-logs/export?format=csv
+Authorization: Bearer {{adminToken}}
+

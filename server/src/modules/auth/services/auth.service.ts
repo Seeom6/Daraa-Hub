@@ -212,6 +212,27 @@ export class AuthService {
   }
 
   /**
+   * Refresh Token
+   */
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+    try {
+      const payload = this.tokenService.verifyRefreshToken(refreshToken);
+
+      // Generate new access token
+      const newPayload = {
+        sub: payload.sub,
+        phone: payload.phone,
+        role: payload.role,
+      };
+      const accessToken = this.tokenService.generateAccessToken(newPayload);
+
+      return { accessToken };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  /**
    * Forgot Password - Step 1: Send OTP
    */
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {

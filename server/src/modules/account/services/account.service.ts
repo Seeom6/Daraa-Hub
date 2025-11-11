@@ -19,6 +19,8 @@ import {
   StoreOwnerProfileDocument,
   CourierProfile,
   CourierProfileDocument,
+  StoreCategory,
+  StoreCategoryDocument,
 } from '../../../database/schemas';
 
 /**
@@ -36,6 +38,7 @@ export class AccountService {
     @InjectModel(CustomerProfile.name) private customerProfileModel: Model<CustomerProfileDocument>,
     @InjectModel(StoreOwnerProfile.name) private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
     @InjectModel(CourierProfile.name) private courierProfileModel: Model<CourierProfileDocument>,
+    @InjectModel(StoreCategory.name) private storeCategoryModel: Model<StoreCategoryDocument>,
   ) {}
 
   /**
@@ -325,6 +328,7 @@ export class AccountService {
         products: [],
         orders: [],
         isStoreActive: false,
+        storeCategories: [], // تهيئة التصنيفات كـ array فارغ
       });
       profileRef = 'StoreOwnerProfile';
     } else {
@@ -351,6 +355,107 @@ export class AccountService {
 
     this.logger.log(`Account ${accountId} upgraded to ${newRole}`);
     return account;
+  }
+
+  /**
+   * Update store owner profile
+   */
+  async updateStoreProfile(
+    accountId: string,
+    updateDto: {
+      storeName?: string;
+      storeDescription?: string;
+      storeLogo?: string;
+      storeBanner?: string;
+      primaryCategory?: string;
+      storeCategories?: string[];
+      businessAddress?: string;
+      businessPhone?: string;
+    },
+  ): Promise<StoreOwnerProfileDocument> {
+    const profile = await this.storeOwnerProfileModel
+      .findOne({ accountId: new Types.ObjectId(accountId) })
+      .exec();
+
+    if (!profile) {
+      throw new NotFoundException('Store owner profile not found');
+    }
+
+    // Validate categories if provided
+    if (updateDto.primaryCategory || updateDto.storeCategories) {
+      const categoriesToValidate: string[] = [];
+
+      if (updateDto.primaryCategory) {
+        categoriesToValidate.push(updateDto.primaryCategory);
+      }
+
+      if (updateDto.storeCategories && updateDto.storeCategories.length > 0) {
+        categoriesToValidate.push(...updateDto.storeCategories);
+      }
+
+      // Check if all categories exist and are active
+      const validCategories = await this.storeCategoryModel
+        .find({
+          _id: { $in: categoriesToValidate.map(id => new Types.ObjectId(id)) },
+          isActive: true,
+        })
+        .exec();
+
+      if (validCategories.length !== categoriesToValidate.length) {
+        throw new BadRequestException('أحد التصنيفات المحددة غير موجود أو غير نشط');
+      }
+
+      // Validate that primaryCategory is in storeCategories
+      if (updateDto.primaryCategory && updateDto.storeCategories) {
+        if (!updateDto.storeCategories.includes(updateDto.primaryCategory)) {
+          throw new BadRequestException('التصنيف الرئيسي يجب أن يكون ضمن تصنيفات المتجر');
+        }
+      } else if (updateDto.primaryCategory && !updateDto.storeCategories) {
+        // If only primaryCategory is updated, check if it's in existing storeCategories
+        const existingCategories = profile.storeCategories.map(id => id.toString());
+        if (!existingCategories.includes(updateDto.primaryCategory)) {
+          throw new BadRequestException('التصنيف الرئيسي يجب أن يكون ضمن تصنيفات المتجر');
+        }
+      }
+    }
+
+    // Update fields
+    if (updateDto.storeName !== undefined) profile.storeName = updateDto.storeName;
+    if (updateDto.storeDescription !== undefined) profile.storeDescription = updateDto.storeDescription;
+    if (updateDto.storeLogo !== undefined) profile.storeLogo = updateDto.storeLogo;
+    if (updateDto.storeBanner !== undefined) profile.storeBanner = updateDto.storeBanner;
+    if (updateDto.businessAddress !== undefined) profile.businessAddress = updateDto.businessAddress;
+    if (updateDto.businessPhone !== undefined) profile.businessPhone = updateDto.businessPhone;
+
+    // Update categories
+    if (updateDto.primaryCategory !== undefined) {
+      profile.primaryCategory = new Types.ObjectId(updateDto.primaryCategory);
+    }
+    if (updateDto.storeCategories !== undefined) {
+      profile.storeCategories = updateDto.storeCategories.map((id) => new Types.ObjectId(id));
+    }
+
+    await profile.save();
+
+    this.logger.log(`Store profile updated for account: ${accountId}`);
+    return profile;
+  }
+
+  /**
+   * Get store owner profile
+   */
+  async getStoreProfile(accountId: string): Promise<StoreOwnerProfileDocument> {
+    const profile = await this.storeOwnerProfileModel
+      .findOne({ accountId: new Types.ObjectId(accountId) })
+      .populate('primaryCategory')
+      .populate('storeCategories')
+      .exec();
+
+    if (!profile) {
+      throw new NotFoundException('Store owner profile not found');
+    }
+
+    return profile;
   }
 }
 

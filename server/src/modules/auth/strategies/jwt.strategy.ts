@@ -30,10 +30,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Account not found or inactive');
     }
 
+    const profileId = account.roleProfileId ? account.roleProfileId.toString() : null;
+
     return {
+      sub: payload.sub,
       userId: payload.sub,
       phone: payload.phone,
       role: payload.role,
+      profileId,
     };
   }
 }

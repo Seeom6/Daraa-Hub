@@ -9,6 +9,7 @@ import {
   Get,
   Req,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Response, Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { RegisterStep1Dto } from '../dto/register-step1.dto';
@@ -26,8 +27,10 @@ export class AuthController {
   /**
    * Registration Step 1: Send OTP
    * POST /auth/register/step1
+   * Rate Limit: 5 requests per minute
    */
   @Post('register/step1')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @HttpCode(HttpStatus.OK)
   async registerStep1(@Body() dto: RegisterStep1Dto) {
     return this.authService.registerStep1(dto);
@@ -36,8 +39,10 @@ export class AuthController {
   /**
    * Registration Step 2: Verify OTP
    * POST /auth/register/verify-otp
+   * Rate Limit: 5 requests per minute
    */
   @Post('register/verify-otp')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyOtp(dto);
@@ -80,8 +85,10 @@ export class AuthController {
   /**
    * Login
    * POST /auth/login
+   * Rate Limit: 5 requests per minute
    */
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() dto: LoginDto,
@@ -110,8 +117,11 @@ export class AuthController {
     });
 
     return {
+      success: true,
       message: 'Login successful',
-      role: result.role,
+      data: {
+        role: result.role,
+      },
     };
   }
 
@@ -125,8 +135,10 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) response: Response) {
     // Clear the access token cookie
     response.clearCookie('access_token');
+    response.clearCookie('refresh_token');
 
     return {
+      success: true,
       message: 'Logout successful',
     };
   }
@@ -140,15 +152,60 @@ export class AuthController {
   async getCurrentUser(@Req() request: Request) {
     // The user is attached to the request by the JWT strategy
     return {
-      user: request.user,
+      success: true,
+      data: request.user,
     };
+  }
+
+  /**
+   * Refresh Token
+   * POST /auth/refresh
+   */
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refreshToken(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = request.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      return {
+        success: false,
+        message: 'Refresh token not found',
+      };
+    }
+
+    try {
+      const result = await this.authService.refreshToken(refreshToken);
+
+      // Set new access token
+      response.cookie('access_token', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      return {
+        success: true,
+        message: 'Token refreshed successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Invalid refresh token',
+      };
+    }
   }
 
   /**
    * Forgot Password Step 1: Send OTP
    * POST /auth/forgot-password
+   * Rate Limit: 5 requests per minute
    */
   @Post('forgot-password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
@@ -157,8 +214,10 @@ export class AuthController {
   /**
    * Forgot Password Step 2: Verify OTP
    * POST /auth/forgot-password/verify-otp
+   * Rate Limit: 5 requests per minute
    */
   @Post('forgot-password/verify-otp')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @HttpCode(HttpStatus.OK)
   async verifyForgotPasswordOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyForgotPasswordOtp(dto);
@@ -167,8 +226,10 @@ export class AuthController {
   /**
    * Forgot Password Step 3: Reset Password
    * POST /auth/reset-password
+   * Rate Limit: 5 requests per minute
    */
   @Post('reset-password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);

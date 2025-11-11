@@ -34,17 +34,40 @@ export class Account {
   @Prop({ default: true })
   isActive: boolean;
 
+  // Suspension/Ban fields
+  @Prop({ default: false })
+  isSuspended: boolean;
+
+  @Prop()
+  suspendedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'Account' })
+  suspendedBy?: Types.ObjectId;
+
+  @Prop()
+  suspensionReason?: string;
+
+  @Prop()
+  suspensionExpiresAt?: Date; // null = permanent ban
+
   @Prop({ type: Types.ObjectId, ref: 'SecurityProfile' })
   securityProfileId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, refPath: 'roleProfileRef' })
   roleProfileId?: Types.ObjectId;
 
-  @Prop({ 
+  @Prop({
     type: String,
     enum: ['CustomerProfile', 'StoreOwnerProfile', 'CourierProfile', 'AdminProfile']
   })
   roleProfileRef?: 'CustomerProfile' | 'StoreOwnerProfile' | 'CourierProfile' | 'AdminProfile';
+
+  // Last login tracking
+  @Prop()
+  lastLoginAt?: Date;
+
+  @Prop()
+  lastLoginIp?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -57,4 +80,6 @@ AccountSchema.index({ phone: 1 });
 AccountSchema.index({ email: 1 });
 AccountSchema.index({ role: 1 });
 AccountSchema.index({ isActive: 1, isVerified: 1 });
+AccountSchema.index({ isSuspended: 1 });
+AccountSchema.index({ suspensionExpiresAt: 1 });
 

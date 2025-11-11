@@ -14,6 +14,8 @@ import {
   StoreOwnerProfileSchema,
   CourierProfile,
   CourierProfileSchema,
+  StoreCategory,
+  StoreCategorySchema,
 } from '../../database/schemas';
 
 @Module({
@@ -24,6 +26,7 @@ import {
       { name: CustomerProfile.name, schema: CustomerProfileSchema },
       { name: StoreOwnerProfile.name, schema: StoreOwnerProfileSchema },
       { name: CourierProfile.name, schema: CourierProfileSchema },
+      { name: StoreCategory.name, schema: StoreCategorySchema },
     ]),
   ],
   controllers: [AccountController],
