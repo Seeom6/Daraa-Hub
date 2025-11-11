@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../app.module';
-import { StoreCategoriesService } from '../../modules/store-categories/services/store-categories.service';
+import { StoreCategoriesService } from '../../domains/shared/store-categories/services/store-categories.service';
 import { storeCategoriesSeed } from './store-categories.seed';
 
 async function seedStoreCategories() {
