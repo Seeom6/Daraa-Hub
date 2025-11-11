@@ -342,33 +342,33 @@ export class PaymentService {
    * Get all payments (Admin only)
    */
   async getAllPayments(): Promise<PaymentDocument[]> {
-    return (this.paymentRepository)
+    return this.paymentRepository
       .getModel()
       .find()
       .sort({ createdAt: -1 })
-      ;
+      .exec();
   }
 
   /**
    * Get customer's payments
    */
   async getCustomerPayments(customerId: string): Promise<PaymentDocument[]> {
-    return (this.paymentRepository)
+    return this.paymentRepository
       .getModel()
       .find({ customerId: new Types.ObjectId(customerId) })
       .sort({ createdAt: -1 })
-      ;
+      .exec();
   }
 
   /**
    * Get store's payments
    */
   async getStorePayments(storeId: string): Promise<PaymentDocument[]> {
-    return (this.paymentRepository)
+    return this.paymentRepository
       .getModel()
       .find({ storeId: new Types.ObjectId(storeId) })
       .sort({ createdAt: -1 })
-      ;
+      .exec();
   }
 }
 

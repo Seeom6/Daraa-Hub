@@ -146,11 +146,11 @@ export class CouponService {
       throw new BadRequestException('Invalid coupon ID');
     }
 
-    const coupon = await (this.couponRepository)
+    const coupon = await this.couponRepository
       .getModel()
       .findById(id)
       .populate('createdBy', 'fullName email')
-      ;
+      .exec();
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
@@ -414,7 +414,7 @@ export class CouponService {
 
     const now = new Date();
 
-    const coupons = await (this.couponRepository)
+    const coupons = await this.couponRepository
       .getModel()
       .find({
         isActive: true,
@@ -425,7 +425,7 @@ export class CouponService {
           { 'applicableTo.userTiers': customer.tier },
         ],
       })
-      ;
+      .exec();
 
     // Filter coupons based on usage limits
     const availableCoupons = coupons.filter(coupon => {
