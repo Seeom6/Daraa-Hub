@@ -81,14 +81,29 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
    */
   async findWithPagination(
     filter: FilterQuery<T>,
-    pagination: PaginationDto,
+    pageOrPagination: number | PaginationDto,
+    limitOrOptions?: number | QueryOptions,
     options?: QueryOptions,
   ): Promise<{ data: T[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 10 } = pagination;
+    let page: number;
+    let limit: number;
+    let queryOptions: QueryOptions | undefined;
+
+    // Handle overloaded parameters
+    if (typeof pageOrPagination === 'number') {
+      page = pageOrPagination;
+      limit = typeof limitOrOptions === 'number' ? limitOrOptions : 10;
+      queryOptions = typeof limitOrOptions === 'object' ? limitOrOptions : options;
+    } else {
+      page = pageOrPagination.page || 1;
+      limit = pageOrPagination.limit || 10;
+      queryOptions = limitOrOptions as QueryOptions;
+    }
+
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.model.find(filter, null, { ...options, skip, limit }).exec(),
+      this.model.find(filter, null, { ...queryOptions, skip, limit }).exec(),
       this.model.countDocuments(filter).exec(),
     ]);
 
@@ -105,6 +120,20 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
    */
   async update(id: string, data: UpdateQuery<T>): Promise<T | null> {
     return this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
+
+  /**
+   * Alias for update method
+   */
+  async findByIdAndUpdate(id: string, data: UpdateQuery<T>): Promise<T | null> {
+    return this.update(id, data);
+  }
+
+  /**
+   * Alias for findAll method
+   */
+  async find(filter: FilterQuery<T> = {}, options?: QueryOptions): Promise<T[]> {
+    return this.findAll(filter, options);
   }
 
   /**
