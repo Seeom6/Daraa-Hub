@@ -1,5 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { CouponService } from '../services/coupon.service';
+import { CouponValidationService } from '../services/coupon-validation.service';
+import { CouponUsageService } from '../services/coupon-usage.service';
 import { CreateCouponDto } from '../dto/create-coupon.dto';
 import { UpdateCouponDto } from '../dto/update-coupon.dto';
 import { QueryCouponDto } from '../dto/query-coupon.dto';
@@ -12,7 +14,11 @@ import { CurrentUser } from '../../../../common/decorators/current-user.decorato
 @Controller('coupons')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CouponController {
-  constructor(private readonly couponService: CouponService) {}
+  constructor(
+    private readonly couponService: CouponService,
+    private readonly couponValidationService: CouponValidationService,
+    private readonly couponUsageService: CouponUsageService,
+  ) {}
 
   /**
    * Validate coupon code
@@ -22,14 +28,16 @@ export class CouponController {
   @Roles('customer')
   async validateCoupon(@CurrentUser() user: any, @Body() validateDto: ValidateCouponDto) {
     validateDto.customerId = user.profileId;
-    const result = await this.couponService.validateCoupon(validateDto);
+    const result = await this.couponValidationService.validateCoupon(validateDto);
     return {
       success: result.valid,
       message: result.message,
-      data: result.valid ? {
-        discountAmount: result.discountAmount,
-        coupon: result.coupon,
-      } : null,
+      data: result.valid
+        ? {
+            discountAmount: result.discountAmount,
+            coupon: result.coupon,
+          }
+        : null,
     };
   }
 
@@ -40,7 +48,7 @@ export class CouponController {
   @Get('available')
   @Roles('customer')
   async getAvailableCoupons(@CurrentUser() user: any) {
-    const coupons = await this.couponService.getAvailableCoupons(user.profileId);
+    const coupons = await this.couponValidationService.getAvailableCoupons(user.profileId);
     return {
       success: true,
       data: coupons,
@@ -126,7 +134,7 @@ export class CouponController {
   @Get('admin/:id/usage')
   @Roles('admin')
   async getCouponUsageStats(@Param('id') id: string) {
-    const stats = await this.couponService.getUsageStats(id);
+    const stats = await this.couponUsageService.getUsageStats(id);
     return {
       success: true,
       data: stats,
