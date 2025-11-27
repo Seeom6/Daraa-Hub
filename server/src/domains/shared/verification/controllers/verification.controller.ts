@@ -19,6 +19,8 @@ import { AdminGuard } from '../../admin/guards/admin.guard';
 import { PermissionsGuard } from '../../admin/guards/permissions.guard';
 import { RequirePermissions } from '../../admin/decorators/permissions.decorator';
 import { VerificationService } from '../services/verification.service';
+import { VerificationDocumentService } from '../services/verification-document.service';
+import { VerificationReviewService } from '../services/verification-review.service';
 import { SubmitVerificationDto } from '../dto/submit-verification.dto';
 import { ReviewVerificationDto } from '../dto/review-verification.dto';
 import { UploadDocumentDto } from '../dto/submit-verification.dto';
@@ -26,7 +28,11 @@ import { UploadDocumentDto } from '../dto/submit-verification.dto';
 @Controller('verification')
 @UseGuards(JwtAuthGuard)
 export class VerificationController {
-  constructor(private readonly verificationService: VerificationService) {}
+  constructor(
+    private readonly verificationService: VerificationService,
+    private readonly documentService: VerificationDocumentService,
+    private readonly reviewService: VerificationReviewService,
+  ) {}
 
   // User endpoints
   @Post('submit')
@@ -60,7 +66,7 @@ export class VerificationController {
       };
     }
 
-    const verificationRequest = await this.verificationService.uploadDocument(
+    const verificationRequest = await this.documentService.uploadDocument(
       uploadDto.verificationRequestId,
       file,
       uploadDto.documentType,
@@ -130,7 +136,7 @@ export class VerificationController {
     @Body() reviewDto: ReviewVerificationDto,
     @Req() req: any,
   ) {
-    const verificationRequest = await this.verificationService.reviewVerification(
+    const verificationRequest = await this.reviewService.reviewVerification(
       id,
       reviewDto,
       req.user.sub,

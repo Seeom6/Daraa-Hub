@@ -5,6 +5,8 @@ import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/sc
 import { CourierProfile, CourierProfileSchema } from '../../../database/schemas/courier-profile.schema';
 import { VerificationController } from './controllers/verification.controller';
 import { VerificationService } from './services/verification.service';
+import { VerificationDocumentService } from './services/verification-document.service';
+import { VerificationReviewService } from './services/verification-review.service';
 import { StorageModule } from '../../../infrastructure/storage/storage.module';
 import { AdminModule } from '../admin/admin.module';
 import { VerificationRepository } from './repositories/verification.repository';
@@ -20,8 +22,18 @@ import { VerificationRepository } from './repositories/verification.repository';
     AdminModule,
   ],
   controllers: [VerificationController],
-  providers: [VerificationService, VerificationRepository],
-  exports: [VerificationService, VerificationRepository],
+  providers: [
+    VerificationService,
+    VerificationDocumentService,
+    VerificationReviewService,
+    VerificationRepository,
+  ],
+  exports: [
+    VerificationService,
+    VerificationDocumentService,
+    VerificationReviewService,
+    VerificationRepository,
+  ],
 })
 export class VerificationModule {}
 

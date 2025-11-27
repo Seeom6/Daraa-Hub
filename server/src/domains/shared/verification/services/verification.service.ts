@@ -6,15 +6,12 @@ import { VerificationRequest, VerificationRequestDocument } from '../../../../da
 import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
 import { CourierProfile, CourierProfileDocument } from '../../../../database/schemas/courier-profile.schema';
 import { SubmitVerificationDto } from '../dto/submit-verification.dto';
-import { ReviewVerificationDto } from '../dto/review-verification.dto';
-import { StorageService } from '../../../../infrastructure/storage/storage.service';
-import {
-  VERIFICATION_SUBMITTED,
-  VERIFICATION_APPROVED,
-  VERIFICATION_REJECTED,
-  VERIFICATION_INFO_REQUESTED,
-} from '../../../../infrastructure/events/event-types';
+import { VERIFICATION_SUBMITTED } from '../../../../infrastructure/events/event-types';
 
+/**
+ * Verification Service
+ * Handles core verification request operations (submit, get status, list)
+ */
 @Injectable()
 export class VerificationService {
   private readonly logger = new Logger(VerificationService.name);
@@ -26,10 +23,12 @@ export class VerificationService {
     private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
     @InjectModel(CourierProfile.name)
     private courierProfileModel: Model<CourierProfileDocument>,
-    private storageService: StorageService,
     private eventEmitter: EventEmitter2,
   ) {}
 
+  /**
+   * Submit a new verification request
+   */
   async submitVerification(
     accountId: string,
     submitDto: SubmitVerificationDto,
@@ -128,45 +127,13 @@ export class VerificationService {
       applicantType: submitDto.applicantType,
     });
 
+    this.logger.log(`Verification submitted for account: ${accountId}`);
     return saved;
   }
 
-  async uploadDocument(
-    verificationRequestId: string,
-    file: Express.Multer.File,
-    documentType: string,
-    description?: string,
-  ): Promise<VerificationRequestDocument> {
-    const verificationRequest = await this.verificationRequestModel
-      .findById(verificationRequestId)
-      .exec();
-
-    if (!verificationRequest) {
-      throw new NotFoundException('Verification request not found');
-    }
-
-    if (verificationRequest.status === 'approved' || verificationRequest.status === 'rejected') {
-      throw new BadRequestException('Cannot upload documents to a finalized verification request');
-    }
-
-    // Upload file to S3
-    const uploadResult = await this.storageService.uploadFile(
-      file,
-      `verification/${verificationRequestId}`,
-    );
-
-    // Add document to verification request
-    verificationRequest.documents.push({
-      type: documentType as any,
-      url: uploadResult.url,
-      uploadedAt: new Date(),
-      description,
-      status: 'pending',
-    });
-
-    return verificationRequest.save();
-  }
-
+  /**
+   * Get my verification status
+   */
   async getMyVerificationStatus(accountId: string): Promise<VerificationRequestDocument | null> {
     return this.verificationRequestModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
@@ -174,6 +141,9 @@ export class VerificationService {
       .exec();
   }
 
+  /**
+   * Get all verification requests (Admin only)
+   */
   async getAllVerificationRequests(filters?: {
     status?: string;
     applicantType?: string;
@@ -219,6 +189,9 @@ export class VerificationService {
     };
   }
 
+  /**
+   * Get verification request by ID
+   */
   async getVerificationRequestById(id: string): Promise<VerificationRequestDocument> {
     const request = await this.verificationRequestModel
       .findById(id)
@@ -233,109 +206,9 @@ export class VerificationService {
     return request;
   }
 
-  async reviewVerification(
-    verificationRequestId: string,
-    reviewDto: ReviewVerificationDto,
-    adminId: string,
-  ): Promise<VerificationRequestDocument> {
-    const verificationRequest = await this.verificationRequestModel
-      .findById(verificationRequestId)
-      .exec();
-
-    if (!verificationRequest) {
-      throw new NotFoundException('Verification request not found');
-    }
-
-    if (verificationRequest.status === 'approved' || verificationRequest.status === 'rejected') {
-      throw new BadRequestException('This verification request has already been finalized');
-    }
-
-    const accountId = verificationRequest.accountId.toString();
-    const applicantType = verificationRequest.applicantType;
-
-    // Update verification request based on action
-    if (reviewDto.action === 'approve') {
-      verificationRequest.status = 'approved';
-      verificationRequest.reviewedBy = new Types.ObjectId(adminId);
-      verificationRequest.reviewedAt = new Date();
-      verificationRequest.history.push({
-        action: 'approved',
-        performedBy: new Types.ObjectId(adminId),
-        timestamp: new Date(),
-        notes: reviewDto.notes,
-      });
-
-      // Update profile verification status
-      await this.updateProfileVerificationStatus(
-        accountId,
-        applicantType,
-        'approved',
-        undefined,
-        new Date(),
-        new Types.ObjectId(adminId),
-      );
-
-      // Emit event
-      this.eventEmitter.emit(VERIFICATION_APPROVED, {
-        accountId,
-        verificationRequestId,
-        applicantType,
-        adminId,
-      });
-    } else if (reviewDto.action === 'reject') {
-      verificationRequest.status = 'rejected';
-      verificationRequest.reviewedBy = new Types.ObjectId(adminId);
-      verificationRequest.reviewedAt = new Date();
-      verificationRequest.rejectionReason = reviewDto.rejectionReason;
-      verificationRequest.history.push({
-        action: 'rejected',
-        performedBy: new Types.ObjectId(adminId),
-        timestamp: new Date(),
-        notes: reviewDto.notes || reviewDto.rejectionReason,
-      });
-
-      // Update profile verification status
-      await this.updateProfileVerificationStatus(
-        accountId,
-        applicantType,
-        'rejected',
-        undefined,
-        new Date(),
-        new Types.ObjectId(adminId),
-        reviewDto.rejectionReason,
-      );
-
-      // Emit event
-      this.eventEmitter.emit(VERIFICATION_REJECTED, {
-        accountId,
-        verificationRequestId,
-        applicantType,
-        adminId,
-        reason: reviewDto.rejectionReason,
-      });
-    } else if (reviewDto.action === 'request_info') {
-      verificationRequest.status = 'info_required';
-      verificationRequest.infoRequired = reviewDto.infoRequired;
-      verificationRequest.history.push({
-        action: 'info_required',
-        performedBy: new Types.ObjectId(adminId),
-        timestamp: new Date(),
-        notes: reviewDto.infoRequired,
-      });
-
-      // Emit event
-      this.eventEmitter.emit(VERIFICATION_INFO_REQUESTED, {
-        accountId,
-        verificationRequestId,
-        applicantType,
-        adminId,
-        infoRequired: reviewDto.infoRequired,
-      });
-    }
-
-    return verificationRequest.save();
-  }
-
+  /**
+   * Update profile verification status
+   */
   private async updateProfileVerificationStatus(
     accountId: string,
     applicantType: 'store_owner' | 'courier',
