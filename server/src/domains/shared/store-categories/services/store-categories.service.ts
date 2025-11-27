@@ -2,22 +2,21 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { StoreCategory, StoreCategoryDocument } from '../../../../database/schemas/store-category.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
 import { CreateStoreCategoryDto, UpdateStoreCategoryDto } from '../dto';
-import { RedisService } from '../../../../infrastructure/redis/redis.service';
+import { StoreCategoryCacheService } from './store-category-cache.service';
 
+/**
+ * Store Categories Service
+ * Handles core CRUD operations for store categories
+ */
 @Injectable()
 export class StoreCategoriesService {
   private readonly logger = new Logger(StoreCategoriesService.name);
-  private readonly CACHE_PREFIX = 'store-category:';
-  private readonly CACHE_TTL = 3600; // 1 hour
 
   constructor(
     @InjectModel(StoreCategory.name)
     private storeCategoryModel: Model<StoreCategoryDocument>,
-    @InjectModel(StoreOwnerProfile.name)
-    private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
-    private redisService: RedisService,
+    private cacheService: StoreCategoryCacheService,
   ) {}
 
   /**
@@ -52,8 +51,9 @@ export class StoreCategoriesService {
     const saved = await category.save();
 
     // Clear cache
-    await this.clearAllCategoriesCache();
+    await this.cacheService.clearAllCategoriesCache();
 
+    this.logger.log(`Category created: ${saved.name} (${saved._id})`);
     return saved;
   }
 
@@ -124,7 +124,7 @@ export class StoreCategoriesService {
 
     // Try cache first
     if (!includeSubcategories) {
-      const cached = await this.getCachedCategory(id);
+      const cached = await this.cacheService.getCachedCategory(id);
       if (cached) {
         return cached;
       }
@@ -148,7 +148,7 @@ export class StoreCategoriesService {
 
     // Cache for future requests
     if (!includeSubcategories) {
-      await this.cacheCategory(category);
+      await this.cacheService.cacheCategory(category);
     }
 
     return category;
@@ -248,9 +248,10 @@ export class StoreCategoriesService {
     const updated = await category.save();
 
     // Clear cache
-    await this.deleteCachedCategory(id);
-    await this.clearAllCategoriesCache();
+    await this.cacheService.deleteCachedCategory(id);
+    await this.cacheService.clearAllCategoriesCache();
 
+    this.logger.log(`Category updated: ${updated.name} (${updated._id})`);
     return updated;
   }
 
@@ -285,8 +286,10 @@ export class StoreCategoriesService {
     await category.save();
 
     // Clear cache
-    await this.deleteCachedCategory(id);
-    await this.clearAllCategoriesCache();
+    await this.cacheService.deleteCachedCategory(id);
+    await this.cacheService.clearAllCategoriesCache();
+
+    this.logger.log(`Category deleted: ${category.name} (${category._id})`);
   }
 
   /**
@@ -307,6 +310,7 @@ export class StoreCategoriesService {
     category.deletedBy = undefined;
     await category.save();
 
+    this.logger.log(`Category restored: ${category.name} (${category._id})`);
     return category;
   }
 
@@ -329,21 +333,7 @@ export class StoreCategoriesService {
     }
 
     await this.storeCategoryModel.findByIdAndDelete(id);
-  }
-
-  /**
-   * تحديث عدد المتاجر في التصنيف
-   */
-  async updateStoreCount(categoryId: string, increment: number): Promise<void> {
-    if (!Types.ObjectId.isValid(categoryId)) {
-      return;
-    }
-
-    await this.storeCategoryModel.findByIdAndUpdate(
-      categoryId,
-      { $inc: { storeCount: increment } },
-      { new: true },
-    );
+    this.logger.log(`Category permanently deleted: ${category.name} (${category._id})`);
   }
 
   /**
@@ -358,147 +348,6 @@ export class StoreCategoriesService {
       .sort({ score: { $meta: 'textScore' } })
       .limit(20)
       .exec();
-  }
-
-  /**
-   * إعادة حساب عدد المتاجر لجميع التصنيفات
-   */
-  async recalculateStoreCounts(): Promise<void> {
-    const categories = await this.storeCategoryModel.find();
-
-    for (const category of categories) {
-      // حساب عدد المتاجر الفعلي من StoreOwnerProfile
-      const count = await this.storeOwnerProfileModel.countDocuments({
-        storeCategories: category._id,
-      });
-
-      category.storeCount = count;
-      await category.save();
-    }
-  }
-
-  /**
-   * إعادة حساب الإحصائيات لجميع التصنيفات
-   */
-  async recalculateStatistics(): Promise<void> {
-    const categories = await this.storeCategoryModel.find();
-
-    for (const category of categories) {
-      await this.updateCategoryStatistics((category._id as Types.ObjectId).toString());
-    }
-  }
-
-  /**
-   * تحديث إحصائيات تصنيف واحد
-   */
-  async updateCategoryStatistics(categoryId: string): Promise<void> {
-    if (!Types.ObjectId.isValid(categoryId)) {
-      return;
-    }
-
-    // الحصول على جميع المتاجر في هذا التصنيف
-    const stores = await this.storeOwnerProfileModel
-      .find({
-        storeCategories: new Types.ObjectId(categoryId),
-        isStoreActive: true,
-      })
-      .select('products totalOrders rating totalReviews totalSales')
-      .exec();
-
-    // حساب الإحصائيات
-    let totalProducts = 0;
-    let totalOrders = 0;
-    let totalRating = 0;
-    let storesWithRating = 0;
-    let totalSales = 0;
-
-    for (const store of stores) {
-      totalProducts += store.products?.length || 0;
-      totalOrders += (store as any).totalOrders || 0;
-      totalSales += (store as any).totalSales || 0;
-
-      if (store.rating && store.rating > 0) {
-        totalRating += store.rating;
-        storesWithRating++;
-      }
-    }
-
-    const averageRating = storesWithRating > 0 ? totalRating / storesWithRating : 0;
-
-    // حساب نقاط الشعبية (popularity score)
-    // Formula: (totalOrders * 2) + (totalSales * 0.1) + (averageRating * 100)
-    const popularityScore = (totalOrders * 2) + (totalSales * 0.1) + (averageRating * 100);
-
-    // تحديث التصنيف
-    await this.storeCategoryModel.findByIdAndUpdate(
-      categoryId,
-      {
-        totalProducts,
-        totalOrders,
-        averageRating: Math.round(averageRating * 10) / 10, // تقريب لرقم عشري واحد
-        popularityScore: Math.round(popularityScore),
-      },
-      { new: true },
-    );
-  }
-
-  // ==================== Cache Helpers ====================
-
-  /**
-   * حفظ تصنيف في الـ cache
-   */
-  private async cacheCategory(category: any): Promise<void> {
-    try {
-      const key = `${this.CACHE_PREFIX}${category._id}`;
-      await this.redisService.set(
-        key,
-        JSON.stringify(category),
-        this.CACHE_TTL,
-      );
-    } catch (error) {
-      this.logger.warn(`Failed to cache category: ${category._id}`, error);
-    }
-  }
-
-  /**
-   * الحصول على تصنيف من الـ cache
-   */
-  private async getCachedCategory(id: string): Promise<StoreCategory | null> {
-    try {
-      const key = `${this.CACHE_PREFIX}${id}`;
-      const cached = await this.redisService.get(key);
-      if (cached) {
-        return JSON.parse(cached);
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to get cached category: ${id}`, error);
-    }
-    return null;
-  }
-
-  /**
-   * حذف تصنيف من الـ cache
-   */
-  private async deleteCachedCategory(id: string): Promise<void> {
-    try {
-      const key = `${this.CACHE_PREFIX}${id}`;
-      await this.redisService.del(key);
-    } catch (error) {
-      this.logger.warn(`Failed to delete cached category: ${id}`, error);
-    }
-  }
-
-  /**
-   * حذف جميع التصنيفات من الـ cache
-   */
-  private async clearAllCategoriesCache(): Promise<void> {
-    try {
-      // حذف cache للتصنيفات الرئيسية
-      await this.redisService.del(`${this.CACHE_PREFIX}root`);
-      await this.redisService.del(`${this.CACHE_PREFIX}all`);
-    } catch (error) {
-      this.logger.warn('Failed to clear categories cache', error);
-    }
   }
 }
 

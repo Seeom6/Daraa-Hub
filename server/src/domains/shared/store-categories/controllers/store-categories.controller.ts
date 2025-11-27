@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { StoreCategoriesService } from '../services/store-categories.service';
+import { StoreCategoryStatisticsService } from '../services/store-category-statistics.service';
 import { CreateStoreCategoryDto, UpdateStoreCategoryDto } from '../dto';
 import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas';
 
@@ -25,6 +26,7 @@ import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../databa
 export class StoreCategoriesController {
   constructor(
     private readonly storeCategoriesService: StoreCategoriesService,
+    private readonly statisticsService: StoreCategoryStatisticsService,
     @InjectModel(StoreOwnerProfile.name)
     private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
   ) {}
@@ -230,7 +232,7 @@ export class StoreCategoriesController {
   @Roles('super_admin', 'admin')
   @HttpCode(HttpStatus.OK)
   async recalculateCounts() {
-    await this.storeCategoriesService.recalculateStoreCounts();
+    await this.statisticsService.recalculateStoreCounts();
     return {
       success: true,
       message: 'تم إعادة حساب عدد المتاجر بنجاح',
@@ -245,7 +247,7 @@ export class StoreCategoriesController {
   @Roles('super_admin', 'admin')
   @HttpCode(HttpStatus.OK)
   async recalculateStatistics() {
-    await this.storeCategoriesService.recalculateStatistics();
+    await this.statisticsService.recalculateStatistics();
     return {
       success: true,
       message: 'تم إعادة حساب الإحصائيات بنجاح',
