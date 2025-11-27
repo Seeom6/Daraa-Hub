@@ -6,6 +6,9 @@ import { StoreSubscription, StoreSubscriptionSchema } from '../../../database/sc
 import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/schemas/store-owner-profile.schema';
 import { SystemSettings, SystemSettingsSchema } from '../../../database/schemas/system-settings.schema';
 import { ProductService } from './services/product.service';
+import { ProductVariantService } from './services/product-variant.service';
+import { ProductMediaService } from './services/product-media.service';
+import { ProductSubscriptionService } from './services/product-subscription.service';
 import { ProductController } from './controllers/product.controller';
 import { ProductRepository } from './repositories/product.repository';
 import { ProductVariantRepository } from './repositories/product-variant.repository';
@@ -25,8 +28,22 @@ import { CategoryModule } from '../categories/category.module';
     CategoryModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository, ProductVariantRepository],
-  exports: [ProductService, ProductRepository, ProductVariantRepository],
+  providers: [
+    ProductService,
+    ProductVariantService,
+    ProductMediaService,
+    ProductSubscriptionService,
+    ProductRepository,
+    ProductVariantRepository,
+  ],
+  exports: [
+    ProductService,
+    ProductVariantService,
+    ProductMediaService,
+    ProductSubscriptionService,
+    ProductRepository,
+    ProductVariantRepository,
+  ],
 })
 export class ProductModule {}
 

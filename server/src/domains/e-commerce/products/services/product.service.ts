@@ -4,41 +4,39 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
-  ForbiddenException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { ProductDocument, ProductStatus } from '../../../../database/schemas/product.schema';
-import { ProductVariant, ProductVariantDocument } from '../../../../database/schemas/product-variant.schema';
-import { StoreSubscription, StoreSubscriptionDocument, SubscriptionStatus } from '../../../../database/schemas/store-subscription.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
-import { SystemSettings, SystemSettingsDocument } from '../../../../database/schemas/system-settings.schema';
-import { CreateProductDto, UpdateProductDto, QueryProductDto, CreateVariantDto, UpdateVariantDto } from '../dto';
+import { CreateProductDto, UpdateProductDto, QueryProductDto } from '../dto';
 import { CategoryService } from '../../categories/services/category.service';
 import { ProductRepository } from '../repositories/product.repository';
+import { ProductSubscriptionService } from './product-subscription.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+/**
+ * Core Product Service
+ * Handles CRUD operations for products
+ */
 @Injectable()
 export class ProductService {
   private readonly logger = new Logger(ProductService.name);
 
   constructor(
     private readonly productRepository: ProductRepository,
-    @InjectModel(ProductVariant.name)
-    private readonly variantModel: Model<ProductVariantDocument>,
-    @InjectModel(StoreSubscription.name)
-    private readonly subscriptionModel: Model<StoreSubscriptionDocument>,
-    @InjectModel(StoreOwnerProfile.name)
-    private readonly storeProfileModel: Model<StoreOwnerProfileDocument>,
-    @InjectModel(SystemSettings.name)
-    private readonly settingsModel: Model<SystemSettingsDocument>,
     private readonly categoryService: CategoryService,
+    private readonly productSubscriptionService: ProductSubscriptionService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  /**
+   * Create a new product
+   */
   async create(createProductDto: CreateProductDto, userId: string): Promise<ProductDocument> {
     // Check subscription limits
-    await this.checkSubscriptionLimits(createProductDto.storeId, createProductDto.images?.length || 0);
+    await this.productSubscriptionService.checkSubscriptionLimits(
+      createProductDto.storeId,
+      createProductDto.images?.length || 0,
+    );
 
     // Check if slug already exists
     const existingSlug = await this.productRepository.findOne({ slug: createProductDto.slug });
@@ -54,78 +52,90 @@ export class ProductService {
       }
     }
 
-    // Verify category exists
-    await this.categoryService.findOne(createProductDto.categoryId);
+    // Validate category exists
+    if (createProductDto.categoryId) {
+      await this.categoryService.findOne(createProductDto.categoryId);
+    }
 
-    const saved = await this.productRepository.create(createProductDto as any);
+    // Convert specifications Record to Map if provided
+    const specifications = createProductDto.specifications
+      ? new Map(Object.entries(createProductDto.specifications))
+      : undefined;
 
-    // Increment category product count
-    await this.categoryService.incrementProductCount(createProductDto.categoryId);
+    const product = await this.productRepository.create({
+      ...createProductDto,
+      storeId: new Types.ObjectId(createProductDto.storeId),
+      categoryId: createProductDto.categoryId ? new Types.ObjectId(createProductDto.categoryId) : undefined,
+      specifications,
+    });
 
-    // Increment daily usage counter
-    await this.incrementDailyUsage(createProductDto.storeId);
+    const saved = await product.save();
+
+    // Increment daily usage
+    await this.productSubscriptionService.incrementDailyUsage(createProductDto.storeId);
 
     this.logger.log(`Product created: ${saved.name} (${saved._id}) by user: ${userId}`);
     return saved;
   }
 
+  /**
+   * Get all products with filters
+   */
   async findAll(query: QueryProductDto): Promise<{ data: ProductDocument[]; total: number; page: number; limit: number }> {
     const {
       search,
       storeId,
       categoryId,
       status,
-      isFeatured,
-      hasVariants,
       minPrice,
       maxPrice,
-      minRating,
-      tags,
-      page = 1,
-      limit = 20,
+      isFeatured,
       sortBy = 'createdAt',
       sortOrder = 'desc',
+      page = 1,
+      limit = 20,
     } = query;
 
     const filter: any = {};
 
+    // Search by name or description
     if (search) {
-      filter.$text = { $search: search };
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } },
+      ];
     }
 
+    // Filter by store
     if (storeId) {
       filter.storeId = new Types.ObjectId(storeId);
     }
 
+    // Filter by category
     if (categoryId) {
       filter.categoryId = new Types.ObjectId(categoryId);
     }
 
+    // Filter by status
     if (status) {
       filter.status = status;
     }
 
-    if (isFeatured !== undefined) {
-      filter.isFeatured = isFeatured;
-    }
-
-    if (hasVariants !== undefined) {
-      filter.hasVariants = hasVariants;
-    }
-
+    // Filter by price range
     if (minPrice !== undefined || maxPrice !== undefined) {
       filter.price = {};
-      if (minPrice !== undefined) filter.price.$gte = minPrice;
-      if (maxPrice !== undefined) filter.price.$lte = maxPrice;
+      if (minPrice !== undefined) {
+        filter.price.$gte = minPrice;
+      }
+      if (maxPrice !== undefined) {
+        filter.price.$lte = maxPrice;
+      }
     }
 
-    if (minRating !== undefined) {
-      filter.rating = { $gte: minRating };
-    }
-
-    if (tags) {
-      const tagArray = tags.split(',').map(t => t.trim());
-      filter.tags = { $in: tagArray };
+    // Filter by featured
+    if (isFeatured !== undefined) {
+      filter.isFeatured = isFeatured;
     }
 
     const skip = (page - 1) * limit;
@@ -133,15 +143,16 @@ export class ProductService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
-      this.productRepository.getModel()
+      this.productRepository
+        .getModel()
         .find(filter)
         .sort(sort)
         .skip(skip)
         .limit(limit)
-        .populate('storeId', 'storeName')
+        .populate('storeId', 'businessName')
         .populate('categoryId', 'name slug')
         .exec(),
-      this.productRepository.getModel().countDocuments(filter).exec(),
+      this.productRepository.count(filter),
     ]);
 
     return {
@@ -152,6 +163,9 @@ export class ProductService {
     };
   }
 
+  /**
+   * Get a single product by ID
+   */
   async findOne(id: string): Promise<ProductDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid product ID');
@@ -159,7 +173,7 @@ export class ProductService {
 
     const product = await this.productRepository.getModel()
       .findById(id)
-      .populate('storeId', 'storeName storeDescription')
+      .populate('storeId', 'businessName storeDescription')
       .populate('categoryId', 'name slug')
       .populate('variants')
       .exec();
@@ -174,10 +188,13 @@ export class ProductService {
     return product;
   }
 
+  /**
+   * Get a single product by slug
+   */
   async findBySlug(slug: string): Promise<ProductDocument> {
     const product = await this.productRepository.getModel()
       .findOne({ slug })
-      .populate('storeId', 'storeName storeDescription')
+      .populate('storeId', 'businessName storeDescription')
       .populate('categoryId', 'name slug')
       .populate('variants')
       .exec();
@@ -192,6 +209,9 @@ export class ProductService {
     return product;
   }
 
+  /**
+   * Update a product
+   */
   async update(id: string, updateProductDto: UpdateProductDto, userId: string): Promise<ProductDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid product ID');
@@ -202,27 +222,25 @@ export class ProductService {
       throw new NotFoundException('Product not found');
     }
 
-    // Check slug uniqueness if being updated
+    // Check if slug is being updated and already exists
     if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
-      const existingSlug = await this.productRepository.getModel().findOne({ slug: updateProductDto.slug }).exec();
+      const existingSlug = await this.productRepository.findOne({ slug: updateProductDto.slug });
       if (existingSlug) {
         throw new ConflictException(`Product with slug '${updateProductDto.slug}' already exists`);
       }
     }
 
-    // Check SKU uniqueness if being updated
+    // Check if SKU is being updated and already exists
     if (updateProductDto.sku && updateProductDto.sku !== product.sku) {
-      const existingSku = await this.productRepository.getModel().findOne({ sku: updateProductDto.sku }).exec();
+      const existingSku = await this.productRepository.findOne({ sku: updateProductDto.sku });
       if (existingSku) {
         throw new ConflictException(`Product with SKU '${updateProductDto.sku}' already exists`);
       }
     }
 
-    // If category is being updated, verify it exists and update counts
-    if (updateProductDto.categoryId && updateProductDto.categoryId !== product.categoryId.toString()) {
+    // Validate category exists (if updating)
+    if (updateProductDto.categoryId) {
       await this.categoryService.findOne(updateProductDto.categoryId);
-      await this.categoryService.decrementProductCount(product.categoryId.toString());
-      await this.categoryService.incrementProductCount(updateProductDto.categoryId);
     }
 
     Object.assign(product, updateProductDto);
@@ -232,6 +250,9 @@ export class ProductService {
     return updated;
   }
 
+  /**
+   * Delete a product
+   */
   async remove(id: string, userId: string): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid product ID');
@@ -242,131 +263,15 @@ export class ProductService {
       throw new NotFoundException('Product not found');
     }
 
-    // Delete all variants
-    await this.variantModel.deleteMany({ productId: id }).exec();
-
-    // Decrement category product count
-    await this.categoryService.decrementProductCount(product.categoryId.toString());
+    // TODO: Check if product has active orders before deletion
 
     await this.productRepository.getModel().findByIdAndDelete(id).exec();
     this.logger.log(`Product deleted: ${product.name} (${id}) by user: ${userId}`);
   }
 
-  async addImages(id: string, imageUrls: string[]): Promise<ProductDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid product ID');
-    }
-
-    const product = await this.productRepository.getModel().findById(id).exec();
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    product.images.push(...imageUrls);
-
-    // Set first image as main image if not set
-    if (!product.mainImage && imageUrls.length > 0) {
-      product.mainImage = imageUrls[0];
-    }
-
-    return await product.save();
-  }
-
-  async removeImage(id: string, imageUrl: string): Promise<ProductDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid product ID');
-    }
-
-    const product = await this.productRepository.getModel().findById(id).exec();
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    product.images = product.images.filter(img => img !== imageUrl);
-
-    // Update main image if it was removed
-    if (product.mainImage === imageUrl) {
-      product.mainImage = product.images.length > 0 ? product.images[0] : undefined;
-    }
-
-    return await product.save();
-  }
-
-  // Variant methods
-  async createVariant(createVariantDto: CreateVariantDto): Promise<ProductVariantDocument> {
-    const product = await this.productRepository.getModel().findById(createVariantDto.productId).exec();
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    // Check SKU uniqueness if provided
-    if (createVariantDto.sku) {
-      const existingSku = await this.variantModel.findOne({ sku: createVariantDto.sku }).exec();
-      if (existingSku) {
-        throw new ConflictException(`Variant with SKU '${createVariantDto.sku}' already exists`);
-      }
-    }
-
-    const variant = new this.variantModel(createVariantDto);
-    const saved = await variant.save();
-
-    // Update product to indicate it has variants
-    if (!product.hasVariants) {
-      product.hasVariants = true;
-      await product.save();
-    }
-
-    this.logger.log(`Variant created for product: ${createVariantDto.productId}`);
-    return saved;
-  }
-
-  async findVariantsByProduct(productId: string): Promise<ProductVariantDocument[]> {
-    return await this.variantModel.find({ productId: new Types.ObjectId(productId) }).exec();
-  }
-
-  async updateVariant(id: string, updateVariantDto: UpdateVariantDto): Promise<ProductVariantDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid variant ID');
-    }
-
-    const variant = await this.variantModel.findById(id).exec();
-    if (!variant) {
-      throw new NotFoundException('Variant not found');
-    }
-
-    // Check SKU uniqueness if being updated
-    if (updateVariantDto.sku && updateVariantDto.sku !== variant.sku) {
-      const existingSku = await this.variantModel.findOne({ sku: updateVariantDto.sku }).exec();
-      if (existingSku) {
-        throw new ConflictException(`Variant with SKU '${updateVariantDto.sku}' already exists`);
-      }
-    }
-
-    Object.assign(variant, updateVariantDto);
-    return await variant.save();
-  }
-
-  async removeVariant(id: string): Promise<void> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid variant ID');
-    }
-
-    const variant = await this.variantModel.findById(id).exec();
-    if (!variant) {
-      throw new NotFoundException('Variant not found');
-    }
-
-    await this.variantModel.findByIdAndDelete(id).exec();
-
-    // Check if product still has variants
-    const remainingVariants = await this.variantModel.countDocuments({ productId: variant.productId }).exec();
-    if (remainingVariants === 0) {
-      await this.productRepository.getModel().findByIdAndUpdate(variant.productId, { hasVariants: false }).exec();
-    }
-
-    this.logger.log(`Variant deleted: ${id}`);
-  }
-
+  /**
+   * Verify product ownership
+   */
   async verifyOwnership(productId: string, storeId: string): Promise<boolean> {
     const product = await this.productRepository.getModel().findById(productId).exec();
     if (!product) {
@@ -374,105 +279,6 @@ export class ProductService {
     }
 
     return product.storeId.toString() === storeId;
-  }
-
-  /**
-   * Check subscription limits before creating product
-   */
-  private async checkSubscriptionLimits(storeId: string, imageCount: number): Promise<void> {
-    // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
-
-    if (!subscriptionSystemEnabled) {
-      // Subscription system is disabled, allow all
-      return;
-    }
-
-    // Get store profile
-    const storeProfile = await this.storeProfileModel.findById(storeId).exec();
-    if (!storeProfile) {
-      throw new NotFoundException('Store not found');
-    }
-
-    // Check if store has active subscription
-    if (!storeProfile.hasActiveSubscription) {
-      throw new ForbiddenException(
-        'Your subscription has expired. Please renew to continue publishing products.',
-      );
-    }
-
-    // Get active subscription
-    const subscription = await this.subscriptionModel
-      .findOne({
-        storeId: new Types.ObjectId(storeId),
-        status: SubscriptionStatus.ACTIVE,
-      })
-      .populate('planId')
-      .exec();
-
-    if (!subscription) {
-      throw new ForbiddenException(
-        'No active subscription found. Please subscribe to a plan to continue.',
-      );
-    }
-
-    // Check if subscription has expired
-    if (subscription.endDate < new Date()) {
-      throw new ForbiddenException(
-        'Your subscription has expired. Please renew to continue publishing products.',
-      );
-    }
-
-    // Check daily limit
-    const todayUsage = subscription.getTodayUsage();
-    const dailyLimit = storeProfile.dailyProductLimit;
-
-    if (todayUsage >= dailyLimit) {
-      // Emit event for notification
-      this.eventEmitter.emit('subscription.dailyLimitReached', {
-        storeId: storeId,
-        dailyLimit,
-      });
-
-      throw new ForbiddenException(
-        `Daily product limit reached (${dailyLimit} products/day). Please upgrade your plan or wait until tomorrow.`,
-      );
-    }
-
-    // Check image limit
-    const maxImages = storeProfile.maxImagesPerProduct;
-    if (imageCount > maxImages) {
-      throw new ForbiddenException(
-        `Image limit exceeded. Your plan allows maximum ${maxImages} images per product.`,
-      );
-    }
-  }
-
-  /**
-   * Increment daily usage counter after product creation
-   */
-  private async incrementDailyUsage(storeId: string): Promise<void> {
-    // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
-
-    if (!subscriptionSystemEnabled) {
-      return;
-    }
-
-    // Get active subscription
-    const subscription = await this.subscriptionModel
-      .findOne({
-        storeId: new Types.ObjectId(storeId),
-        status: SubscriptionStatus.ACTIVE,
-      })
-      .exec();
-
-    if (subscription) {
-      await subscription.incrementTodayUsage();
-      this.logger.log(`Daily usage incremented for store ${storeId}: ${subscription.getTodayUsage()}`);
-    }
   }
 }
 

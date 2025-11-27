@@ -20,6 +20,8 @@ import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator';
 import { ProductService } from '../services/product.service';
+import { ProductVariantService } from '../services/product-variant.service';
+import { ProductMediaService } from '../services/product-media.service';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -33,6 +35,8 @@ import { StorageService } from '../../../../infrastructure/storage/storage.servi
 export class ProductController {
   constructor(
     private readonly productService: ProductService,
+    private readonly productVariantService: ProductVariantService,
+    private readonly productMediaService: ProductMediaService,
     private readonly storageService: StorageService,
   ) {}
 
@@ -192,7 +196,7 @@ export class ProductController {
     const imageUrls = uploadResults.map(result => result.url);
 
     // Add images to product
-    const product = await this.productService.addImages(id, imageUrls);
+    const product = await this.productMediaService.addImages(id, imageUrls);
 
     return {
       success: true,
@@ -225,7 +229,7 @@ export class ProductController {
       }
     }
 
-    const product = await this.productService.removeImage(id, imageUrl);
+    const product = await this.productMediaService.removeImage(id, imageUrl);
 
     return {
       success: true,
@@ -257,7 +261,7 @@ export class ProductController {
     }
 
     createVariantDto.productId = productId;
-    const variant = await this.productService.createVariant(createVariantDto);
+    const variant = await this.productVariantService.createVariant(createVariantDto);
 
     return {
       success: true,
@@ -273,7 +277,7 @@ export class ProductController {
    */
   @Get(':id/variants')
   async getVariants(@Param('id') productId: string) {
-    const variants = await this.productService.findVariantsByProduct(productId);
+    const variants = await this.productVariantService.findVariantsByProduct(productId);
     return {
       success: true,
       data: variants,
@@ -293,7 +297,7 @@ export class ProductController {
     @Body() updateVariantDto: UpdateVariantDto,
     @CurrentUser() user: any,
   ) {
-    const variant = await this.productService.updateVariant(variantId, updateVariantDto);
+    const variant = await this.productVariantService.updateVariant(variantId, updateVariantDto);
     return {
       success: true,
       message: 'Variant updated successfully',
@@ -314,7 +318,7 @@ export class ProductController {
     @Param('variantId') variantId: string,
     @CurrentUser() user: any,
   ) {
-    await this.productService.removeVariant(variantId);
+    await this.productVariantService.removeVariant(variantId);
   }
 }
 
