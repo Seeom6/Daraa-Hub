@@ -11,6 +11,8 @@ import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { AccountService } from '../../accounts/services/account.service';
+import { AccountProfileService } from '../../accounts/services/account-profile.service';
+import { AccountSecurityService } from '../../accounts/services/account-security.service';
 import type { ISmsService } from '../../../../infrastructure/sms/sms.interface';
 import { Otp, OtpDocument } from '../entities/otp.entity';
 import { RegisterStep1Dto } from '../dto/register-step1.dto';
@@ -29,6 +31,8 @@ export class AuthService {
   constructor(
     @InjectModel(Otp.name) private otpModel: Model<OtpDocument>,
     private accountService: AccountService,
+    private accountProfileService: AccountProfileService,
+    private accountSecurityService: AccountSecurityService,
     @Inject('SMS_SERVICE') private smsService: ISmsService,
     private otpService: OtpService,
     private tokenService: TokenService,
@@ -105,7 +109,7 @@ export class AuthService {
     await this.otpService.markAsUsed((otpRecord._id as any).toString());
 
     // Verify phone and create customer profile
-    await this.accountService.verifyPhoneAndCreateProfile(phoneNumber);
+    await this.accountProfileService.verifyPhoneAndCreateProfile(phoneNumber);
 
     return {
       message: 'تم التحقق من رقم الهاتف بنجاح.',
@@ -144,7 +148,7 @@ export class AuthService {
     }
 
     // Set password for account
-    const account = await this.accountService.setPassword(phoneNumber, password, email);
+    const account = await this.accountSecurityService.setPassword(phoneNumber, password, email);
 
     // Generate JWT tokens
     const payload = {
@@ -179,21 +183,21 @@ export class AuthService {
     }
 
     // Check if account is locked
-    const isLocked = await this.accountService.isAccountLocked(account._id as any);
+    const isLocked = await this.accountSecurityService.isAccountLocked(account._id as any);
     if (isLocked) {
       throw new UnauthorizedException('Account is temporarily locked due to multiple failed login attempts. Please try again later.');
     }
 
     // Validate password
-    const isPasswordValid = await this.accountService.validatePassword(account, password);
+    const isPasswordValid = await this.accountSecurityService.validatePassword(account, password);
     if (!isPasswordValid) {
       // Record failed login attempt
-      await this.accountService.addLoginHistory(account._id as any, ip, device, false);
+      await this.accountSecurityService.addLoginHistory(account._id as any, ip, device, false);
       throw new UnauthorizedException('Invalid phone number or password');
     }
 
     // Record successful login
-    await this.accountService.addLoginHistory(account._id as any, ip, device, true);
+    await this.accountSecurityService.addLoginHistory(account._id as any, ip, device, true);
 
     // Generate JWT tokens
     const payload = {
@@ -335,7 +339,7 @@ export class AuthService {
     }
 
     // Update password
-    await this.accountService.updatePassword(phoneNumber, password);
+    await this.accountSecurityService.updatePassword(phoneNumber, password);
 
     // Clean up OTPs
     await this.otpService.deleteOtp(phoneNumber, 'forgot-password');

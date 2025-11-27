@@ -3,6 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { AccountController } from './controllers/account.controller';
 import { AccountService } from './services/account.service';
+import { AccountProfileService } from './services/account-profile.service';
+import { AccountSecurityService } from './services/account-security.service';
 import {
   Account,
   AccountSchema,
@@ -37,6 +39,8 @@ import { SecurityProfileRepository } from './repositories/security-profile.repos
   controllers: [AccountController],
   providers: [
     AccountService,
+    AccountProfileService,
+    AccountSecurityService,
     AccountRepository,
     CustomerProfileRepository,
     StoreOwnerProfileRepository,
@@ -45,6 +49,8 @@ import { SecurityProfileRepository } from './repositories/security-profile.repos
   ],
   exports: [
     AccountService,
+    AccountProfileService,
+    AccountSecurityService,
     AccountRepository,
     CustomerProfileRepository,
     StoreOwnerProfileRepository,

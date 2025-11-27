@@ -11,6 +11,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { AccountService } from '../services/account.service';
+import { AccountProfileService } from '../services/account-profile.service';
 import { UpgradeRoleDto } from '../dto/upgrade-role.dto';
 import { UpdateStoreProfileDto } from '../dto/update-store-profile.dto';
 import { JwtAuthGuard } from '../../../../common/guards';
@@ -24,7 +25,10 @@ import { CurrentUser } from '../../../../common/decorators/current-user.decorato
  */
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly accountProfileService: AccountProfileService,
+  ) {}
 
   /**
    * Get current user's profile
@@ -42,7 +46,7 @@ export class AccountController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async upgradeRole(@Request() req, @Body() dto: UpgradeRoleDto) {
-    const account = await this.accountService.upgradeRole(req.user.userId, dto.role);
+    const account = await this.accountProfileService.upgradeRole(req.user.userId, dto.role);
 
     return {
       message: 'Account role upgraded successfully',
@@ -63,7 +67,7 @@ export class AccountController {
     @CurrentUser() user: any,
     @Body() updateDto: UpdateStoreProfileDto,
   ) {
-    const profile = await this.accountService.updateStoreProfile(
+    const profile = await this.accountProfileService.updateStoreProfile(
       user.sub,
       updateDto,
     );
@@ -84,7 +88,7 @@ export class AccountController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner')
   async getStoreProfile(@CurrentUser() user: any) {
-    const profile = await this.accountService.getStoreProfile(user.sub);
+    const profile = await this.accountProfileService.getStoreProfile(user.sub);
 
     return {
       success: true,
