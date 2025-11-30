@@ -43,9 +43,13 @@ export class SubscriptionPlanService {
    */
   async create(createDto: CreatePlanDto): Promise<SubscriptionPlanDocument> {
     // Check if plan type already exists
-    const existing = await this.planModel.findOne({ type: createDto.type }).exec();
+    const existing = await this.planModel
+      .findOne({ type: createDto.type })
+      .exec();
     if (existing) {
-      throw new ConflictException(`Plan with type ${createDto.type} already exists`);
+      throw new ConflictException(
+        `Plan with type ${createDto.type} already exists`,
+      );
     }
 
     const plan = new this.planModel(createDto);
@@ -85,7 +89,9 @@ export class SubscriptionPlanService {
   async findByType(type: PlanType): Promise<SubscriptionPlanDocument> {
     const plan = await this.planModel.findOne({ type }).exec();
     if (!plan) {
-      throw new NotFoundException(`Subscription plan with type ${type} not found`);
+      throw new NotFoundException(
+        `Subscription plan with type ${type} not found`,
+      );
     }
 
     return plan;
@@ -94,14 +100,21 @@ export class SubscriptionPlanService {
   /**
    * Update plan (Admin only)
    */
-  async update(id: string, updateDto: UpdatePlanDto): Promise<SubscriptionPlanDocument> {
+  async update(
+    id: string,
+    updateDto: UpdatePlanDto,
+  ): Promise<SubscriptionPlanDocument> {
     const plan = await this.findOne(id);
 
     // If changing type, check for conflicts
     if (updateDto.type && updateDto.type !== plan.type) {
-      const existing = await this.planModel.findOne({ type: updateDto.type }).exec();
+      const existing = await this.planModel
+        .findOne({ type: updateDto.type })
+        .exec();
       if (existing) {
-        throw new ConflictException(`Plan with type ${updateDto.type} already exists`);
+        throw new ConflictException(
+          `Plan with type ${updateDto.type} already exists`,
+        );
       }
     }
 
@@ -122,4 +135,3 @@ export class SubscriptionPlanService {
     this.logger.log(`Subscription plan deleted: ${plan.name}`);
   }
 }
-

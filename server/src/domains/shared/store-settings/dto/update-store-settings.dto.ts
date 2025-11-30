@@ -220,4 +220,3 @@ export class UpdateStoreSettingsDto {
   @Transform(({ value }) => value?.trim())
   maintenanceMessage?: string;
 }
-

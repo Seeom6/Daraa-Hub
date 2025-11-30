@@ -14,8 +14,24 @@ export const AUDIT_LOG_KEY = 'audit_log';
 
 export interface AuditLogMetadata {
   action: string;
-  category: 'user' | 'store' | 'courier' | 'product' | 'order' | 'payment' | 'system' | 'security';
-  actionType: 'create' | 'read' | 'update' | 'delete' | 'approve' | 'reject' | 'suspend' | 'other';
+  category:
+    | 'user'
+    | 'store'
+    | 'courier'
+    | 'product'
+    | 'order'
+    | 'payment'
+    | 'system'
+    | 'security';
+  actionType:
+    | 'create'
+    | 'read'
+    | 'update'
+    | 'delete'
+    | 'approve'
+    | 'reject'
+    | 'suspend'
+    | 'other';
   description?: string;
 }
 
@@ -102,4 +118,3 @@ export class AuditLogInterceptor implements NestInterceptor {
     );
   }
 }
-

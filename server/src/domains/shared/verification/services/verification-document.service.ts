@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { VerificationRequest, VerificationRequestDocument } from '../../../../database/schemas/verification-request.schema';
+import {
+  VerificationRequest,
+  VerificationRequestDocument,
+} from '../../../../database/schemas/verification-request.schema';
 import { StorageService } from '../../../../infrastructure/storage/storage.service';
 
 /**
@@ -35,8 +43,13 @@ export class VerificationDocumentService {
       throw new NotFoundException('Verification request not found');
     }
 
-    if (verificationRequest.status === 'approved' || verificationRequest.status === 'rejected') {
-      throw new BadRequestException('Cannot upload documents to a finalized verification request');
+    if (
+      verificationRequest.status === 'approved' ||
+      verificationRequest.status === 'rejected'
+    ) {
+      throw new BadRequestException(
+        'Cannot upload documents to a finalized verification request',
+      );
     }
 
     // Upload file to S3
@@ -54,8 +67,9 @@ export class VerificationDocumentService {
       status: 'pending',
     });
 
-    this.logger.log(`Document uploaded for verification request: ${verificationRequestId}`);
+    this.logger.log(
+      `Document uploaded for verification request: ${verificationRequestId}`,
+    );
     return verificationRequest.save();
   }
 }
-

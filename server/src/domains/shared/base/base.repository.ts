@@ -1,4 +1,10 @@
-import { Document, FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
+import {
+  Document,
+  FilterQuery,
+  Model,
+  QueryOptions,
+  UpdateQuery,
+} from 'mongoose';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 /**
@@ -28,7 +34,7 @@ export interface IBaseRepository<T extends Document> {
 /**
  * Base Repository Implementation
  * Provides common CRUD operations for all repositories
- * 
+ *
  * @example
  * ```typescript
  * @Injectable()
@@ -36,7 +42,7 @@ export interface IBaseRepository<T extends Document> {
  *   constructor(@InjectModel(Product.name) productModel: Model<Product>) {
  *     super(productModel);
  *   }
- * 
+ *
  *   // Add custom methods here
  *   async findByStoreId(storeId: string): Promise<Product[]> {
  *     return this.findAll({ store: storeId, isDeleted: false });
@@ -44,7 +50,9 @@ export interface IBaseRepository<T extends Document> {
  * }
  * ```
  */
-export abstract class BaseRepository<T extends Document> implements IBaseRepository<T> {
+export abstract class BaseRepository<T extends Document>
+  implements IBaseRepository<T>
+{
   constructor(protected readonly model: Model<T>) {}
 
   /**
@@ -73,14 +81,20 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
   /**
    * Find one document by filter
    */
-  async findOne(filter: FilterQuery<T>, options?: QueryOptions): Promise<T | null> {
+  async findOne(
+    filter: FilterQuery<T>,
+    options?: QueryOptions,
+  ): Promise<T | null> {
     return this.model.findOne(filter, null, options).exec();
   }
 
   /**
    * Find all documents by filter
    */
-  async findAll(filter: FilterQuery<T> = {}, options?: QueryOptions): Promise<T[]> {
+  async findAll(
+    filter: FilterQuery<T> = {},
+    options?: QueryOptions,
+  ): Promise<T[]> {
     return this.model.find(filter, null, options).exec();
   }
 
@@ -101,7 +115,8 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     if (typeof pageOrPagination === 'number') {
       page = pageOrPagination;
       limit = typeof limitOrOptions === 'number' ? limitOrOptions : 10;
-      queryOptions = typeof limitOrOptions === 'object' ? limitOrOptions : options;
+      queryOptions =
+        typeof limitOrOptions === 'object' ? limitOrOptions : options;
     } else {
       page = pageOrPagination.page || 1;
       limit = pageOrPagination.limit || 10;
@@ -140,21 +155,30 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
   /**
    * Alias for findAll method
    */
-  async find(filter: FilterQuery<T> = {}, options?: QueryOptions): Promise<T[]> {
+  async find(
+    filter: FilterQuery<T> = {},
+    options?: QueryOptions,
+  ): Promise<T[]> {
     return this.findAll(filter, options);
   }
 
   /**
    * Update one document by filter
    */
-  async updateOne(filter: FilterQuery<T>, data: UpdateQuery<T>): Promise<T | null> {
+  async updateOne(
+    filter: FilterQuery<T>,
+    data: UpdateQuery<T>,
+  ): Promise<T | null> {
     return this.model.findOneAndUpdate(filter, data, { new: true }).exec();
   }
 
   /**
    * Update many documents by filter
    */
-  async updateMany(filter: FilterQuery<T>, data: UpdateQuery<T>): Promise<number> {
+  async updateMany(
+    filter: FilterQuery<T>,
+    data: UpdateQuery<T>,
+  ): Promise<number> {
     const result = await this.model.updateMany(filter, data).exec();
     return result.modifiedCount;
   }
@@ -202,7 +226,9 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     // Check if model has isDeleted field
     const schema = this.model.schema;
     if (schema.path('isDeleted')) {
-      const result = await this.model.updateMany(filter, { isDeleted: true }).exec();
+      const result = await this.model
+        .updateMany(filter, { isDeleted: true })
+        .exec();
       return result.modifiedCount;
     }
 
@@ -268,4 +294,3 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     return populateString.split(',').map((p) => p.trim());
   }
 }
-

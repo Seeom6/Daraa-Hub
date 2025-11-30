@@ -28,7 +28,7 @@ export class SettingsController {
   @Get('public/:key')
   async getPublicSettings(@Param('key') key: string) {
     const settings = await this.settingsService.findByKey(key);
-    
+
     // Only return certain settings publicly
     const publicKeys = ['general', 'features'];
     if (!publicKeys.includes(key)) {
@@ -151,4 +151,3 @@ export class SettingsController {
     };
   }
 }
-

@@ -3,4 +3,3 @@ export * from './update-product.dto';
 export * from './query-product.dto';
 export * from './create-variant.dto';
 export * from './update-variant.dto';
-

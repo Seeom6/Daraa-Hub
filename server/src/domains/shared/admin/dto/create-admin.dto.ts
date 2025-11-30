@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsObject,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class PermissionSet {
@@ -86,7 +92,12 @@ export class CreateAdminDto {
   role: 'super_admin' | 'admin' | 'moderator' | 'support';
 
   @IsOptional()
-  @IsEnum(['operations', 'customer_service', 'finance', 'marketing', 'technical'])
+  @IsEnum([
+    'operations',
+    'customer_service',
+    'finance',
+    'marketing',
+    'technical',
+  ])
   department?: string;
 }
-

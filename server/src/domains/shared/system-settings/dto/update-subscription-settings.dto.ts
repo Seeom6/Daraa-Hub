@@ -39,4 +39,3 @@ export class UpdateSubscriptionSettingsDto {
   @IsBoolean()
   notifyOnPaymentFailure?: boolean;
 }
-

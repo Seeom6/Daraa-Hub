@@ -12,7 +12,10 @@ import {
   IsObject,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ProductStatus, ProductUnit } from '../../../../database/schemas/product.schema';
+import {
+  ProductStatus,
+  ProductUnit,
+} from '../../../../database/schemas/product.schema';
 
 export class CreateProductDto {
   @IsMongoId()
@@ -136,4 +139,3 @@ export class CreateProductDto {
   @IsString({ each: true })
   seoKeywords?: string[];
 }
-

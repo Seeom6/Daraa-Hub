@@ -40,4 +40,3 @@ export const RelaxedThrottle = () => {
     SetMetadata(THROTTLE_TTL_KEY, 60)(target, propertyKey, descriptor);
   };
 };
-

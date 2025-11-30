@@ -38,7 +38,10 @@ export class ReviewController {
   @Roles('customer')
   @HttpCode(HttpStatus.CREATED)
   async createReview(@Body() createDto: CreateReviewDto, @Req() req: any) {
-    const review = await this.reviewService.createReview(createDto, req.user.sub);
+    const review = await this.reviewService.createReview(
+      createDto,
+      req.user.sub,
+    );
 
     return {
       success: true,
@@ -57,7 +60,11 @@ export class ReviewController {
     @Body() updateDto: UpdateReviewDto,
     @Req() req: any,
   ) {
-    const review = await this.reviewService.updateReview(id, updateDto, req.user.sub);
+    const review = await this.reviewService.updateReview(
+      id,
+      updateDto,
+      req.user.sub,
+    );
 
     return {
       success: true,
@@ -185,4 +192,3 @@ export class ReviewController {
     };
   }
 }
-

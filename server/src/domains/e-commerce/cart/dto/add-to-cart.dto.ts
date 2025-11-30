@@ -1,4 +1,10 @@
-import { IsMongoId, IsNumber, IsOptional, IsObject, Min } from 'class-validator';
+import {
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsObject,
+  Min,
+} from 'class-validator';
 
 export class AddToCartDto {
   @IsMongoId()
@@ -16,4 +22,3 @@ export class AddToCartDto {
   @IsObject()
   selectedOptions?: Record<string, any>;
 }
-

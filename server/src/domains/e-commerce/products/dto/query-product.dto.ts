@@ -82,4 +82,3 @@ export class QueryProductDto {
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

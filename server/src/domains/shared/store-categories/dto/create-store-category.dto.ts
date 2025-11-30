@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsMongoId, Min, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsMongoId,
+  Min,
+  IsArray,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateStoreCategoryDto {
@@ -52,4 +60,3 @@ export class CreateStoreCategoryDto {
   @IsString({ each: true })
   seoKeywords?: string[]; // كلمات مفتاحية
 }
-

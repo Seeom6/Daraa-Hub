@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { NotificationPreference, NotificationPreferenceDocument } from '../../../../database/schemas/notification-preference.schema';
+import {
+  NotificationPreference,
+  NotificationPreferenceDocument,
+} from '../../../../database/schemas/notification-preference.schema';
 import { UpdateNotificationPreferenceDto } from '../dto/update-notification-preference.dto';
 
 @Injectable()
@@ -16,14 +19,16 @@ export class NotificationPreferenceService {
   /**
    * Get user's notification preferences (create default if not exists)
    */
-  async getPreferences(userId: string): Promise<NotificationPreferenceDocument> {
+  async getPreferences(
+    userId: string,
+  ): Promise<NotificationPreferenceDocument> {
     let preferences = await this.notificationPreferenceModel
       .findOne({ userId: new Types.ObjectId(userId) })
       .exec();
 
     if (!preferences) {
       // Create default preferences
-      preferences = await this.createDefaultPreferences(userId) as any;
+      preferences = (await this.createDefaultPreferences(userId)) as any;
     }
 
     return preferences!;
@@ -41,16 +46,22 @@ export class NotificationPreferenceService {
       .exec();
 
     if (!preferences) {
-      preferences = await this.createDefaultPreferences(userId) as any;
+      preferences = (await this.createDefaultPreferences(userId)) as any;
     }
 
     // Update preferences
     if (updateDto.channels) {
-      preferences!.channels = { ...preferences!.channels, ...updateDto.channels };
+      preferences!.channels = {
+        ...preferences!.channels,
+        ...updateDto.channels,
+      };
     }
 
     if (updateDto.categories) {
-      preferences!.categories = { ...preferences!.categories, ...updateDto.categories };
+      preferences!.categories = {
+        ...preferences!.categories,
+        ...updateDto.categories,
+      };
     }
 
     if (updateDto.quietHours !== undefined) {
@@ -92,7 +103,10 @@ export class NotificationPreferenceService {
     }
 
     // Check quiet hours (only for push and sms)
-    if ((channel === 'push' || channel === 'sms') && preferences.quietHours?.enabled) {
+    if (
+      (channel === 'push' || channel === 'sms') &&
+      preferences.quietHours?.enabled
+    ) {
       if (this.isInQuietHours(preferences.quietHours)) {
         return false;
       }
@@ -112,7 +126,9 @@ export class NotificationPreferenceService {
   /**
    * Create default preferences for a user
    */
-  private async createDefaultPreferences(userId: string): Promise<NotificationPreferenceDocument> {
+  private async createDefaultPreferences(
+    userId: string,
+  ): Promise<NotificationPreferenceDocument> {
     const preferences = new this.notificationPreferenceModel({
       userId: new Types.ObjectId(userId),
       channels: {
@@ -138,7 +154,9 @@ export class NotificationPreferenceService {
     });
 
     await preferences.save();
-    this.logger.log(`Created default notification preferences for user ${userId}`);
+    this.logger.log(
+      `Created default notification preferences for user ${userId}`,
+    );
 
     return preferences;
   }
@@ -164,7 +182,9 @@ export class NotificationPreferenceService {
       });
 
       const [currentHour, currentMinute] = currentTime.split(':').map(Number);
-      const [startHour, startMinute] = quietHours.startTime.split(':').map(Number);
+      const [startHour, startMinute] = quietHours.startTime
+        .split(':')
+        .map(Number);
       const [endHour, endMinute] = quietHours.endTime.split(':').map(Number);
 
       const currentMinutes = currentHour * 60 + currentMinute;
@@ -183,4 +203,3 @@ export class NotificationPreferenceService {
     }
   }
 }
-

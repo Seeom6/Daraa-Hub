@@ -1,10 +1,24 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { VerificationRequest, VerificationRequestDocument } from '../../../../database/schemas/verification-request.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
-import { CourierProfile, CourierProfileDocument } from '../../../../database/schemas/courier-profile.schema';
+import {
+  VerificationRequest,
+  VerificationRequestDocument,
+} from '../../../../database/schemas/verification-request.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas/store-owner-profile.schema';
+import {
+  CourierProfile,
+  CourierProfileDocument,
+} from '../../../../database/schemas/courier-profile.schema';
 import { SubmitVerificationDto } from '../dto/submit-verification.dto';
 import { VERIFICATION_SUBMITTED } from '../../../../infrastructure/events/event-types';
 
@@ -42,7 +56,9 @@ export class VerificationService {
       .exec();
 
     if (existingRequest) {
-      throw new BadRequestException('You already have a pending verification request');
+      throw new BadRequestException(
+        'You already have a pending verification request',
+      );
     }
 
     // Get the profile based on applicant type
@@ -50,23 +66,47 @@ export class VerificationService {
     let profileModel: string;
 
     if (submitDto.applicantType === 'store_owner') {
+      // Try both ObjectId and string formats for accountId
+      this.logger.debug(
+        `Looking for store owner profile with accountId: ${accountId}`,
+      );
       const storeOwnerProfile = await this.storeOwnerProfileModel
-        .findOne({ accountId: new Types.ObjectId(accountId) })
+        .findOne({
+          $or: [
+            { accountId: new Types.ObjectId(accountId) },
+            { accountId: accountId },
+          ],
+        })
         .exec();
 
       if (!storeOwnerProfile) {
+        this.logger.error(
+          `Store owner profile not found for accountId: ${accountId}`,
+        );
         throw new NotFoundException('Store owner profile not found');
       }
+      this.logger.debug(
+        `Found store owner profile: ${storeOwnerProfile._id}`,
+      );
 
       // Update store categories if provided
-      if (submitDto.businessInfo?.primaryCategory || submitDto.businessInfo?.storeCategories) {
+      if (
+        submitDto.businessInfo?.primaryCategory ||
+        submitDto.businessInfo?.storeCategories
+      ) {
         if (submitDto.businessInfo.primaryCategory) {
-          storeOwnerProfile.primaryCategory = new Types.ObjectId(submitDto.businessInfo.primaryCategory);
-        }
-        if (submitDto.businessInfo.storeCategories && submitDto.businessInfo.storeCategories.length > 0) {
-          storeOwnerProfile.storeCategories = submitDto.businessInfo.storeCategories.map(
-            (id) => new Types.ObjectId(id)
+          storeOwnerProfile.primaryCategory = new Types.ObjectId(
+            submitDto.businessInfo.primaryCategory,
           );
+        }
+        if (
+          submitDto.businessInfo.storeCategories &&
+          submitDto.businessInfo.storeCategories.length > 0
+        ) {
+          storeOwnerProfile.storeCategories =
+            submitDto.businessInfo.storeCategories.map(
+              (id) => new Types.ObjectId(id),
+            );
         }
         await storeOwnerProfile.save();
       }
@@ -74,8 +114,14 @@ export class VerificationService {
       profileId = storeOwnerProfile._id as Types.ObjectId;
       profileModel = 'StoreOwnerProfile';
     } else if (submitDto.applicantType === 'courier') {
+      // Try both ObjectId and string formats for accountId
       const courierProfile = await this.courierProfileModel
-        .findOne({ accountId: new Types.ObjectId(accountId) })
+        .findOne({
+          $or: [
+            { accountId: new Types.ObjectId(accountId) },
+            { accountId: accountId },
+          ],
+        })
         .exec();
 
       if (!courierProfile) {
@@ -134,7 +180,9 @@ export class VerificationService {
   /**
    * Get my verification status
    */
-  async getMyVerificationStatus(accountId: string): Promise<VerificationRequestDocument | null> {
+  async getMyVerificationStatus(
+    accountId: string,
+  ): Promise<VerificationRequestDocument | null> {
     return this.verificationRequestModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
       .sort({ createdAt: -1 })
@@ -192,7 +240,9 @@ export class VerificationService {
   /**
    * Get verification request by ID
    */
-  async getVerificationRequestById(id: string): Promise<VerificationRequestDocument> {
+  async getVerificationRequestById(
+    id: string,
+  ): Promise<VerificationRequestDocument> {
     const request = await this.verificationRequestModel
       .findById(id)
       .populate('accountId', 'fullName phone email')
@@ -240,13 +290,18 @@ export class VerificationService {
 
     if (applicantType === 'store_owner') {
       await this.storeOwnerProfileModel
-        .findOneAndUpdate({ accountId: new Types.ObjectId(accountId) }, updateData)
+        .findOneAndUpdate(
+          { accountId: new Types.ObjectId(accountId) },
+          updateData,
+        )
         .exec();
     } else {
       await this.courierProfileModel
-        .findOneAndUpdate({ accountId: new Types.ObjectId(accountId) }, updateData)
+        .findOneAndUpdate(
+          { accountId: new Types.ObjectId(accountId) },
+          updateData,
+        )
         .exec();
     }
   }
 }
-

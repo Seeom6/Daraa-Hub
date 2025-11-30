@@ -25,4 +25,3 @@ export class CompleteProfileDto {
   })
   password: string;
 }
-

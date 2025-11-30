@@ -8,4 +8,3 @@ export class StoreResponseDto {
   @IsString()
   notes?: string;
 }
-

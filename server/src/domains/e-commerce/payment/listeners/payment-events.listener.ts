@@ -2,8 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Account, AccountDocument } from '../../../../database/schemas/account.schema';
-import { CustomerProfile, CustomerProfileDocument } from '../../../../database/schemas/customer-profile.schema';
+import {
+  Account,
+  AccountDocument,
+} from '../../../../database/schemas/account.schema';
+import {
+  CustomerProfile,
+  CustomerProfileDocument,
+} from '../../../../database/schemas/customer-profile.schema';
 import { NotificationsService } from '../../../shared/notifications/services/notifications.service';
 import { PaymentService } from '../services/payment.service';
 
@@ -65,6 +71,12 @@ interface PaymentRefundedEvent {
   refundedBy: string;
 }
 
+interface OrderStatusUpdatedEvent {
+  orderId: string;
+  status: string;
+  updatedBy: string;
+}
+
 @Injectable()
 export class PaymentEventsListener {
   private readonly logger = new Logger(PaymentEventsListener.name);
@@ -82,7 +94,9 @@ export class PaymentEventsListener {
    * جلب accountId من customerProfileId
    * Get accountId from customerProfileId
    */
-  private async getCustomerAccountId(customerProfileId: string): Promise<string | null> {
+  private async getCustomerAccountId(
+    customerProfileId: string,
+  ): Promise<string | null> {
     try {
       const customerProfile = await this.customerProfileModel
         .findById(customerProfileId)
@@ -106,21 +120,54 @@ export class PaymentEventsListener {
    */
   @OnEvent('order.created')
   async handleOrderCreated(event: OrderCreatedEvent) {
-    this.logger.log(`Order created: ${event.orderNumber} - Creating payment record`);
+    this.logger.log(
+      `Order created: ${event.orderNumber} - Creating payment record`,
+    );
 
     try {
-      // Get order to determine payment method
-      const order = await this.paymentService['orderModel'].findById(event.orderId).exec();
-      if (!order) {
-        this.logger.error(`Order not found: ${event.orderId}`);
-        return;
-      }
+      // Use payment method from event (no need to query order again)
+      const paymentMethod = event.paymentMethod || 'cash';
 
       // Create payment record - cast payment method to PaymentMethodType
-      await this.paymentService.createPayment(event.orderId, order.paymentMethod as any);
+      await this.paymentService.createPayment(
+        event.orderId,
+        paymentMethod as any,
+      );
       this.logger.log(`Payment record created for order ${event.orderNumber}`);
     } catch (error) {
-      this.logger.error(`Failed to create payment for order ${event.orderNumber}:`, error);
+      this.logger.error(
+        `Failed to create payment for order ${event.orderNumber}:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Handle order status updated event
+   * Auto-confirm cash payment when order is delivered
+   */
+  @OnEvent('order.status_updated')
+  async handleOrderStatusUpdated(event: OrderStatusUpdatedEvent) {
+    if (event.status !== 'delivered') {
+      return;
+    }
+
+    this.logger.log(
+      `Order ${event.orderId} delivered - checking for cash payment confirmation`,
+    );
+
+    try {
+      // Try to confirm cash payment
+      await this.paymentService.confirmCashPaymentByOrderId(
+        event.orderId,
+        event.updatedBy,
+      );
+      this.logger.log(`Cash payment confirmed for order ${event.orderId}`);
+    } catch (error) {
+      // Log error but don't throw - payment might not be cash or already confirmed
+      this.logger.warn(
+        `Could not confirm cash payment for order ${event.orderId}: ${error.message}`,
+      );
     }
   }
 
@@ -129,11 +176,15 @@ export class PaymentEventsListener {
    */
   @OnEvent('payment.processed')
   async handlePaymentProcessed(event: PaymentProcessedEvent) {
-    this.logger.log(`Payment processed: ${event.paymentId} - Amount: $${event.amount}`);
+    this.logger.log(
+      `Payment processed: ${event.paymentId} - Amount: $${event.amount}`,
+    );
 
     try {
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       // Get store owner account
       const storeOwner = await this.accountModel.findOne({
@@ -161,9 +212,13 @@ export class PaymentEventsListener {
           },
         });
 
-        this.logger.log(`Payment processing notification sent to customer for payment ${event.paymentId}`);
+        this.logger.log(
+          `Payment processing notification sent to customer for payment ${event.paymentId}`,
+        );
       } else {
-        this.logger.warn(`Could not send payment processing notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not send payment processing notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
 
       // Notification to store owner
@@ -187,10 +242,15 @@ export class PaymentEventsListener {
           },
         });
 
-        this.logger.log(`Payment processing notification sent to store owner for payment ${event.paymentId}`);
+        this.logger.log(
+          `Payment processing notification sent to store owner for payment ${event.paymentId}`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to send payment processing notifications:`, error);
+      this.logger.error(
+        `Failed to send payment processing notifications:`,
+        error,
+      );
     }
   }
 
@@ -199,7 +259,9 @@ export class PaymentEventsListener {
    */
   @OnEvent('payment.completed')
   async handlePaymentCompleted(event: PaymentCompletedEvent) {
-    this.logger.log(`Payment completed: ${event.paymentId} - Amount: $${event.amount}`);
+    this.logger.log(
+      `Payment completed: ${event.paymentId} - Amount: $${event.amount}`,
+    );
 
     try {
       // Get store owner account
@@ -209,7 +271,9 @@ export class PaymentEventsListener {
       });
 
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       if (customerAccountId) {
         // Notification to customer
@@ -233,7 +297,9 @@ export class PaymentEventsListener {
           },
         });
       } else {
-        this.logger.warn(`Could not send payment completion notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not send payment completion notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
 
       // Notification to store owner
@@ -258,9 +324,14 @@ export class PaymentEventsListener {
         });
       }
 
-      this.logger.log(`Payment completion notifications sent for payment ${event.paymentId}`);
+      this.logger.log(
+        `Payment completion notifications sent for payment ${event.paymentId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send payment completion notifications:`, error);
+      this.logger.error(
+        `Failed to send payment completion notifications:`,
+        error,
+      );
     }
   }
 
@@ -269,11 +340,15 @@ export class PaymentEventsListener {
    */
   @OnEvent('payment.failed')
   async handlePaymentFailed(event: PaymentFailedEvent) {
-    this.logger.log(`Payment failed: ${event.paymentId} - Reason: ${event.reason}`);
+    this.logger.log(
+      `Payment failed: ${event.paymentId} - Reason: ${event.reason}`,
+    );
 
     try {
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       if (customerAccountId) {
         // Notification to customer
@@ -297,9 +372,13 @@ export class PaymentEventsListener {
           },
         });
 
-        this.logger.log(`Payment failure notification sent for payment ${event.paymentId}`);
+        this.logger.log(
+          `Payment failure notification sent for payment ${event.paymentId}`,
+        );
       } else {
-        this.logger.warn(`Could not send payment failure notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not send payment failure notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Failed to send payment failure notification:`, error);
@@ -311,7 +390,9 @@ export class PaymentEventsListener {
    */
   @OnEvent('payment.refunded')
   async handlePaymentRefunded(event: PaymentRefundedEvent) {
-    this.logger.log(`Payment refunded: ${event.paymentId} - Amount: $${event.refundAmount}`);
+    this.logger.log(
+      `Payment refunded: ${event.paymentId} - Amount: $${event.refundAmount}`,
+    );
 
     try {
       // Get store owner account
@@ -321,7 +402,9 @@ export class PaymentEventsListener {
       });
 
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       if (customerAccountId) {
         // Notification to customer
@@ -346,7 +429,9 @@ export class PaymentEventsListener {
           },
         });
       } else {
-        this.logger.warn(`Could not send refund notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not send refund notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
 
       // Notification to store owner
@@ -373,10 +458,11 @@ export class PaymentEventsListener {
         });
       }
 
-      this.logger.log(`Refund notifications sent for payment ${event.paymentId}`);
+      this.logger.log(
+        `Refund notifications sent for payment ${event.paymentId}`,
+      );
     } catch (error) {
       this.logger.error(`Failed to send refund notifications:`, error);
     }
   }
 }
-

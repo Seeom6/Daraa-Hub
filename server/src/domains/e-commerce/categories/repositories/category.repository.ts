@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Category, CategoryDocument } from '../../../../database/schemas/category.schema';
+import {
+  Category,
+  CategoryDocument,
+} from '../../../../database/schemas/category.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()
@@ -75,8 +78,10 @@ export class CategoryRepository extends BaseRepository<CategoryDocument> {
   /**
    * Update category order
    */
-  async updateOrder(categoryId: string, order: number): Promise<CategoryDocument | null> {
+  async updateOrder(
+    categoryId: string,
+    order: number,
+  ): Promise<CategoryDocument | null> {
     return this.findByIdAndUpdate(categoryId, { order });
   }
 }
-

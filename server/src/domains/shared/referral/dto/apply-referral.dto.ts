@@ -9,4 +9,3 @@ export class ApplyReferralDto {
   @IsNotEmpty()
   referredId: string;
 }
-

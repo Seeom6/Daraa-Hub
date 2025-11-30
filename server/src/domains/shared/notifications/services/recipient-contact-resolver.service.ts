@@ -1,11 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Account, AccountDocument } from '../../../../database/schemas/account.schema';
-import { CustomerProfile, CustomerProfileDocument } from '../../../../database/schemas/customer-profile.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
-import { CourierProfile, CourierProfileDocument } from '../../../../database/schemas/courier-profile.schema';
-import { AdminProfile, AdminProfileDocument } from '../../../../database/schemas/admin-profile.schema';
+import {
+  Account,
+  AccountDocument,
+} from '../../../../database/schemas/account.schema';
+import {
+  CustomerProfile,
+  CustomerProfileDocument,
+} from '../../../../database/schemas/customer-profile.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas/store-owner-profile.schema';
+import {
+  CourierProfile,
+  CourierProfileDocument,
+} from '../../../../database/schemas/courier-profile.schema';
+import {
+  AdminProfile,
+  AdminProfileDocument,
+} from '../../../../database/schemas/admin-profile.schema';
 
 /**
  * معلومات الاتصال للمستلم
@@ -14,13 +29,13 @@ import { AdminProfile, AdminProfileDocument } from '../../../../database/schemas
 export interface RecipientContactInfo {
   /** رقم الهاتف - Phone number */
   phone: string;
-  
+
   /** البريد الإلكتروني - Email address */
   email?: string;
-  
+
   /** الاسم الكامل - Full name */
   fullName: string;
-  
+
   /** دور المستخدم - User role */
   role: 'customer' | 'store_owner' | 'courier' | 'admin';
 }
@@ -28,10 +43,10 @@ export interface RecipientContactInfo {
 /**
  * خدمة مركزية لجلب معلومات الاتصال للمستلمين
  * Centralized service for resolving recipient contact information
- * 
+ *
  * هذه الخدمة قابلة لإعادة الاستخدام ومستقلة عن مكتبات الإرسال (Twilio, etc.)
  * This service is reusable and independent of sending libraries (Twilio, etc.)
- * 
+ *
  * @example
  * // Get phone number for any user type
  * const contact = await resolver.resolveContactInfo(userId, 'customer');
@@ -57,7 +72,7 @@ export class RecipientContactResolverService {
   /**
    * جلب معلومات الاتصال للمستلم بناءً على دوره
    * Resolve contact information for a recipient based on their role
-   * 
+   *
    * @param recipientId - معرف المستلم (Account ID)
    * @param role - دور المستخدم
    * @returns معلومات الاتصال أو null إذا لم يتم العثور عليها
@@ -70,7 +85,7 @@ export class RecipientContactResolverService {
       // جلب معلومات الحساب الأساسية
       // Get basic account information
       const account = await this.accountModel.findById(recipientId).exec();
-      
+
       if (!account) {
         this.logger.warn(`Account not found: ${recipientId}`);
         return null;
@@ -131,7 +146,7 @@ export class RecipientContactResolverService {
         if (profile.businessPhone) {
           contactInfo.phone = profile.businessPhone;
         }
-        
+
         // استخدام اسم المتجر إذا كان متوفراً
         // Use store name if available
         if (profile.storeName) {
@@ -139,7 +154,9 @@ export class RecipientContactResolverService {
         }
       }
     } catch (error) {
-      this.logger.warn(`Failed to enrich store owner contact: ${error.message}`);
+      this.logger.warn(
+        `Failed to enrich store owner contact: ${error.message}`,
+      );
       // لا نرمي خطأ، نستخدم المعلومات الأساسية من Account
       // Don't throw, use basic info from Account
     }
@@ -151,7 +168,7 @@ export class RecipientContactResolverService {
    */
   private async enrichCustomerContact(
     account: AccountDocument,
-    contactInfo: RecipientContactInfo,
+    _contactInfo: RecipientContactInfo,
   ): Promise<void> {
     try {
       const profile = await this.customerProfileModel
@@ -165,7 +182,9 @@ export class RecipientContactResolverService {
         // e.g., preferred address, alternative phone, etc.
       }
     } catch (error) {
-      this.logger.warn(`Failed to enrich customer contact: ${error.message}`);
+      this.logger.warn(
+        `Failed to enrich customer contact: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -175,7 +194,7 @@ export class RecipientContactResolverService {
    */
   private async enrichCourierContact(
     account: AccountDocument,
-    contactInfo: RecipientContactInfo,
+    _contactInfo: RecipientContactInfo,
   ): Promise<void> {
     try {
       const profile = await this.courierProfileModel
@@ -187,7 +206,9 @@ export class RecipientContactResolverService {
         // Can add additional information here in the future
       }
     } catch (error) {
-      this.logger.warn(`Failed to enrich courier contact: ${error.message}`);
+      this.logger.warn(
+        `Failed to enrich courier contact: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -197,7 +218,7 @@ export class RecipientContactResolverService {
    */
   private async enrichAdminContact(
     account: AccountDocument,
-    contactInfo: RecipientContactInfo,
+    _contactInfo: RecipientContactInfo,
   ): Promise<void> {
     try {
       const profile = await this.adminProfileModel
@@ -209,14 +230,16 @@ export class RecipientContactResolverService {
         // Can add additional information here in the future
       }
     } catch (error) {
-      this.logger.warn(`Failed to enrich admin contact: ${error.message}`);
+      this.logger.warn(
+        `Failed to enrich admin contact: ${(error as Error).message}`,
+      );
     }
   }
 
   /**
    * جلب رقم الهاتف فقط (اختصار)
    * Get phone number only (shortcut)
-   * 
+   *
    * @param recipientId - معرف المستلم
    * @param role - دور المستخدم
    * @returns رقم الهاتف أو null
@@ -232,7 +255,7 @@ export class RecipientContactResolverService {
   /**
    * جلب البريد الإلكتروني فقط (اختصار)
    * Get email only (shortcut)
-   * 
+   *
    * @param recipientId - معرف المستلم
    * @param role - دور المستخدم
    * @returns البريد الإلكتروني أو null
@@ -245,4 +268,3 @@ export class RecipientContactResolverService {
     return contactInfo?.email || null;
   }
 }
-

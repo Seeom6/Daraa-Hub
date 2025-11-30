@@ -15,8 +15,8 @@ async function seedStoreCategories() {
 
     // المرحلة 1: إضافة التصنيفات الرئيسية (level 0)
     console.log('📁 إضافة التصنيفات الرئيسية...');
-    const rootCategories = storeCategoriesSeed.filter(cat => cat.level === 0);
-    
+    const rootCategories = storeCategoriesSeed.filter((cat) => cat.level === 0);
+
     for (const categoryData of rootCategories) {
       try {
         const category = await storeCategoriesService.create({
@@ -31,14 +31,16 @@ async function seedStoreCategories() {
           seoDescription: categoryData.seoDescription,
           seoKeywords: categoryData.seoKeywords,
         });
-        
+
         categoryMap.set(categoryData.slug, (category as any)._id.toString());
         console.log(`  ✅ ${categoryData.name} (${categoryData.slug})`);
       } catch (error) {
         if (error.message.includes('موجود مسبقاً')) {
           console.log(`  ⏭️  ${categoryData.name} - موجود مسبقاً`);
           // الحصول على ID من قاعدة البيانات
-          const existing = await storeCategoriesService.findBySlug(categoryData.slug);
+          const existing = await storeCategoriesService.findBySlug(
+            categoryData.slug,
+          );
           categoryMap.set(categoryData.slug, (existing as any)._id.toString());
         } else {
           console.error(`  ❌ خطأ في ${categoryData.name}:`, error.message);
@@ -48,8 +50,8 @@ async function seedStoreCategories() {
 
     // المرحلة 2: إضافة التصنيفات الفرعية (level 1)
     console.log('\n📂 إضافة التصنيفات الفرعية...');
-    const subCategories = storeCategoriesSeed.filter(cat => cat.level === 1);
-    
+    const subCategories = storeCategoriesSeed.filter((cat) => cat.level === 1);
+
     for (const categoryData of subCategories) {
       try {
         const parentSlug = (categoryData as any).parentSlug;
@@ -70,7 +72,7 @@ async function seedStoreCategories() {
           order: categoryData.order,
           isActive: categoryData.isActive,
         });
-        
+
         console.log(`  ✅ ${categoryData.name} (${categoryData.slug})`);
       } catch (error) {
         if (error.message.includes('موجود مسبقاً')) {
@@ -85,14 +87,13 @@ async function seedStoreCategories() {
 
     // عرض ملخص
     const allCategories = await storeCategoriesService.findAll();
-    const rootCount = allCategories.filter(c => c.level === 0).length;
-    const subCount = allCategories.filter(c => c.level === 1).length;
-    
+    const rootCount = allCategories.filter((c) => c.level === 0).length;
+    const subCount = allCategories.filter((c) => c.level === 1).length;
+
     console.log('📊 الملخص:');
     console.log(`  - التصنيفات الرئيسية: ${rootCount}`);
     console.log(`  - التصنيفات الفرعية: ${subCount}`);
     console.log(`  - المجموع: ${allCategories.length}\n`);
-
   } catch (error) {
     console.error('❌ خطأ في إضافة التصنيفات:', error);
   } finally {
@@ -110,4 +111,3 @@ seedStoreCategories()
     console.error('❌ فشل السكريبت:', error);
     process.exit(1);
   });
-

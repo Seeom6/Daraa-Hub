@@ -1,8 +1,17 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { VerificationRequest, VerificationRequestSchema } from '../../../database/schemas/verification-request.schema';
-import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/schemas/store-owner-profile.schema';
-import { CourierProfile, CourierProfileSchema } from '../../../database/schemas/courier-profile.schema';
+import {
+  VerificationRequest,
+  VerificationRequestSchema,
+} from '../../../database/schemas/verification-request.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileSchema,
+} from '../../../database/schemas/store-owner-profile.schema';
+import {
+  CourierProfile,
+  CourierProfileSchema,
+} from '../../../database/schemas/courier-profile.schema';
 import { VerificationController } from './controllers/verification.controller';
 import { VerificationService } from './services/verification.service';
 import { VerificationDocumentService } from './services/verification-document.service';
@@ -36,4 +45,3 @@ import { VerificationRepository } from './repositories/verification.repository';
   ],
 })
 export class VerificationModule {}
-

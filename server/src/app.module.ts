@@ -37,12 +37,17 @@ import { ReferralModule } from './domains/shared/referral/referral.module';
 import { SubscriptionModule } from './domains/shared/subscription/subscription.module';
 import { SubscriptionPlanModule } from './domains/shared/subscription-plan/subscription-plan.module';
 import { StoreCategoriesModule } from './domains/shared/store-categories/store-categories.module';
+import { AddressModule } from './domains/shared/addresses/address.module';
+import { WalletModule } from './domains/shared/wallet/wallet.module';
+import { CommissionModule } from './domains/shared/commission/commission.module';
+import { DeliveryZoneModule } from './domains/shared/delivery-zones/delivery-zone.module';
 import { SmsModule } from './infrastructure/sms/sms.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { QueueModule } from './infrastructure/queue/queue.module';
 import { EmailModule } from './infrastructure/email/email.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { EventsModule } from './infrastructure/events/events.module';
+import { JobsModule } from './infrastructure/jobs/jobs.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -53,11 +58,34 @@ import configuration from './config/configuration';
       load: [configuration],
     }),
 
-    // MongoDB Connection
+    // MongoDB Connection with Optimized Settings
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('database.uri'),
+        // Connection Pool Settings
+        maxPoolSize: configService.get<number>('database.maxPoolSize'),
+        minPoolSize: configService.get<number>('database.minPoolSize'),
+        maxIdleTimeMS: configService.get<number>('database.maxIdleTimeMS'),
+        serverSelectionTimeoutMS: configService.get<number>(
+          'database.serverSelectionTimeoutMS',
+        ),
+        socketTimeoutMS: configService.get<number>('database.socketTimeoutMS'),
+        connectTimeoutMS: configService.get<number>(
+          'database.connectTimeoutMS',
+        ),
+        // Write Concern
+        retryWrites: configService.get<boolean>('database.retryWrites'),
+        w: configService.get<string>('database.w') as 'majority' | number,
+        // Read Preference (cast to valid type)
+        readPreference: configService.get<string>('database.readPreference') as
+          | 'primary'
+          | 'primaryPreferred'
+          | 'secondary'
+          | 'secondaryPreferred'
+          | 'nearest',
+        // Auto Index (disable in production for performance)
+        autoIndex: configService.get<string>('nodeEnv') !== 'production',
       }),
       inject: [ConfigService],
     }),
@@ -83,6 +111,7 @@ import configuration from './config/configuration';
     StorageModule,
     EventsModule,
     SmsModule,
+    JobsModule,
 
     // Feature Modules
     AuthModule,
@@ -114,6 +143,10 @@ import configuration from './config/configuration';
     ReturnModule,
     AnalyticsModule,
     HealthModule,
+    AddressModule,
+    WalletModule,
+    CommissionModule,
+    DeliveryZoneModule,
   ],
   controllers: [AppController],
   providers: [

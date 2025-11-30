@@ -14,7 +14,9 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     return `${ip}-${userId}`;
   }
 
-  protected async throwThrottlingException(context: ExecutionContext): Promise<void> {
+  protected async throwThrottlingException(
+    context: ExecutionContext,
+  ): Promise<void> {
     const request = context.switchToHttp().getRequest();
     const tracker = await this.getTracker(request);
 
@@ -23,4 +25,3 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     );
   }
 }
-

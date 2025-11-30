@@ -1,7 +1,16 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ProductVariant, ProductVariantDocument } from '../../../../database/schemas/product-variant.schema';
+import {
+  ProductVariant,
+  ProductVariantDocument,
+} from '../../../../database/schemas/product-variant.schema';
 import { CreateVariantDto, UpdateVariantDto } from '../dto';
 import { ProductRepository } from '../repositories/product.repository';
 
@@ -22,17 +31,26 @@ export class ProductVariantService {
   /**
    * Create a new variant for a product
    */
-  async createVariant(createVariantDto: CreateVariantDto): Promise<ProductVariantDocument> {
-    const product = await this.productRepository.getModel().findById(createVariantDto.productId).exec();
+  async createVariant(
+    createVariantDto: CreateVariantDto,
+  ): Promise<ProductVariantDocument> {
+    const product = await this.productRepository
+      .getModel()
+      .findById(createVariantDto.productId)
+      .exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
     // Check if SKU already exists
     if (createVariantDto.sku) {
-      const existingSku = await this.variantModel.findOne({ sku: createVariantDto.sku }).exec();
+      const existingSku = await this.variantModel
+        .findOne({ sku: createVariantDto.sku })
+        .exec();
       if (existingSku) {
-        throw new ConflictException(`Variant with SKU '${createVariantDto.sku}' already exists`);
+        throw new ConflictException(
+          `Variant with SKU '${createVariantDto.sku}' already exists`,
+        );
       }
     }
 
@@ -43,21 +61,30 @@ export class ProductVariantService {
 
     const saved = await variant.save();
 
-    this.logger.log(`Variant created for product: ${createVariantDto.productId}`);
+    this.logger.log(
+      `Variant created for product: ${createVariantDto.productId}`,
+    );
     return saved;
   }
 
   /**
    * Get all variants for a product
    */
-  async findVariantsByProduct(productId: string): Promise<ProductVariantDocument[]> {
-    return await this.variantModel.find({ productId: new Types.ObjectId(productId) }).exec();
+  async findVariantsByProduct(
+    productId: string,
+  ): Promise<ProductVariantDocument[]> {
+    return await this.variantModel
+      .find({ productId: new Types.ObjectId(productId) })
+      .exec();
   }
 
   /**
    * Update a variant
    */
-  async updateVariant(id: string, updateVariantDto: UpdateVariantDto): Promise<ProductVariantDocument> {
+  async updateVariant(
+    id: string,
+    updateVariantDto: UpdateVariantDto,
+  ): Promise<ProductVariantDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid variant ID');
     }
@@ -69,9 +96,13 @@ export class ProductVariantService {
 
     // Check if SKU already exists (if updating SKU)
     if (updateVariantDto.sku && updateVariantDto.sku !== variant.sku) {
-      const existingSku = await this.variantModel.findOne({ sku: updateVariantDto.sku }).exec();
+      const existingSku = await this.variantModel
+        .findOne({ sku: updateVariantDto.sku })
+        .exec();
       if (existingSku) {
-        throw new ConflictException(`Variant with SKU '${updateVariantDto.sku}' already exists`);
+        throw new ConflictException(
+          `Variant with SKU '${updateVariantDto.sku}' already exists`,
+        );
       }
     }
 
@@ -93,7 +124,8 @@ export class ProductVariantService {
     }
 
     // Remove variant reference from product
-    await this.productRepository.getModel()
+    await this.productRepository
+      .getModel()
       .findByIdAndUpdate(variant.productId, {
         $pull: { variants: variant._id },
       })
@@ -104,4 +136,3 @@ export class ProductVariantService {
     this.logger.log(`Variant deleted: ${id}`);
   }
 }
-

@@ -28,11 +28,13 @@ export class StoreSettingsRepository extends BaseRepository<StoreSettingsDocumen
    */
   async getOrCreateSettings(storeId: string): Promise<StoreSettingsDocument> {
     let settings = await this.findByStoreId(storeId);
-    
+
     if (!settings) {
-      settings = await this.create({ storeId: new Types.ObjectId(storeId) } as any);
+      settings = await this.create({
+        storeId: new Types.ObjectId(storeId),
+      } as any);
     }
-    
+
     return settings;
   }
 
@@ -56,7 +58,8 @@ export class StoreSettingsRepository extends BaseRepository<StoreSettingsDocumen
     enabled: boolean,
   ): Promise<StoreSettingsDocument | null> {
     const settings = await this.getOrCreateSettings(storeId);
-    return this.findByIdAndUpdate((settings as any)._id.toString(), { [feature]: enabled });
+    return this.findByIdAndUpdate((settings as any)._id.toString(), {
+      [feature]: enabled,
+    });
   }
 }
-

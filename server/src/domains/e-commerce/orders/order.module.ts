@@ -14,6 +14,9 @@ import { CartModule } from '../cart/cart.module';
 import { ProductModule } from '../products/product.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { AccountModule } from '../../shared/accounts/account.module';
+import { WalletModule } from '../../shared/wallet/wallet.module';
+import { CommissionModule } from '../../shared/commission/commission.module';
+import { DeliveryZoneModule } from '../../shared/delivery-zones/delivery-zone.module';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { AccountModule } from '../../shared/accounts/account.module';
     NotificationsModule,
     StoreSettingsModule,
     forwardRef(() => PaymentModule), // Use forwardRef to avoid circular dependency
+    WalletModule,
+    CommissionModule,
+    DeliveryZoneModule,
   ],
   controllers: [OrderController],
   providers: [
@@ -34,7 +40,11 @@ import { AccountModule } from '../../shared/accounts/account.module';
     OrderEventsListener,
     OrderRepository,
   ],
-  exports: [OrderService, OrderCreationService, OrderStatusService, OrderRepository],
+  exports: [
+    OrderService,
+    OrderCreationService,
+    OrderStatusService,
+    OrderRepository,
+  ],
 })
 export class OrderModule {}
-

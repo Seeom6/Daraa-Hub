@@ -14,12 +14,17 @@ import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { AdminGuard } from '../../../shared/admin/guards/admin.guard';
 import { ReviewModerationService } from '../services/review-moderation.service';
 import { ModerateReviewDto } from '../dto';
-import { ReviewStatus, ReviewTargetType } from '../../../../database/schemas/review.schema';
+import {
+  ReviewStatus,
+  ReviewTargetType,
+} from '../../../../database/schemas/review.schema';
 
 @Controller('admin/reviews')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class ReviewAdminController {
-  constructor(private readonly reviewModerationService: ReviewModerationService) {}
+  constructor(
+    private readonly reviewModerationService: ReviewModerationService,
+  ) {}
 
   // Get all reviews (with filters)
   @Get()
@@ -64,4 +69,3 @@ export class ReviewAdminController {
     };
   }
 }
-

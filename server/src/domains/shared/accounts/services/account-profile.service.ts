@@ -5,27 +5,24 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import {
-  Account,
   AccountDocument,
-  SecurityProfile,
   SecurityProfileDocument,
-  CustomerProfile,
   CustomerProfileDocument,
-  StoreOwnerProfile,
   StoreOwnerProfileDocument,
-  CourierProfile,
-  CourierProfileDocument,
-  StoreCategory,
-  StoreCategoryDocument,
 } from '../../../../database/schemas';
 import { AccountRepository } from '../repositories/account.repository';
+import { SecurityProfileRepository } from '../repositories/security-profile.repository';
+import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
+import { StoreOwnerProfileRepository } from '../repositories/store-owner-profile.repository';
+import { CourierProfileRepository } from '../repositories/courier-profile.repository';
+import { StoreCategoryRepository } from '../../store-categories/repositories/store-category.repository';
 
 /**
  * Account Profile Service
  * Handles profile creation, upgrades, and updates
+ * Uses Repository Pattern for all database operations
  */
 @Injectable()
 export class AccountProfileService {
@@ -33,11 +30,11 @@ export class AccountProfileService {
 
   constructor(
     private readonly accountRepository: AccountRepository,
-    @InjectModel(SecurityProfile.name) private securityProfileModel: Model<SecurityProfileDocument>,
-    @InjectModel(CustomerProfile.name) private customerProfileModel: Model<CustomerProfileDocument>,
-    @InjectModel(StoreOwnerProfile.name) private storeOwnerProfileModel: Model<StoreOwnerProfileDocument>,
-    @InjectModel(CourierProfile.name) private courierProfileModel: Model<CourierProfileDocument>,
-    @InjectModel(StoreCategory.name) private storeCategoryModel: Model<StoreCategoryDocument>,
+    private readonly securityProfileRepository: SecurityProfileRepository,
+    private readonly customerProfileRepository: CustomerProfileRepository,
+    private readonly storeOwnerProfileRepository: StoreOwnerProfileRepository,
+    private readonly courierProfileRepository: CourierProfileRepository,
+    private readonly storeCategoryRepository: StoreCategoryRepository,
   ) {}
 
   /**
@@ -48,7 +45,7 @@ export class AccountProfileService {
     securityProfile: SecurityProfileDocument;
     customerProfile: CustomerProfileDocument;
   }> {
-    const account = await this.accountRepository.getModel().findOne({ phone });
+    const account = await this.accountRepository.findByPhone(phone);
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -58,27 +55,29 @@ export class AccountProfileService {
     account.role = 'customer';
     await account.save();
 
-    // Get or create security profile
-    let securityProfile = await this.securityProfileModel.findOne({ accountId: account._id });
+    // Get or create security profile using Repository
+    let securityProfile = await this.securityProfileRepository.findByAccountId(
+      (account._id as Types.ObjectId).toString(),
+    );
     if (!securityProfile) {
-      securityProfile = new this.securityProfileModel({
+      const newSecurityProfile = await this.securityProfileRepository.create({
         accountId: account._id,
         twoFactorEnabled: false,
         failedAttempts: 0,
         loginHistory: [],
-      });
-      await securityProfile.save();
+      } as any);
+      securityProfile = await newSecurityProfile.save();
     }
 
-    // Create customer profile
-    const customerProfile = new this.customerProfileModel({
+    // Create customer profile using Repository
+    const newCustomerProfile = await this.customerProfileRepository.create({
       accountId: account._id,
       fullName: account.fullName,
       loyaltyPoints: 0,
       totalOrders: 0,
       totalSpent: 0,
-    });
-    await customerProfile.save();
+    } as any);
+    const customerProfile = await newCustomerProfile.save();
 
     this.logger.log(`Customer profile created for account: ${account.phone}`);
 
@@ -96,7 +95,7 @@ export class AccountProfileService {
     accountId: Types.ObjectId,
     newRole: 'store_owner' | 'courier',
   ): Promise<AccountDocument> {
-    const account = await this.accountRepository.getModel().findById(accountId);
+    const account = await this.accountRepository.findById(accountId.toString());
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -107,12 +106,15 @@ export class AccountProfileService {
 
     // Create appropriate profile based on new role
     if (newRole === 'store_owner') {
-      const existingProfile = await this.storeOwnerProfileModel.findOne({ accountId });
+      const existingProfile =
+        await this.storeOwnerProfileRepository.findByAccountId(
+          accountId.toString(),
+        );
       if (existingProfile) {
         throw new ConflictException('Store owner profile already exists');
       }
 
-      const storeProfile = new this.storeOwnerProfileModel({
+      const storeProfile = await this.storeOwnerProfileRepository.create({
         accountId,
         businessName: account.fullName,
         isVerified: false,
@@ -123,16 +125,19 @@ export class AccountProfileService {
         totalProducts: 0,
         totalOrders: 0,
         totalRevenue: 0,
-      });
+      } as any);
       await storeProfile.save();
       this.logger.log(`Store owner profile created for account: ${accountId}`);
     } else if (newRole === 'courier') {
-      const existingProfile = await this.courierProfileModel.findOne({ accountId });
+      const existingProfile =
+        await this.courierProfileRepository.findByAccountId(
+          accountId.toString(),
+        );
       if (existingProfile) {
         throw new ConflictException('Courier profile already exists');
       }
 
-      const courierProfile = new this.courierProfileModel({
+      const courierProfile = await this.courierProfileRepository.create({
         accountId,
         fullName: account.fullName,
         isAvailable: false,
@@ -142,7 +147,7 @@ export class AccountProfileService {
         successfulDeliveries: 0,
         rating: 0,
         earnings: 0,
-      });
+      } as any);
       await courierProfile.save();
       this.logger.log(`Courier profile created for account: ${accountId}`);
     }
@@ -169,9 +174,8 @@ export class AccountProfileService {
       storeCategoryIds?: string[];
     },
   ): Promise<StoreOwnerProfileDocument> {
-    const profile = await this.storeOwnerProfileModel.findOne({
-      accountId: new Types.ObjectId(accountId),
-    });
+    const profile =
+      await this.storeOwnerProfileRepository.findByAccountId(accountId);
 
     if (!profile) {
       throw new NotFoundException('Store owner profile not found');
@@ -179,33 +183,42 @@ export class AccountProfileService {
 
     // Update basic fields
     if (updateDto.storeName) profile.storeName = updateDto.storeName;
-    if (updateDto.storeDescription) profile.storeDescription = updateDto.storeDescription;
+    if (updateDto.storeDescription)
+      profile.storeDescription = updateDto.storeDescription;
     if (updateDto.storeLogo) profile.storeLogo = updateDto.storeLogo;
     if (updateDto.storeBanner) profile.storeBanner = updateDto.storeBanner;
-    if (updateDto.businessAddress) profile.businessAddress = updateDto.businessAddress;
-    if (updateDto.businessPhone) profile.businessPhone = updateDto.businessPhone;
+    if (updateDto.businessAddress)
+      profile.businessAddress = updateDto.businessAddress;
+    if (updateDto.businessPhone)
+      profile.businessPhone = updateDto.businessPhone;
 
-    // Update primary category
+    // Update primary category using Repository
     if (updateDto.primaryCategoryId) {
-      const category = await this.storeCategoryModel.findById(updateDto.primaryCategoryId);
+      const category = await this.storeCategoryRepository.findById(
+        updateDto.primaryCategoryId,
+      );
       if (!category) {
         throw new NotFoundException('Primary category not found');
       }
       profile.primaryCategory = new Types.ObjectId(updateDto.primaryCategoryId);
     }
 
-    // Update store categories
+    // Update store categories using Repository
     if (updateDto.storeCategoryIds && updateDto.storeCategoryIds.length > 0) {
       // Validate all categories exist
-      const categories = await this.storeCategoryModel.find({
-        _id: { $in: updateDto.storeCategoryIds.map(id => new Types.ObjectId(id)) },
-      });
+      const categories = await Promise.all(
+        updateDto.storeCategoryIds.map((id) =>
+          this.storeCategoryRepository.findById(id),
+        ),
+      );
 
-      if (categories.length !== updateDto.storeCategoryIds.length) {
+      if (categories.some((c) => !c)) {
         throw new NotFoundException('One or more store categories not found');
       }
 
-      profile.storeCategories = updateDto.storeCategoryIds.map(id => new Types.ObjectId(id));
+      profile.storeCategories = updateDto.storeCategoryIds.map(
+        (id) => new Types.ObjectId(id),
+      );
     }
 
     await profile.save();
@@ -218,10 +231,8 @@ export class AccountProfileService {
    * Get store owner profile
    */
   async getStoreProfile(accountId: string): Promise<StoreOwnerProfileDocument> {
-    const profile = await this.storeOwnerProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      .populate('primaryCategory')
-      .populate('storeCategories');
+    const profile =
+      await this.storeOwnerProfileRepository.findByAccountId(accountId);
 
     if (!profile) {
       throw new NotFoundException('Store owner profile not found');

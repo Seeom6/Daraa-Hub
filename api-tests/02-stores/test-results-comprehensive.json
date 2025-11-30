@@ -1,0 +1,43 @@
+﻿{
+    "StartTime":  {
+                      "value":  "\/Date(1764487182991)\/",
+                      "DisplayHint":  2,
+                      "DateTime":  "Sunday, November 30, 2025 10:19:42 AM"
+                  },
+    "Passed":  3,
+    "TestSuite":  "Comprehensive Store Management Test",
+    "Skipped":  0,
+    "Tests":  [
+                  {
+                      "Name":  "Store Owner Registration",
+                      "Timestamp":  "2025-11-30 10:19:45",
+                      "Duration":  0,
+                      "Endpoint":  "Multiple",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Store Profile Management",
+                      "Timestamp":  "2025-11-30 10:19:45",
+                      "Duration":  0,
+                      "Endpoint":  "Multiple",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Verification Submission",
+                      "Timestamp":  "2025-11-30 10:19:45",
+                      "Duration":  36.11,
+                      "Endpoint":  "POST /verification/submit",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  }
+              ],
+    "EndTime":  {
+                    "value":  "\/Date(1764487185188)\/",
+                    "DisplayHint":  2,
+                    "DateTime":  "Sunday, November 30, 2025 10:19:45 AM"
+                },
+    "TotalTests":  3,
+    "Failed":  0
+}

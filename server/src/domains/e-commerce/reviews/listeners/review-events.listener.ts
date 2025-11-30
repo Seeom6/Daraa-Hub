@@ -22,31 +22,50 @@ export class ReviewEventsListener {
   }
 
   @OnEvent('review.updated')
-  handleReviewUpdated(payload: { reviewId: string; targetType: string; targetId: string }) {
-    this.logger.log(`Review updated: ${payload.reviewId} for ${payload.targetType} ${payload.targetId}`);
+  handleReviewUpdated(payload: {
+    reviewId: string;
+    targetType: string;
+    targetId: string;
+  }) {
+    this.logger.log(
+      `Review updated: ${payload.reviewId} for ${payload.targetType} ${payload.targetId}`,
+    );
 
     // TODO: Update analytics
   }
 
   @OnEvent('review.deleted')
-  handleReviewDeleted(payload: { reviewId: string; targetType: string; targetId: string }) {
-    this.logger.log(`Review deleted: ${payload.reviewId} for ${payload.targetType} ${payload.targetId}`);
+  handleReviewDeleted(payload: {
+    reviewId: string;
+    targetType: string;
+    targetId: string;
+  }) {
+    this.logger.log(
+      `Review deleted: ${payload.reviewId} for ${payload.targetType} ${payload.targetId}`,
+    );
 
     // TODO: Update analytics
   }
 
   @OnEvent('review.moderated')
-  handleReviewModerated(payload: { reviewId: string; status: string; moderatedBy: string }) {
-    this.logger.log(`Review moderated: ${payload.reviewId} to ${payload.status} by ${payload.moderatedBy}`);
+  handleReviewModerated(payload: {
+    reviewId: string;
+    status: string;
+    moderatedBy: string;
+  }) {
+    this.logger.log(
+      `Review moderated: ${payload.reviewId} to ${payload.status} by ${payload.moderatedBy}`,
+    );
 
     // TODO: Send notification to customer if rejected
   }
 
   @OnEvent('review.store_response_added')
   handleStoreResponseAdded(payload: { reviewId: string; storeId: string }) {
-    this.logger.log(`Store response added to review: ${payload.reviewId} by store ${payload.storeId}`);
+    this.logger.log(
+      `Store response added to review: ${payload.reviewId} by store ${payload.storeId}`,
+    );
 
     // TODO: Send notification to customer
   }
 }
-

@@ -1,4 +1,10 @@
-import { IsEnum, IsOptional, IsDateString, IsMongoId, IsNumber } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsDateString,
+  IsMongoId,
+  IsNumber,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { AnalyticsPeriod } from '../../../../database/schemas/product-analytics.schema';
 
@@ -33,4 +39,3 @@ export class QueryAnalyticsDto {
   @Type(() => Number)
   limit?: number = 10;
 }
-

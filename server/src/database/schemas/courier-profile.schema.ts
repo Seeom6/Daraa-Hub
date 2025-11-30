@@ -20,13 +20,18 @@ export class Location {
  */
 @Schema({ timestamps: true })
 export class CourierProfile {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Account',
+    required: true,
+    unique: true,
+  })
   accountId: Types.ObjectId;
 
   @Prop({
     type: String,
     enum: ['pending', 'approved', 'rejected', 'suspended'],
-    default: 'pending'
+    default: 'pending',
   })
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
 
@@ -66,23 +71,23 @@ export class CourierProfile {
   @Prop()
   insuranceDocument?: string;
 
-  @Prop({ 
-    type: String, 
-    enum: ['offline', 'available', 'busy', 'on_break'], 
-    default: 'offline' 
+  @Prop({
+    type: String,
+    enum: ['offline', 'available', 'busy', 'on_break'],
+    default: 'offline',
   })
   status: 'offline' | 'available' | 'busy' | 'on_break';
 
-  @Prop({ 
-    type: { 
-      type: String, 
-      enum: ['Point'], 
-      default: 'Point' 
-    }, 
-    coordinates: { 
-      type: [Number], 
-      default: [0, 0] 
-    } 
+  @Prop({
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number],
+      default: [0, 0],
+    },
   })
   currentLocation?: Location;
 
@@ -140,10 +145,11 @@ export class CourierProfile {
   updatedAt: Date;
 }
 
-export const CourierProfileSchema = SchemaFactory.createForClass(CourierProfile);
+export const CourierProfileSchema =
+  SchemaFactory.createForClass(CourierProfile);
 
 // Indexes
-CourierProfileSchema.index({ accountId: 1 });
+// Note: accountId already has unique: true in @Prop, which creates an index automatically
 CourierProfileSchema.index({ verificationStatus: 1 });
 CourierProfileSchema.index({ status: 1 });
 CourierProfileSchema.index({ rating: -1 });
@@ -151,4 +157,3 @@ CourierProfileSchema.index({ isAvailableForDelivery: 1 });
 CourierProfileSchema.index({ isCourierSuspended: 1 });
 CourierProfileSchema.index({ verificationSubmittedAt: 1 });
 CourierProfileSchema.index({ currentLocation: '2dsphere' }); // Geospatial index
-

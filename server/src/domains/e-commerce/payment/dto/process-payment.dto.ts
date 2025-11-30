@@ -1,4 +1,11 @@
-import { IsMongoId, IsEnum, IsOptional, IsObject, IsNumber, Min } from 'class-validator';
+import {
+  IsMongoId,
+  IsEnum,
+  IsOptional,
+  IsObject,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { PaymentMethodType } from '../../../../database/schemas/payment.schema';
 
 export class ProcessPaymentDto {
@@ -21,4 +28,3 @@ export class ProcessPaymentDto {
   @IsObject()
   gatewayResponse?: Record<string, any>;
 }
-

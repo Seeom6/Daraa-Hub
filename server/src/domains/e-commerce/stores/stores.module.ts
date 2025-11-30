@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/schemas';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileSchema,
+} from '../../../database/schemas';
 import { StoresController } from './stores.controller';
 
 @Module({
@@ -12,4 +15,3 @@ import { StoresController } from './stores.controller';
   controllers: [StoresController],
 })
 export class StoresModule {}
-

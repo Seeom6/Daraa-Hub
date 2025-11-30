@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Notification, NotificationDocument } from '../../../../database/schemas/notification.schema';
+import {
+  Notification,
+  NotificationDocument,
+} from '../../../../database/schemas/notification.schema';
 import { BaseRepository } from '../../base/base.repository';
 
 @Injectable()
@@ -41,7 +44,9 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
   /**
    * Mark notification as read
    */
-  async markAsRead(notificationId: string): Promise<NotificationDocument | null> {
+  async markAsRead(
+    notificationId: string,
+  ): Promise<NotificationDocument | null> {
     return this.findByIdAndUpdate(notificationId, {
       isRead: true,
       readAt: new Date(),
@@ -85,4 +90,3 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
     return result.deletedCount;
   }
 }
-

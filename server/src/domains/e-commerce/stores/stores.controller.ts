@@ -1,7 +1,16 @@
-import { Controller, Get, Param, Query, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../database/schemas';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../database/schemas';
 
 @Controller('stores')
 export class StoresController {
@@ -65,7 +74,9 @@ export class StoresController {
     // Get stores
     const stores = await this.storeOwnerProfileModel
       .find(query)
-      .select('storeName storeDescription storeLogo storeBanner rating totalReviews totalSales primaryCategory storeCategories verificationStatus createdAt')
+      .select(
+        'storeName storeDescription storeLogo storeBanner rating totalReviews totalSales primaryCategory storeCategories verificationStatus createdAt',
+      )
       .populate('primaryCategory', 'name slug icon')
       .populate('storeCategories', 'name slug icon')
       .sort(sortOption)
@@ -116,4 +127,3 @@ export class StoresController {
     };
   }
 }
-

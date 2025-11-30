@@ -11,16 +11,20 @@ export enum AnalyticsPeriod {
 
 @Schema({ timestamps: true, collection: 'productanalytics' })
 export class ProductAnalytics {
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
   @Prop({ required: true, enum: AnalyticsPeriod })
   period: AnalyticsPeriod;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   date: Date;
 
   @Prop({ default: 0 })
@@ -51,10 +55,10 @@ export class ProductAnalytics {
   updatedAt: Date;
 }
 
-export const ProductAnalyticsSchema = SchemaFactory.createForClass(ProductAnalytics);
+export const ProductAnalyticsSchema =
+  SchemaFactory.createForClass(ProductAnalytics);
 
 // Indexes
 ProductAnalyticsSchema.index({ productId: 1, period: 1, date: -1 });
 ProductAnalyticsSchema.index({ storeId: 1, period: 1, date: -1 });
 ProductAnalyticsSchema.index({ date: -1 });
-

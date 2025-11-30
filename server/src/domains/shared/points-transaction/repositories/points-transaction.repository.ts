@@ -106,4 +106,3 @@ export class PointsTransactionRepository extends BaseRepository<PointsTransactio
     });
   }
 }
-

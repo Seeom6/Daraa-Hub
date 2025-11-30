@@ -5,7 +5,10 @@ import {
   ReviewTargetType,
   ReviewStatus,
 } from '../../../../database/schemas/review.schema';
-import { Product, ProductDocument } from '../../../../database/schemas/product.schema';
+import {
+  Product,
+  ProductDocument,
+} from '../../../../database/schemas/product.schema';
 import {
   StoreOwnerProfile,
   StoreOwnerProfileDocument,
@@ -37,7 +40,10 @@ export class ReviewRatingService {
   /**
    * Verify that the review target exists
    */
-  async verifyTargetExists(targetType: ReviewTargetType, targetId: string): Promise<void> {
+  async verifyTargetExists(
+    targetType: ReviewTargetType,
+    targetId: string,
+  ): Promise<void> {
     if (targetType === ReviewTargetType.PRODUCT) {
       const product = await this.productModel.findById(targetId);
       if (!product) {
@@ -59,8 +65,11 @@ export class ReviewRatingService {
   /**
    * Update the average rating for a target (Product, Store, or Courier)
    */
-  async updateTargetRating(targetType: ReviewTargetType, targetId: string): Promise<void> {
-    const reviews = await (this.reviewRepository)
+  async updateTargetRating(
+    targetType: ReviewTargetType,
+    targetId: string,
+  ): Promise<void> {
+    const reviews = await this.reviewRepository
       .getModel()
       .find({
         targetType,
@@ -71,7 +80,9 @@ export class ReviewRatingService {
 
     const totalReviews = reviews.length;
     const averageRating =
-      totalReviews > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0;
+      totalReviews > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
 
     if (targetType === ReviewTargetType.PRODUCT) {
       await this.productModel.findByIdAndUpdate(targetId, {
@@ -106,7 +117,7 @@ export class ReviewRatingService {
     ratingDistribution: { [key: number]: number };
     totalReviews: number;
   }> {
-    const allReviews = await (this.reviewRepository)
+    const allReviews = await this.reviewRepository
       .getModel()
       .find({
         targetType,
@@ -133,4 +144,3 @@ export class ReviewRatingService {
     };
   }
 }
-

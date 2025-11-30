@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Account, AccountDocument } from '../../../../database/schemas/account.schema';
+import {
+  Account,
+  AccountDocument,
+} from '../../../../database/schemas/account.schema';
 import { BaseRepository } from '../../base/base.repository';
 
 @Injectable()
@@ -16,8 +19,17 @@ export class AccountRepository extends BaseRepository<AccountDocument> {
   /**
    * Find account by phone number
    */
-  async findByPhoneNumber(phoneNumber: string): Promise<AccountDocument | null> {
+  async findByPhoneNumber(
+    phoneNumber: string,
+  ): Promise<AccountDocument | null> {
     return this.findOne({ phoneNumber });
+  }
+
+  /**
+   * Find account by phone (active accounts only)
+   */
+  async findByPhone(phone: string): Promise<AccountDocument | null> {
+    return this.findOne({ phone, isActive: true });
   }
 
   /**
@@ -114,4 +126,3 @@ export class AccountRepository extends BaseRepository<AccountDocument> {
     ]);
   }
 }
-

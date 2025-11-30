@@ -1,9 +1,101 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 /**
- * Mock Repository Factory
+ * Generate a fake ObjectId
+ */
+export const generateObjectId = (): string => {
+  return new Types.ObjectId().toString();
+};
+
+/**
+ * Generate multiple fake ObjectIds
+ */
+export const generateObjectIds = (count: number): string[] => {
+  return Array.from({ length: count }, () => generateObjectId());
+};
+
+/**
+ * Create a mock Mongoose Model
+ */
+export const createMockModel = <T>(): Partial<Model<T>> =>
+  ({
+    find: jest.fn(),
+    findOne: jest.fn(),
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findByIdAndDelete: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    findOneAndDelete: jest.fn(),
+    create: jest.fn(),
+    updateOne: jest.fn(),
+    updateMany: jest.fn(),
+    deleteOne: jest.fn(),
+    deleteMany: jest.fn(),
+    countDocuments: jest.fn(),
+    exists: jest.fn(),
+    populate: jest.fn(),
+    sort: jest.fn(),
+    limit: jest.fn(),
+    skip: jest.fn(),
+  }) as any;
+
+/**
+ * Create a mock Repository
+ */
+export const createMockRepository = () => ({
+  create: jest.fn(),
+  findById: jest.fn(),
+  findOne: jest.fn(),
+  findAll: jest.fn(),
+  findWithPagination: jest.fn(),
+  update: jest.fn(),
+  updateOne: jest.fn(),
+  updateMany: jest.fn(),
+  delete: jest.fn(),
+  deleteOne: jest.fn(),
+  deleteMany: jest.fn(),
+  count: jest.fn(),
+  exists: jest.fn(),
+  getModel: jest.fn(),
+});
+
+/**
+ * Create a mock EventEmitter
+ */
+export const createMockEventEmitter = () => ({
+  emit: jest.fn(),
+  emitAsync: jest.fn(),
+  on: jest.fn(),
+  once: jest.fn(),
+  removeListener: jest.fn(),
+  removeAllListeners: jest.fn(),
+});
+
+/**
+ * Create a mock Logger
+ */
+export const createMockLogger = () => ({
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
+  verbose: jest.fn(),
+});
+
+/**
+ * Create a mock Cache Manager
+ */
+export const createMockCacheManager = () => ({
+  get: jest.fn(),
+  set: jest.fn(),
+  del: jest.fn(),
+  reset: jest.fn(),
+});
+
+/**
+ * Mock Repository Factory (Class version)
  * Creates a mock repository for testing
  */
 export class MockRepositoryFactory {
@@ -48,6 +140,8 @@ export class MockModelFactory {
     mockModel.findOneAndDelete = jest.fn().mockReturnThis();
     mockModel.deleteMany = jest.fn().mockReturnThis();
     mockModel.countDocuments = jest.fn().mockReturnThis();
+    mockModel.create = jest.fn();
+    mockModel.aggregate = jest.fn();
     mockModel.exec = jest.fn();
     mockModel.schema = {
       path: jest.fn().mockReturnValue(null),
@@ -120,7 +214,12 @@ export class MockDataFactory {
   /**
    * Create mock pagination result
    */
-  static createPaginationResult<T>(data: T[], total: number, page = 1, limit = 10) {
+  static createPaginationResult<T>(
+    data: T[],
+    total: number,
+    page = 1,
+    limit = 10,
+  ) {
     return {
       data,
       total,
@@ -223,4 +322,3 @@ export class TestHelpers {
     jest.resetAllMocks();
   }
 }
-

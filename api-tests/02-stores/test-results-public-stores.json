@@ -1,0 +1,59 @@
+﻿{
+    "StartTime":  {
+                      "value":  "\/Date(1764438053989)\/",
+                      "DisplayHint":  2,
+                      "DateTime":  "Saturday, November 29, 2025 8:40:53 PM"
+                  },
+    "Passed":  5,
+    "TestSuite":  "Public Store Endpoints",
+    "Skipped":  0,
+    "Tests":  [
+                  {
+                      "Name":  "Get all stores",
+                      "Timestamp":  "2025-11-29 20:40:54",
+                      "Duration":  68.71,
+                      "Endpoint":  "GET /stores",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Get stores with pagination",
+                      "Timestamp":  "2025-11-29 20:40:54",
+                      "Duration":  36.01,
+                      "Endpoint":  "GET /stores?page=1\u0026limit=5",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Search stores by name",
+                      "Timestamp":  "2025-11-29 20:40:54",
+                      "Duration":  63,
+                      "Endpoint":  "GET /stores?search=test",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Filter verified stores",
+                      "Timestamp":  "2025-11-29 20:40:54",
+                      "Duration":  25.06,
+                      "Endpoint":  "GET /stores?verified=true",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Sort stores by rating",
+                      "Timestamp":  "2025-11-29 20:40:54",
+                      "Duration":  26.62,
+                      "Endpoint":  "GET /stores?sort=rating",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  }
+              ],
+    "EndTime":  {
+                    "value":  "\/Date(1764438054384)\/",
+                    "DisplayHint":  2,
+                    "DateTime":  "Saturday, November 29, 2025 8:40:54 PM"
+                },
+    "TotalTests":  5,
+    "Failed":  0
+}

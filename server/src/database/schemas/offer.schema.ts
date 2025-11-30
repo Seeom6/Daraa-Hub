@@ -10,7 +10,11 @@ export enum DiscountType {
 
 @Schema({ timestamps: true })
 export class Offer {
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
   @Prop({ required: true, trim: true })
@@ -37,13 +41,13 @@ export class Offer {
   @Prop({ type: [Types.ObjectId], ref: 'Product', default: [] })
   applicableProducts: Types.ObjectId[]; // Empty array = all products in store
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   startDate: Date;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   endDate: Date;
 
-  @Prop({ default: true, index: true })
+  @Prop({ default: true })
   isActive: boolean;
 
   @Prop({ default: 0, min: 0 })
@@ -62,4 +66,3 @@ export const OfferSchema = SchemaFactory.createForClass(Offer);
 OfferSchema.index({ storeId: 1, isActive: 1 });
 OfferSchema.index({ startDate: 1, endDate: 1 });
 OfferSchema.index({ applicableProducts: 1 });
-

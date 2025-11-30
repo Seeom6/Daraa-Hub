@@ -1,4 +1,17 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsBoolean, IsArray, IsMongoId, IsDate, Min, Max, ValidateNested } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsArray,
+  IsMongoId,
+  IsDate,
+  Min,
+  Max,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { CouponType } from '../../../../database/schemas/coupon.schema';
 
@@ -97,4 +110,3 @@ export class CreateCouponDto {
   @IsOptional()
   isActive?: boolean;
 }
-

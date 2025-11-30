@@ -1,7 +1,16 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas/store-owner-profile.schema';
 import { ProductRepository } from '../repositories/product.repository';
 import { ProductDocument } from '../../../../database/schemas/product.schema';
 
@@ -33,7 +42,9 @@ export class ProductMediaService {
     }
 
     // Check image limit
-    const storeProfile = await this.storeProfileModel.findById(product.storeId).exec();
+    const storeProfile = await this.storeProfileModel
+      .findById(product.storeId)
+      .exec();
     const maxImages = storeProfile?.maxImagesPerProduct || 10;
     const totalImages = (product.images?.length || 0) + imageUrls.length;
 
@@ -72,10 +83,10 @@ export class ProductMediaService {
 
     // Update main image if it was removed
     if (product.mainImage === imageUrl) {
-      product.mainImage = product.images.length > 0 ? product.images[0] : undefined;
+      product.mainImage =
+        product.images.length > 0 ? product.images[0] : undefined;
     }
 
     return await product.save();
   }
 }
-

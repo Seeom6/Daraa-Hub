@@ -33,7 +33,9 @@ export class StoreSettingsController {
   ) {
     // Verify ownership if store owner
     if (user.role === 'store_owner' && user.profileId !== storeId) {
-      throw new ForbiddenException('You can only access your own store settings');
+      throw new ForbiddenException(
+        'You can only access your own store settings',
+      );
     }
 
     const settings = await this.storeSettingsService.getOrCreate(storeId);
@@ -72,7 +74,9 @@ export class StoreSettingsController {
   ) {
     // Verify ownership if store owner
     if (user.role === 'store_owner' && user.profileId !== storeId) {
-      throw new ForbiddenException('You can only update your own store settings');
+      throw new ForbiddenException(
+        'You can only update your own store settings',
+      );
     }
 
     const settings = await this.storeSettingsService.update(
@@ -126,4 +130,3 @@ export class StoreSettingsController {
     };
   }
 }
-

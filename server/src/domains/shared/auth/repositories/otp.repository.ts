@@ -71,4 +71,3 @@ export class OTPRepository extends BaseRepository<OtpDocument> {
     });
   }
 }
-

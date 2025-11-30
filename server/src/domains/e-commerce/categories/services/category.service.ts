@@ -1,7 +1,16 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Category, CategoryDocument } from '../../../../database/schemas/category.schema';
+import {
+  Category,
+  CategoryDocument,
+} from '../../../../database/schemas/category.schema';
 import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto } from '../dto';
 import { CategoryRepository } from '../repositories/category.repository';
 
@@ -9,21 +18,27 @@ import { CategoryRepository } from '../repositories/category.repository';
 export class CategoryService {
   private readonly logger = new Logger(CategoryService.name);
 
-  constructor(
-    private readonly categoryRepository: CategoryRepository,
-  ) {}
+  constructor(private readonly categoryRepository: CategoryRepository) {}
 
-  async create(createCategoryDto: CreateCategoryDto): Promise<CategoryDocument> {
+  async create(
+    createCategoryDto: CreateCategoryDto,
+  ): Promise<CategoryDocument> {
     // Check if slug already exists
-    const existingSlug = await this.categoryRepository.findOne({ slug: createCategoryDto.slug });
+    const existingSlug = await this.categoryRepository.findOne({
+      slug: createCategoryDto.slug,
+    });
     if (existingSlug) {
-      throw new ConflictException(`Category with slug '${createCategoryDto.slug}' already exists`);
+      throw new ConflictException(
+        `Category with slug '${createCategoryDto.slug}' already exists`,
+      );
     }
 
     // If parentCategory is provided, validate it exists and calculate level
     let level = 0;
     if (createCategoryDto.parentCategory) {
-      const parent = await this.categoryRepository.findById(createCategoryDto.parentCategory);
+      const parent = await this.categoryRepository.findById(
+        createCategoryDto.parentCategory,
+      );
       if (!parent) {
         throw new NotFoundException('Parent category not found');
       }
@@ -38,8 +53,22 @@ export class CategoryService {
     return saved;
   }
 
-  async findAll(query: QueryCategoryDto): Promise<{ data: CategoryDocument[]; total: number; page: number; limit: number }> {
-    const { search, parentCategory, level, isActive, page = 1, limit = 20, sortBy = 'order', sortOrder = 'asc' } = query;
+  async findAll(query: QueryCategoryDto): Promise<{
+    data: CategoryDocument[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const {
+      search,
+      parentCategory,
+      level,
+      isActive,
+      page = 1,
+      limit = 20,
+      sortBy = 'order',
+      sortOrder = 'asc',
+    } = query;
 
     const filter: any = {};
 
@@ -48,7 +77,10 @@ export class CategoryService {
     }
 
     if (parentCategory !== undefined) {
-      filter.parentCategory = parentCategory === 'null' || parentCategory === null ? null : new Types.ObjectId(parentCategory);
+      filter.parentCategory =
+        parentCategory === 'null' || parentCategory === null
+          ? null
+          : new Types.ObjectId(parentCategory);
     }
 
     if (level !== undefined) {
@@ -117,7 +149,10 @@ export class CategoryService {
     return category;
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<CategoryDocument> {
+  async update(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<CategoryDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid category ID');
     }
@@ -129,9 +164,13 @@ export class CategoryService {
 
     // Check slug uniqueness if being updated
     if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
-      const existingSlug = await this.categoryRepository.findOne({ slug: updateCategoryDto.slug });
+      const existingSlug = await this.categoryRepository.findOne({
+        slug: updateCategoryDto.slug,
+      });
       if (existingSlug) {
-        throw new ConflictException(`Category with slug '${updateCategoryDto.slug}' already exists`);
+        throw new ConflictException(
+          `Category with slug '${updateCategoryDto.slug}' already exists`,
+        );
       }
     }
 
@@ -143,13 +182,18 @@ export class CategoryService {
           throw new BadRequestException('Category cannot be its own parent');
         }
 
-        const parent = await this.categoryRepository.findById(updateCategoryDto.parentCategory);
+        const parent = await this.categoryRepository.findById(
+          updateCategoryDto.parentCategory,
+        );
         if (!parent) {
           throw new NotFoundException('Parent category not found');
         }
 
         // Check for circular reference
-        const isCircular = await this.checkCircularReference(id, updateCategoryDto.parentCategory);
+        const isCircular = await this.checkCircularReference(
+          id,
+          updateCategoryDto.parentCategory,
+        );
         if (isCircular) {
           throw new BadRequestException('Circular reference detected');
         }
@@ -178,9 +222,13 @@ export class CategoryService {
     }
 
     // Check if category has subcategories
-    const subcategories = await this.categoryRepository.count({ parentCategory: id });
+    const subcategories = await this.categoryRepository.count({
+      parentCategory: id,
+    });
     if (subcategories > 0) {
-      throw new BadRequestException('Cannot delete category with subcategories');
+      throw new BadRequestException(
+        'Cannot delete category with subcategories',
+      );
     }
 
     // Check if category has products
@@ -207,15 +255,28 @@ export class CategoryService {
     return rootCategories;
   }
 
-  async incrementProductCount(categoryId: string, increment: number = 1): Promise<void> {
-    await this.categoryRepository.findByIdAndUpdate(categoryId, { $inc: { productCount: increment } });
+  async incrementProductCount(
+    categoryId: string,
+    increment: number = 1,
+  ): Promise<void> {
+    await this.categoryRepository.findByIdAndUpdate(categoryId, {
+      $inc: { productCount: increment },
+    });
   }
 
-  async decrementProductCount(categoryId: string, decrement: number = 1): Promise<void> {
-    await this.categoryRepository.findByIdAndUpdate(categoryId, { $inc: { productCount: -decrement } });
+  async decrementProductCount(
+    categoryId: string,
+    decrement: number = 1,
+  ): Promise<void> {
+    await this.categoryRepository.findByIdAndUpdate(categoryId, {
+      $inc: { productCount: -decrement },
+    });
   }
 
-  private async checkCircularReference(categoryId: string, parentId: string): Promise<boolean> {
+  private async checkCircularReference(
+    categoryId: string,
+    parentId: string,
+  ): Promise<boolean> {
     let currentParentId = parentId;
 
     while (currentParentId) {
@@ -234,4 +295,3 @@ export class CategoryService {
     return false;
   }
 }
-

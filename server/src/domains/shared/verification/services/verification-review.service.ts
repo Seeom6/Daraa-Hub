@@ -1,10 +1,24 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { VerificationRequest, VerificationRequestDocument } from '../../../../database/schemas/verification-request.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
-import { CourierProfile, CourierProfileDocument } from '../../../../database/schemas/courier-profile.schema';
+import {
+  VerificationRequest,
+  VerificationRequestDocument,
+} from '../../../../database/schemas/verification-request.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas/store-owner-profile.schema';
+import {
+  CourierProfile,
+  CourierProfileDocument,
+} from '../../../../database/schemas/courier-profile.schema';
 import { ReviewVerificationDto } from '../dto/review-verification.dto';
 import {
   VERIFICATION_APPROVED,
@@ -46,8 +60,13 @@ export class VerificationReviewService {
       throw new NotFoundException('Verification request not found');
     }
 
-    if (verificationRequest.status === 'approved' || verificationRequest.status === 'rejected') {
-      throw new BadRequestException('This verification request has already been finalized');
+    if (
+      verificationRequest.status === 'approved' ||
+      verificationRequest.status === 'rejected'
+    ) {
+      throw new BadRequestException(
+        'This verification request has already been finalized',
+      );
     }
 
     const accountId = verificationRequest.accountId.toString();
@@ -136,7 +155,9 @@ export class VerificationReviewService {
         infoRequired: reviewDto.infoRequired,
       });
 
-      this.logger.log(`Info requested for verification: ${verificationRequestId}`);
+      this.logger.log(
+        `Info requested for verification: ${verificationRequestId}`,
+      );
     }
 
     return verificationRequest.save();
@@ -176,13 +197,18 @@ export class VerificationReviewService {
 
     if (applicantType === 'store_owner') {
       await this.storeOwnerProfileModel
-        .findOneAndUpdate({ accountId: new Types.ObjectId(accountId) }, updateData)
+        .findOneAndUpdate(
+          { accountId: new Types.ObjectId(accountId) },
+          updateData,
+        )
         .exec();
     } else {
       await this.courierProfileModel
-        .findOneAndUpdate({ accountId: new Types.ObjectId(accountId) }, updateData)
+        .findOneAndUpdate(
+          { accountId: new Types.ObjectId(accountId) },
+          updateData,
+        )
         .exec();
     }
   }
 }
-

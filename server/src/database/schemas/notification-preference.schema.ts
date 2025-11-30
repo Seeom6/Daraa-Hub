@@ -9,18 +9,23 @@ export type NotificationPreferenceDocument = NotificationPreference & Document;
  */
 @Schema({ timestamps: true })
 export class NotificationPreference {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Account',
+    required: true,
+    unique: true,
+  })
   userId: Types.ObjectId;
 
   // Channel preferences
-  @Prop({ 
+  @Prop({
     type: Object,
     default: {
       push: true,
       email: true,
       sms: true,
       in_app: true,
-    }
+    },
   })
   channels: {
     push: boolean;
@@ -30,7 +35,7 @@ export class NotificationPreference {
   };
 
   // Category preferences
-  @Prop({ 
+  @Prop({
     type: Object,
     default: {
       orders: true,
@@ -43,7 +48,7 @@ export class NotificationPreference {
       security: true,
       reviews: true,
       disputes: true,
-    }
+    },
   })
   categories: {
     orders: boolean;
@@ -63,21 +68,21 @@ export class NotificationPreference {
   quietHours?: {
     enabled: boolean;
     startTime: string; // e.g., "22:00"
-    endTime: string;   // e.g., "08:00"
-    timezone: string;  // e.g., "Asia/Damascus"
+    endTime: string; // e.g., "08:00"
+    timezone: string; // e.g., "Asia/Damascus"
   };
 
   // Language preference
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['ar', 'en'],
     default: 'ar',
   })
   language: 'ar' | 'en';
 
   // Email digest preference
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['instant', 'daily', 'weekly', 'never'],
     default: 'instant',
   })
@@ -87,8 +92,8 @@ export class NotificationPreference {
   updatedAt: Date;
 }
 
-export const NotificationPreferenceSchema = SchemaFactory.createForClass(NotificationPreference);
+export const NotificationPreferenceSchema = SchemaFactory.createForClass(
+  NotificationPreference,
+);
 
-// Indexes
-NotificationPreferenceSchema.index({ userId: 1 });
-
+// Note: userId already has unique: true in @Prop, which creates an index automatically

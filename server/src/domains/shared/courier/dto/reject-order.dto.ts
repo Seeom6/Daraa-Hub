@@ -7,4 +7,3 @@ export class RejectOrderDto {
   @IsString()
   reason: string;
 }
-

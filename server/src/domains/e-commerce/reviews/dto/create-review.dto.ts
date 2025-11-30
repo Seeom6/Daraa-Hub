@@ -45,4 +45,3 @@ export class CreateReviewDto {
   @IsUrl({}, { each: true })
   images?: string[];
 }
-

@@ -13,10 +13,14 @@ export enum TransactionType {
 
 @Schema({ timestamps: true })
 export class PointsTransaction {
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    required: true,
+  })
   customerId: Types.ObjectId;
 
-  @Prop({ type: String, enum: TransactionType, required: true, index: true })
+  @Prop({ type: String, enum: TransactionType, required: true })
   type: TransactionType;
 
   @Prop({ required: true })
@@ -34,20 +38,20 @@ export class PointsTransaction {
   @Prop({ required: true, default: 0 })
   balanceAfter: number;
 
-  @Prop({ index: true })
+  @Prop()
   expiresAt?: Date; // Points expiration date
 
-  @Prop({ default: false, index: true })
+  @Prop({ default: false })
   isExpired: boolean;
 
   createdAt: Date;
   updatedAt: Date;
 }
 
-export const PointsTransactionSchema = SchemaFactory.createForClass(PointsTransaction);
+export const PointsTransactionSchema =
+  SchemaFactory.createForClass(PointsTransaction);
 
 // Indexes
 PointsTransactionSchema.index({ customerId: 1, createdAt: -1 });
 PointsTransactionSchema.index({ orderId: 1 });
 PointsTransactionSchema.index({ expiresAt: 1, isExpired: 1 });
-

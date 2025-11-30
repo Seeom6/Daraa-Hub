@@ -35,16 +35,33 @@ export class RewardInfo {
 
 @Schema({ timestamps: true })
 export class Referral {
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    required: true,
+  })
   referrerId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    unique: true,
+  })
   referredId?: Types.ObjectId;
 
-  @Prop({ required: true, unique: true, uppercase: true, trim: true, index: true })
+  @Prop({
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true,
+  })
   code: string;
 
-  @Prop({ type: String, enum: ReferralStatus, default: ReferralStatus.PENDING, index: true })
+  @Prop({
+    type: String,
+    enum: ReferralStatus,
+    default: ReferralStatus.PENDING,
+  })
   status: ReferralStatus;
 
   @Prop({ type: RewardInfo, required: true })
@@ -67,7 +84,5 @@ export const ReferralSchema = SchemaFactory.createForClass(Referral);
 
 // Indexes
 ReferralSchema.index({ referrerId: 1 });
-ReferralSchema.index({ referredId: 1 }, { unique: true, sparse: true });
-ReferralSchema.index({ code: 1 }, { unique: true });
+// Note: referredId and code already have unique: true in @Prop, which creates indexes automatically
 ReferralSchema.index({ status: 1 });
-

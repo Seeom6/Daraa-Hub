@@ -6,7 +6,9 @@ export interface StoreSubscriptionMethods {
   incrementTodayUsage(): Promise<void>;
 }
 
-export type StoreSubscriptionDocument = StoreSubscription & Document & StoreSubscriptionMethods;
+export type StoreSubscriptionDocument = StoreSubscription &
+  Document &
+  StoreSubscriptionMethods;
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',
@@ -16,8 +18,8 @@ export enum SubscriptionStatus {
 }
 
 export enum SubscriptionPaymentMethod {
-  MANUAL = 'manual',        // Admin activates after manual payment
-  ONLINE = 'online',        // Online payment gateway (future)
+  MANUAL = 'manual', // Admin activates after manual payment
+  ONLINE = 'online', // Online payment gateway (future)
   FREE_GRANT = 'free_grant', // Admin grants for free
 }
 
@@ -28,19 +30,27 @@ export interface DailyUsage {
 
 @Schema({ timestamps: true })
 export class StoreSubscription {
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'SubscriptionPlan', required: true })
   planId: Types.ObjectId;
 
-  @Prop({ type: String, enum: SubscriptionStatus, default: SubscriptionStatus.PENDING_PAYMENT, index: true })
+  @Prop({
+    type: String,
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.PENDING_PAYMENT,
+  })
   status: SubscriptionStatus;
 
   @Prop({ required: true })
   startDate: Date;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   endDate: Date;
 
   @Prop({ type: String, enum: SubscriptionPaymentMethod, required: true })
@@ -69,10 +79,12 @@ export class StoreSubscription {
 
   // Daily usage tracking
   @Prop({
-    type: [{
-      date: { type: String, required: true },
-      productsPublished: { type: Number, default: 0 },
-    }],
+    type: [
+      {
+        date: { type: String, required: true },
+        productsPublished: { type: Number, default: 0 },
+      },
+    ],
     default: [],
   })
   dailyUsage: DailyUsage[];
@@ -91,7 +103,8 @@ export class StoreSubscription {
   updatedAt: Date;
 }
 
-export const StoreSubscriptionSchema = SchemaFactory.createForClass(StoreSubscription);
+export const StoreSubscriptionSchema =
+  SchemaFactory.createForClass(StoreSubscription);
 
 // Indexes
 StoreSubscriptionSchema.index({ storeId: 1, status: 1 });
@@ -99,24 +112,26 @@ StoreSubscriptionSchema.index({ endDate: 1, status: 1 });
 StoreSubscriptionSchema.index({ status: 1 });
 
 // Method to get today's usage
-StoreSubscriptionSchema.methods.getTodayUsage = function(): number {
+StoreSubscriptionSchema.methods.getTodayUsage = function (): number {
   const today = new Date().toISOString().split('T')[0];
   const todayUsage = this.dailyUsage.find((u: DailyUsage) => u.date === today);
   return todayUsage ? todayUsage.productsPublished : 0;
 };
 
 // Method to increment today's usage
-StoreSubscriptionSchema.methods.incrementTodayUsage = async function(): Promise<void> {
-  const today = new Date().toISOString().split('T')[0];
-  const todayUsageIndex = this.dailyUsage.findIndex((u: DailyUsage) => u.date === today);
-  
-  if (todayUsageIndex >= 0) {
-    this.dailyUsage[todayUsageIndex].productsPublished += 1;
-  } else {
-    this.dailyUsage.push({ date: today, productsPublished: 1 });
-  }
-  
-  this.totalProductsPublished += 1;
-  await this.save();
-};
+StoreSubscriptionSchema.methods.incrementTodayUsage =
+  async function (): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const todayUsageIndex = this.dailyUsage.findIndex(
+      (u: DailyUsage) => u.date === today,
+    );
 
+    if (todayUsageIndex >= 0) {
+      this.dailyUsage[todayUsageIndex].productsPublished += 1;
+    } else {
+      this.dailyUsage.push({ date: today, productsPublished: 1 });
+    }
+
+    this.totalProductsPublished += 1;
+    await this.save();
+  };

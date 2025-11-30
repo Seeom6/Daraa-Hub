@@ -1,0 +1,137 @@
+# ============================================
+# Daraa Platform - Monitoring Stack
+# ============================================
+# This file adds monitoring capabilities to the platform
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+#
+# Includes:
+# - Prometheus (Metrics Collection)
+# - Grafana (Visualization)
+# - MongoDB Exporter
+# - Redis Exporter
+# - Node Exporter (System Metrics)
+
+version: '3.8'
+
+services:
+  # ============================================
+  # Prometheus - Metrics Collection
+  # ============================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: daraa-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - daraa-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - daraa-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  # ============================================
+  # Grafana - Visualization
+  # ============================================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: daraa-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-DaraaGrafana2024}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - daraa-grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - daraa-network
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================
+  # MongoDB Exporter
+  # ============================================
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.39
+    container_name: daraa-mongodb-exporter
+    restart: unless-stopped
+    ports:
+      - "9216:9216"
+    environment:
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-DaraaSecurePassword2024}@daraa-mongodb:27017/admin?authSource=admin
+    networks:
+      - daraa-network
+    depends_on:
+      - mongodb
+    command:
+      - '--collect-all'
+      - '--compatible-mode'
+
+  # ============================================
+  # Redis Exporter
+  # ============================================
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: daraa-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://daraa-redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-DaraaRedisPassword2024}
+    networks:
+      - daraa-network
+    depends_on:
+      - redis
+
+  # ============================================
+  # Node Exporter - System Metrics
+  # ============================================
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: daraa-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - daraa-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  daraa-prometheus-data:
+    driver: local
+  daraa-grafana-data:
+    driver: local
+

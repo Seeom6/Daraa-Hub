@@ -1,0 +1,67 @@
+﻿{
+    "StartTime":  {
+                      "value":  "\/Date(1764437199076)\/",
+                      "DisplayHint":  2,
+                      "DateTime":  "Saturday, November 29, 2025 8:26:39 PM"
+                  },
+    "Passed":  5,
+    "TestSuite":  "Customer Registration",
+    "Skipped":  0,
+    "Tests":  [
+                  {
+                      "Name":  "Send OTP",
+                      "Timestamp":  "2025-11-29 20:26:39",
+                      "Duration":  288.45,
+                      "Endpoint":  "POST /auth/register/step1",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Verify OTP",
+                      "Timestamp":  "2025-11-29 20:26:41",
+                      "Duration":  185.86,
+                      "Endpoint":  "POST /auth/register/verify-otp",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Complete Profile",
+                      "Timestamp":  "2025-11-29 20:26:42",
+                      "Duration":  352.41,
+                      "Endpoint":  "POST /auth/register/complete-profile",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Reject duplicate phone",
+                      "Timestamp":  "2025-11-29 20:26:42",
+                      "Duration":  0,
+                      "Endpoint":  "POST /auth/register/step1",
+                      "Status":  "failed",
+                      "ErrorMessage":  "Should reject duplicate phone"
+                  },
+                  {
+                      "Name":  "Reject invalid OTP",
+                      "Timestamp":  "2025-11-29 20:26:42",
+                      "Duration":  103.58,
+                      "Endpoint":  "POST /auth/register/verify-otp",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Reject weak password",
+                      "Timestamp":  "2025-11-29 20:26:44",
+                      "Duration":  22.48,
+                      "Endpoint":  "POST /auth/register/complete-profile",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  }
+              ],
+    "EndTime":  {
+                    "value":  "\/Date(1764437204198)\/",
+                    "DisplayHint":  2,
+                    "DateTime":  "Saturday, November 29, 2025 8:26:44 PM"
+                },
+    "TotalTests":  6,
+    "Failed":  1
+}

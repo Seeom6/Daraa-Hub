@@ -56,4 +56,3 @@ export const defaultSubscriptionPlans = [
     order: 3,
   },
 ];
-

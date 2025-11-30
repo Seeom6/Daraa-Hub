@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Product, ProductDocument } from '../../../../database/schemas/product.schema';
+import {
+  Product,
+  ProductDocument,
+} from '../../../../database/schemas/product.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()
@@ -127,9 +130,7 @@ export class ProductRepository extends BaseRepository<ProductDocument> {
   /**
    * Get featured products
    */
-  async getFeaturedProducts(
-    limit: number = 10,
-  ): Promise<ProductDocument[]> {
+  async getFeaturedProducts(limit: number = 10): Promise<ProductDocument[]> {
     return this.productModel
       .find({ isFeatured: true, status: 'active' })
       .limit(limit)
@@ -140,9 +141,7 @@ export class ProductRepository extends BaseRepository<ProductDocument> {
   /**
    * Get trending products (most viewed)
    */
-  async getTrendingProducts(
-    limit: number = 10,
-  ): Promise<ProductDocument[]> {
+  async getTrendingProducts(limit: number = 10): Promise<ProductDocument[]> {
     return this.productModel
       .find({ status: 'active' })
       .sort({ views: -1 })
@@ -166,4 +165,3 @@ export class ProductRepository extends BaseRepository<ProductDocument> {
       .exec();
   }
 }
-

@@ -41,10 +41,11 @@ export class VerificationController {
     @Body() submitDto: SubmitVerificationDto,
     @Req() req: any,
   ) {
-    const verificationRequest = await this.verificationService.submitVerification(
-      req.user.sub,
-      submitDto,
-    );
+    const verificationRequest =
+      await this.verificationService.submitVerification(
+        req.user.sub,
+        submitDto,
+      );
     return {
       success: true,
       message: 'Verification request submitted successfully',
@@ -83,7 +84,9 @@ export class VerificationController {
   @Get('my-status')
   @HttpCode(HttpStatus.OK)
   async getMyVerificationStatus(@Req() req: any) {
-    const status = await this.verificationService.getMyVerificationStatus(req.user.sub);
+    const status = await this.verificationService.getMyVerificationStatus(
+      req.user.sub,
+    );
     return {
       success: true,
       data: status,
@@ -108,7 +111,8 @@ export class VerificationController {
       limit: limit ? parseInt(limit) : 20,
     };
 
-    const result = await this.verificationService.getAllVerificationRequests(filters);
+    const result =
+      await this.verificationService.getAllVerificationRequests(filters);
     return {
       success: true,
       data: result,
@@ -120,7 +124,8 @@ export class VerificationController {
   @RequirePermissions({ resource: 'stores', action: 'view' })
   @HttpCode(HttpStatus.OK)
   async getVerificationRequestById(@Param('id') id: string) {
-    const request = await this.verificationService.getVerificationRequestById(id);
+    const request =
+      await this.verificationService.getVerificationRequestById(id);
     return {
       success: true,
       data: request,
@@ -149,4 +154,3 @@ export class VerificationController {
     };
   }
 }
-

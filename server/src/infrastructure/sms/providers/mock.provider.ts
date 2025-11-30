@@ -31,4 +31,3 @@ export class MockSmsProvider implements ISmsService {
     return true;
   }
 }
-

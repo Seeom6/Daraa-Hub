@@ -57,7 +57,9 @@ export class ReviewModerationService {
       moderatedBy: adminId,
     });
 
-    this.logger.log(`Review ${reviewId} moderated to ${moderateDto.status} by admin ${adminId}`);
+    this.logger.log(
+      `Review ${reviewId} moderated to ${moderateDto.status} by admin ${adminId}`,
+    );
 
     return review;
   }
@@ -87,7 +89,7 @@ export class ReviewModerationService {
     }
 
     const total = await this.reviewRepository.count(query);
-    const reviews = await (this.reviewRepository)
+    const reviews = await this.reviewRepository
       .getModel()
       .find(query)
       .populate('customerId', 'accountId')
@@ -103,4 +105,3 @@ export class ReviewModerationService {
     };
   }
 }
-

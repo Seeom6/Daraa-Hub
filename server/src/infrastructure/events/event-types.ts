@@ -49,4 +49,3 @@ export const NOTIFICATION_FAILED = 'notification.failed';
 export const SECURITY_SUSPICIOUS_LOGIN = 'security.suspicious_login';
 export const SECURITY_FRAUD_DETECTED = 'security.fraud_detected';
 export const SECURITY_ACCOUNT_LOCKED = 'security.account_locked';
-

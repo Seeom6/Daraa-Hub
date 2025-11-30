@@ -2,7 +2,10 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Review, ReviewSchema } from '../../../database/schemas/review.schema';
 import { Order, OrderSchema } from '../../../database/schemas/order.schema';
-import { Product, ProductSchema } from '../../../database/schemas/product.schema';
+import {
+  Product,
+  ProductSchema,
+} from '../../../database/schemas/product.schema';
 import {
   StoreOwnerProfile,
   StoreOwnerProfileSchema,
@@ -16,6 +19,9 @@ import {
   CustomerProfileSchema,
 } from '../../../database/schemas/customer-profile.schema';
 import { ReviewService } from './services/review.service';
+import { ReviewCrudService } from './services/review-crud.service';
+import { ReviewQueryService } from './services/review-query.service';
+import { ReviewVerificationService } from './services/review-verification.service';
 import { ReviewRatingService } from './services/review-rating.service';
 import { ReviewModerationService } from './services/review-moderation.service';
 import { ReviewInteractionService } from './services/review-interaction.service';
@@ -38,6 +44,9 @@ import { ReviewRepository } from './repositories/review.repository';
   controllers: [ReviewController, ReviewAdminController],
   providers: [
     ReviewService,
+    ReviewCrudService,
+    ReviewQueryService,
+    ReviewVerificationService,
     ReviewRatingService,
     ReviewModerationService,
     ReviewInteractionService,
@@ -46,6 +55,9 @@ import { ReviewRepository } from './repositories/review.repository';
   ],
   exports: [
     ReviewService,
+    ReviewCrudService,
+    ReviewQueryService,
+    ReviewVerificationService,
     ReviewRatingService,
     ReviewModerationService,
     ReviewInteractionService,
@@ -53,4 +65,3 @@ import { ReviewRepository } from './repositories/review.repository';
   ],
 })
 export class ReviewModule {}
-

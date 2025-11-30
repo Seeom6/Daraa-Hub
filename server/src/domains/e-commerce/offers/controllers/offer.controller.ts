@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { OfferService } from '../services/offer.service';
 import { CreateOfferDto } from '../dto/create-offer.dto';
 import { UpdateOfferDto } from '../dto/update-offer.dto';
@@ -71,7 +81,10 @@ export class OfferController {
   @Post('store')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner')
-  async createOffer(@CurrentUser() user: any, @Body() createDto: CreateOfferDto) {
+  async createOffer(
+    @CurrentUser() user: any,
+    @Body() createDto: CreateOfferDto,
+  ) {
     const offer = await this.offerService.create(createDto, user.profileId);
     return {
       success: true,
@@ -87,7 +100,10 @@ export class OfferController {
   @Get('store/my')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner')
-  async getMyOffers(@CurrentUser() user: any, @Query() queryDto: QueryOfferDto) {
+  async getMyOffers(
+    @CurrentUser() user: any,
+    @Query() queryDto: QueryOfferDto,
+  ) {
     queryDto.storeId = user.profileId;
     const result = await this.offerService.findAll(queryDto);
     return {
@@ -103,7 +119,11 @@ export class OfferController {
   @Put('store/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner')
-  async updateOffer(@CurrentUser() user: any, @Param('id') id: string, @Body() updateDto: UpdateOfferDto) {
+  async updateOffer(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() updateDto: UpdateOfferDto,
+  ) {
     const offer = await this.offerService.update(id, updateDto, user.profileId);
     return {
       success: true,
@@ -156,4 +176,3 @@ export class OfferController {
     };
   }
 }
-

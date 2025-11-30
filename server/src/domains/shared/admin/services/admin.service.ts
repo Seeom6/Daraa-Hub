@@ -1,39 +1,45 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { AdminProfile, AdminProfileDocument } from '../../../../database/schemas/admin-profile.schema';
+import { Types } from 'mongoose';
+import { AdminProfileDocument } from '../../../../database/schemas/admin-profile.schema';
 import { CreateAdminDto } from '../dto/create-admin.dto';
+import { AdminProfileRepository } from '../repositories/admin-profile.repository';
 
+/**
+ * Admin Service
+ * Handles admin profile management
+ * Uses Repository Pattern for all database operations
+ */
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
   constructor(
-    @InjectModel(AdminProfile.name)
-    private adminProfileModel: Model<AdminProfileDocument>,
+    private readonly adminProfileRepository: AdminProfileRepository,
   ) {}
 
   async create(createAdminDto: CreateAdminDto): Promise<AdminProfileDocument> {
-    const adminProfile = new this.adminProfileModel({
+    const adminProfile = await this.adminProfileRepository.create({
       accountId: new Types.ObjectId(createAdminDto.accountId),
       permissions: createAdminDto.permissions,
       role: createAdminDto.role,
       department: createAdminDto.department,
-    });
+    } as any);
 
     const saved = await adminProfile.save();
-    this.logger.log(`Admin profile created for account: ${createAdminDto.accountId}`);
+    this.logger.log(
+      `Admin profile created for account: ${createAdminDto.accountId}`,
+    );
     return saved;
   }
 
-  async findByAccountId(accountId: string): Promise<AdminProfileDocument | null> {
-    return this.adminProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      .exec();
+  async findByAccountId(
+    accountId: string,
+  ): Promise<AdminProfileDocument | null> {
+    return this.adminProfileRepository.findByAccountId(accountId);
   }
 
   async findById(id: string): Promise<AdminProfileDocument> {
-    const admin = await this.adminProfileModel.findById(id).exec();
+    const admin = await this.adminProfileRepository.findById(id);
     if (!admin) {
       throw new NotFoundException('Admin profile not found');
     }
@@ -45,34 +51,29 @@ export class AdminService {
     department?: string;
     isActive?: boolean;
   }): Promise<AdminProfileDocument[]> {
-    const query: any = {};
-
     if (filters?.role) {
-      query.role = filters.role;
+      return this.adminProfileRepository.findByRole(filters.role as any);
     }
 
     if (filters?.department) {
-      query.department = filters.department;
+      return this.adminProfileRepository.findByDepartment(filters.department);
     }
 
-    if (filters?.isActive !== undefined) {
-      query.isActive = filters.isActive;
+    if (filters?.isActive) {
+      return this.adminProfileRepository.findActive();
     }
 
-    return this.adminProfileModel.find(query).populate('accountId').exec();
+    return this.adminProfileRepository.find({});
   }
 
   async updatePermissions(
     id: string,
     permissions: any,
   ): Promise<AdminProfileDocument> {
-    const admin = await this.adminProfileModel
-      .findByIdAndUpdate(
-        id,
-        { permissions },
-        { new: true },
-      )
-      .exec();
+    const admin = await this.adminProfileRepository.updatePermissions(
+      id,
+      permissions,
+    );
 
     if (!admin) {
       throw new NotFoundException('Admin profile not found');
@@ -86,13 +87,7 @@ export class AdminService {
     id: string,
     role: 'super_admin' | 'admin' | 'moderator' | 'support',
   ): Promise<AdminProfileDocument> {
-    const admin = await this.adminProfileModel
-      .findByIdAndUpdate(
-        id,
-        { role },
-        { new: true },
-      )
-      .exec();
+    const admin = await this.adminProfileRepository.updateRole(id, role);
 
     if (!admin) {
       throw new NotFoundException('Admin profile not found');
@@ -103,13 +98,7 @@ export class AdminService {
   }
 
   async deactivate(id: string): Promise<AdminProfileDocument> {
-    const admin = await this.adminProfileModel
-      .findByIdAndUpdate(
-        id,
-        { isActive: false },
-        { new: true },
-      )
-      .exec();
+    const admin = await this.adminProfileRepository.toggleActive(id, false);
 
     if (!admin) {
       throw new NotFoundException('Admin profile not found');
@@ -120,13 +109,7 @@ export class AdminService {
   }
 
   async activate(id: string): Promise<AdminProfileDocument> {
-    const admin = await this.adminProfileModel
-      .findByIdAndUpdate(
-        id,
-        { isActive: true },
-        { new: true },
-      )
-      .exec();
+    const admin = await this.adminProfileRepository.toggleActive(id, true);
 
     if (!admin) {
       throw new NotFoundException('Admin profile not found');
@@ -143,36 +126,34 @@ export class AdminService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    await this.adminProfileModel
-      .findOneAndUpdate(
-        { accountId: new Types.ObjectId(accountId) },
-        {
-          $push: {
-            activityLog: {
-              action,
-              timestamp: new Date(),
-              ipAddress,
-              userAgent,
-              details,
-            },
-          },
-          lastLoginAt: action === 'login' ? new Date() : undefined,
-        },
-      )
-      .exec();
+    await this.adminProfileRepository.logActivity(
+      accountId,
+      {
+        action,
+        timestamp: new Date(),
+        ipAddress,
+        userAgent,
+        details,
+      },
+      action === 'login',
+    );
   }
 
   async getActivityLog(accountId: string, limit: number = 50): Promise<any[]> {
-    const admin = await this.adminProfileModel
-      .findOne({ accountId: new Types.ObjectId(accountId) })
-      .select('activityLog')
-      .exec();
+    const activityLog = await this.adminProfileRepository.getActivityLog(
+      accountId,
+      limit,
+    );
 
-    if (!admin) {
-      throw new NotFoundException('Admin profile not found');
+    if (!activityLog.length) {
+      const admin =
+        await this.adminProfileRepository.findByAccountId(accountId);
+      if (!admin) {
+        throw new NotFoundException('Admin profile not found');
+      }
     }
 
-    return admin.activityLog.slice(-limit).reverse();
+    return activityLog;
   }
 
   // Helper method to create default permissions based on role
@@ -180,7 +161,13 @@ export class AdminService {
     switch (role) {
       case 'super_admin':
         return {
-          users: { view: true, create: true, edit: true, delete: true, suspend: true },
+          users: {
+            view: true,
+            create: true,
+            edit: true,
+            delete: true,
+            suspend: true,
+          },
           stores: { view: true, approve: true, reject: true, suspend: true },
           couriers: { view: true, approve: true, reject: true, suspend: true },
           products: { view: true, edit: true, delete: true, feature: true },
@@ -195,7 +182,13 @@ export class AdminService {
 
       case 'admin':
         return {
-          users: { view: true, create: true, edit: true, delete: false, suspend: true },
+          users: {
+            view: true,
+            create: true,
+            edit: true,
+            delete: false,
+            suspend: true,
+          },
           stores: { view: true, approve: true, reject: true, suspend: true },
           couriers: { view: true, approve: true, reject: true, suspend: true },
           products: { view: true, edit: true, delete: true, feature: true },
@@ -210,7 +203,13 @@ export class AdminService {
 
       case 'moderator':
         return {
-          users: { view: true, create: false, edit: false, delete: false, suspend: false },
+          users: {
+            view: true,
+            create: false,
+            edit: false,
+            delete: false,
+            suspend: false,
+          },
           stores: { view: true, approve: true, reject: true, suspend: false },
           couriers: { view: true, approve: true, reject: true, suspend: false },
           products: { view: true, edit: true, delete: false, feature: true },
@@ -225,9 +224,20 @@ export class AdminService {
 
       case 'support':
         return {
-          users: { view: true, create: false, edit: false, delete: false, suspend: false },
+          users: {
+            view: true,
+            create: false,
+            edit: false,
+            delete: false,
+            suspend: false,
+          },
           stores: { view: true, approve: false, reject: false, suspend: false },
-          couriers: { view: true, approve: false, reject: false, suspend: false },
+          couriers: {
+            view: true,
+            approve: false,
+            reject: false,
+            suspend: false,
+          },
           products: { view: true, edit: false, delete: false, feature: false },
           orders: { view: true, cancel: false, refund: false },
           payments: { view: false, refund: false },
@@ -243,4 +253,3 @@ export class AdminService {
     }
   }
 }
-

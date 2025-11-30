@@ -11,4 +11,3 @@ export class VerifyOtpDto {
   @Matches(/^\d{6}$/, { message: 'OTP must contain only digits' })
   otp: string;
 }
-

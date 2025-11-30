@@ -1,4 +1,11 @@
-import { IsEnum, IsOptional, IsString, IsNumber, Min, IsMongoId } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsMongoId,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ReferralStatus } from '../../../../database/schemas/referral.schema';
 
@@ -39,4 +46,3 @@ export class QueryReferralDto {
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

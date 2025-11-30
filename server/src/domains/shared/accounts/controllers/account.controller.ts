@@ -46,7 +46,10 @@ export class AccountController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async upgradeRole(@Request() req, @Body() dto: UpgradeRoleDto) {
-    const account = await this.accountProfileService.upgradeRole(req.user.userId, dto.role);
+    const account = await this.accountProfileService.upgradeRole(
+      req.user.userId,
+      dto.role,
+    );
 
     return {
       message: 'Account role upgraded successfully',
@@ -96,4 +99,3 @@ export class AccountController {
     };
   }
 }
-

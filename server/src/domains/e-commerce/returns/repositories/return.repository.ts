@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Return, ReturnDocument } from '../../../../database/schemas/return.schema';
+import {
+  Return,
+  ReturnDocument,
+} from '../../../../database/schemas/return.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()

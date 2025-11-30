@@ -73,22 +73,30 @@ export class DisputeResolution {
 
 @Schema({ timestamps: true })
 export class Dispute {
-  @Prop({ type: Types.ObjectId, ref: 'Order', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Order', required: true })
   orderId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Account', required: true })
   reportedBy: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Account', required: true })
   reportedAgainst: Types.ObjectId;
 
   @Prop({ type: String, enum: Object.values(DisputeType), required: true })
   type: DisputeType;
 
-  @Prop({ type: String, enum: Object.values(DisputePriority), default: DisputePriority.MEDIUM, index: true })
+  @Prop({
+    type: String,
+    enum: Object.values(DisputePriority),
+    default: DisputePriority.MEDIUM,
+  })
   priority: DisputePriority;
 
-  @Prop({ type: String, enum: Object.values(DisputeStatus), default: DisputeStatus.OPEN, index: true })
+  @Prop({
+    type: String,
+    enum: Object.values(DisputeStatus),
+    default: DisputeStatus.OPEN,
+  })
   status: DisputeStatus;
 
   @Prop({ required: true })
@@ -103,7 +111,7 @@ export class Dispute {
   @Prop({ type: DisputeResolution })
   resolution: DisputeResolution;
 
-  @Prop({ type: Types.ObjectId, ref: 'AdminProfile', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'AdminProfile' })
   assignedTo: Types.ObjectId;
 
   @Prop({ type: Date })
@@ -124,4 +132,3 @@ DisputeSchema.index({ reportedBy: 1, status: 1 });
 DisputeSchema.index({ status: 1, priority: -1 });
 DisputeSchema.index({ assignedTo: 1, status: 1 });
 DisputeSchema.index({ createdAt: -1 });
-

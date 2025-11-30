@@ -19,7 +19,9 @@ export class VerificationRepository extends BaseRepository<VerificationRequestDo
   /**
    * Find verification by account ID
    */
-  async findByAccountId(accountId: string): Promise<VerificationRequestDocument | null> {
+  async findByAccountId(
+    accountId: string,
+  ): Promise<VerificationRequestDocument | null> {
     return this.verificationModel
       .findOne({ accountId: new Types.ObjectId(accountId) })
       .sort({ createdAt: -1 })
@@ -34,12 +36,9 @@ export class VerificationRepository extends BaseRepository<VerificationRequestDo
     page: number = 1,
     limit: number = 10,
   ): Promise<{ data: VerificationRequestDocument[]; total: number }> {
-    return this.findWithPagination(
-      { status },
-      page,
-      limit,
-      { sort: { createdAt: -1 } },
-    );
+    return this.findWithPagination({ status }, page, limit, {
+      sort: { createdAt: -1 },
+    });
   }
 
   /**
@@ -82,12 +81,8 @@ export class VerificationRepository extends BaseRepository<VerificationRequestDo
     page: number = 1,
     limit: number = 10,
   ): Promise<{ data: VerificationRequestDocument[]; total: number }> {
-    return this.findWithPagination(
-      { verificationType: type },
-      page,
-      limit,
-      { sort: { createdAt: -1 } },
-    );
+    return this.findWithPagination({ verificationType: type }, page, limit, {
+      sort: { createdAt: -1 },
+    });
   }
 }
-

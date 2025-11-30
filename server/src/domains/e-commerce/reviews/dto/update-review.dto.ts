@@ -33,4 +33,3 @@ export class UpdateReviewDto {
   @IsUrl({}, { each: true })
   images?: string[];
 }
-

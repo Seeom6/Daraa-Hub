@@ -290,4 +290,3 @@ describe('Phase 8: Notifications & Communication (E2E)', () => {
     });
   });
 });
-

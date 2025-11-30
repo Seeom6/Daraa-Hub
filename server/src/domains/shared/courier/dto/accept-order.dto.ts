@@ -8,4 +8,3 @@ export class AcceptOrderDto {
   @IsString()
   notes?: string;
 }
-

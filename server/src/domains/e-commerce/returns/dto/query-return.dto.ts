@@ -27,4 +27,3 @@ export class QueryReturnDto {
   @Min(1)
   limit?: number = 20;
 }
-

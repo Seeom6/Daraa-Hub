@@ -22,13 +22,17 @@ export interface StockMovement {
 
 @Schema({ timestamps: true })
 export class Inventory {
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'ProductVariant', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'ProductVariant' })
   variantId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
   @Prop({ required: true, default: 0, min: 0 })
@@ -89,4 +93,3 @@ InventorySchema.pre('save', function (next) {
   this.availableQuantity = this.quantity - this.reservedQuantity;
   next();
 });
-

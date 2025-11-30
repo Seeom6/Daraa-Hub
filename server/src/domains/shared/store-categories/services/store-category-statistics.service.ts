@@ -1,8 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { StoreCategory, StoreCategoryDocument } from '../../../../database/schemas/store-category.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
+import {
+  StoreCategory,
+  StoreCategoryDocument,
+} from '../../../../database/schemas/store-category.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas/store-owner-profile.schema';
 
 /**
  * Store Category Statistics Service
@@ -60,7 +66,9 @@ export class StoreCategoryStatisticsService {
     const categories = await this.storeCategoryModel.find();
 
     for (const category of categories) {
-      await this.updateCategoryStatistics((category._id as Types.ObjectId).toString());
+      await this.updateCategoryStatistics(
+        (category._id as Types.ObjectId).toString(),
+      );
     }
 
     this.logger.log('Statistics recalculated for all categories');
@@ -101,11 +109,13 @@ export class StoreCategoryStatisticsService {
       }
     }
 
-    const averageRating = storesWithRating > 0 ? totalRating / storesWithRating : 0;
+    const averageRating =
+      storesWithRating > 0 ? totalRating / storesWithRating : 0;
 
     // حساب نقاط الشعبية (popularity score)
     // Formula: (totalOrders * 2) + (totalSales * 0.1) + (averageRating * 100)
-    const popularityScore = (totalOrders * 2) + (totalSales * 0.1) + (averageRating * 100);
+    const popularityScore =
+      totalOrders * 2 + totalSales * 0.1 + averageRating * 100;
 
     // تحديث التصنيف
     await this.storeCategoryModel.findByIdAndUpdate(
@@ -122,4 +132,3 @@ export class StoreCategoryStatisticsService {
     this.logger.log(`Statistics updated for category: ${categoryId}`);
   }
 }
-

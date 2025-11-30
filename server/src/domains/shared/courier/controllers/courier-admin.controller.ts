@@ -97,7 +97,8 @@ export class CourierAdminController {
   @Get('available/:orderId')
   @Roles('admin', 'store_owner')
   async findAvailableCouriersForOrder(@Param('orderId') orderId: string) {
-    const couriers = await this.courierAdminService.findAvailableCouriersForOrder(orderId);
+    const couriers =
+      await this.courierAdminService.findAvailableCouriersForOrder(orderId);
     return {
       success: true,
       data: couriers,
@@ -177,4 +178,3 @@ export class CourierAdminController {
     };
   }
 }
-

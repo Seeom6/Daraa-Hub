@@ -66,7 +66,9 @@ export class SubscriptionPlanRepository extends BaseRepository<SubscriptionPlanD
   /**
    * Increment subscriber count
    */
-  async incrementSubscribers(planId: string): Promise<SubscriptionPlanDocument | null> {
+  async incrementSubscribers(
+    planId: string,
+  ): Promise<SubscriptionPlanDocument | null> {
     return this.planModel.findByIdAndUpdate(
       planId,
       { $inc: { subscriberCount: 1 } },
@@ -77,7 +79,9 @@ export class SubscriptionPlanRepository extends BaseRepository<SubscriptionPlanD
   /**
    * Decrement subscriber count
    */
-  async decrementSubscribers(planId: string): Promise<SubscriptionPlanDocument | null> {
+  async decrementSubscribers(
+    planId: string,
+  ): Promise<SubscriptionPlanDocument | null> {
     return this.planModel.findByIdAndUpdate(
       planId,
       { $inc: { subscriberCount: -1 } },
@@ -85,4 +89,3 @@ export class SubscriptionPlanRepository extends BaseRepository<SubscriptionPlanD
     );
   }
 }
-

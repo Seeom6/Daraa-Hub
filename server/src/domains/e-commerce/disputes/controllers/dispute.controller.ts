@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
@@ -55,7 +65,11 @@ export class DisputeController {
     @Req() req: any,
   ) {
     const userId = req.user.profileId;
-    const dispute = await this.disputeService.addMessage(id, addMessageDto, userId);
+    const dispute = await this.disputeService.addMessage(
+      id,
+      addMessageDto,
+      userId,
+    );
     return {
       success: true,
       data: dispute,
@@ -76,7 +90,10 @@ export class DisputeController {
 
   @Put('admin/:id')
   @Roles('admin')
-  async updateDispute(@Param('id') id: string, @Body() updateDisputeDto: UpdateDisputeDto) {
+  async updateDispute(
+    @Param('id') id: string,
+    @Body() updateDisputeDto: UpdateDisputeDto,
+  ) {
     const dispute = await this.disputeService.update(id, updateDisputeDto);
     return {
       success: true,
@@ -93,7 +110,11 @@ export class DisputeController {
     @Req() req: any,
   ) {
     const adminId = req.user.profileId;
-    const dispute = await this.disputeService.resolve(id, resolveDisputeDto, adminId);
+    const dispute = await this.disputeService.resolve(
+      id,
+      resolveDisputeDto,
+      adminId,
+    );
     return {
       success: true,
       data: dispute,
@@ -123,4 +144,3 @@ export class DisputeController {
     };
   }
 }
-

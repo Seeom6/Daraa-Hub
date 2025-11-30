@@ -4,12 +4,13 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Cart, CartDocument } from '../../../database/schemas/cart.schema';
-import { Product, ProductDocument } from '../../../database/schemas/product.schema';
-import { ProductVariant, ProductVariantDocument } from '../../../database/schemas/product-variant.schema';
-import { Inventory, InventoryDocument } from '../../../database/schemas/inventory.schema';
+import { Types } from 'mongoose';
+import { CartDocument } from '../../../database/schemas/cart.schema';
+import { ProductVariantDocument } from '../../../database/schemas/product-variant.schema';
+import { CartRepository } from './repositories/cart.repository';
+import { ProductRepository } from '../products/repositories/product.repository';
+import { ProductVariantRepository } from '../products/repositories/product-variant.repository';
+import { InventoryRepository } from '../inventory/repositories/inventory.repository';
 import { AddToCartDto, UpdateCartItemDto } from './dto';
 
 @Injectable()
@@ -17,30 +18,26 @@ export class CartService {
   private readonly logger = new Logger(CartService.name);
 
   constructor(
-    @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
-    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-    @InjectModel(ProductVariant.name) private productVariantModel: Model<ProductVariantDocument>,
-    @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
+    private readonly cartRepository: CartRepository,
+    private readonly productRepository: ProductRepository,
+    private readonly productVariantRepository: ProductVariantRepository,
+    private readonly inventoryRepository: InventoryRepository,
   ) {}
 
   /**
    * Get or create cart for customer
    */
   async getOrCreateCart(customerId: string): Promise<CartDocument> {
-    let cart = await this.cartModel
-      .findOne({ customerId: new Types.ObjectId(customerId) })
-      .populate('items.productId', 'name slug price images status')
-      .populate('items.variantId', 'name price images')
-      .exec();
+    let cart = await this.cartRepository.findByCustomerId(customerId);
 
     if (!cart) {
-      cart = await this.cartModel.create({
+      cart = await this.cartRepository.create({
         customerId: new Types.ObjectId(customerId),
         items: [],
         subtotal: 0,
         discount: 0,
         total: 0,
-      });
+      } as any);
     }
 
     return cart;
@@ -49,11 +46,14 @@ export class CartService {
   /**
    * Add item to cart
    */
-  async addToCart(customerId: string, addToCartDto: AddToCartDto): Promise<CartDocument> {
+  async addToCart(
+    customerId: string,
+    addToCartDto: AddToCartDto,
+  ): Promise<CartDocument> {
     const { productId, variantId, quantity, selectedOptions } = addToCartDto;
 
     // Validate product
-    const product = await this.productModel.findById(productId).exec();
+    const product = await this.productRepository.findById(productId);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -65,21 +65,20 @@ export class CartService {
     // Validate variant if provided
     let variant: ProductVariantDocument | null = null;
     if (variantId) {
-      variant = await this.productVariantModel.findById(variantId).exec();
+      variant = await this.productVariantRepository.findById(variantId);
       if (!variant || variant.productId.toString() !== productId) {
         throw new NotFoundException('Product variant not found');
       }
     }
 
-    // Check inventory
-    const inventory = await this.inventoryModel
-      .findOne({
-        productId: new Types.ObjectId(productId),
-        ...(variantId && { variantId: new Types.ObjectId(variantId) }),
-      })
-      .exec();
+    // Check inventory availability
+    const hasStock = await this.inventoryRepository.checkAvailability(
+      productId,
+      quantity,
+      variantId,
+    );
 
-    if (!inventory || inventory.availableQuantity < quantity) {
+    if (!hasStock) {
       throw new BadRequestException('Insufficient stock');
     }
 
@@ -90,20 +89,28 @@ export class CartService {
     const existingItemIndex = cart.items.findIndex(
       (item) =>
         item.productId.toString() === productId &&
-        (variantId ? item.variantId?.toString() === variantId : !item.variantId),
+        (variantId
+          ? item.variantId?.toString() === variantId
+          : !item.variantId),
     );
 
     const price = variant?.price || product.price;
     const pointsPrice = variant?.pointsPrice || product.pointsPrice;
 
     if (existingItemIndex > -1) {
-      // Update quantity
-      cart.items[existingItemIndex].quantity += quantity;
-      
-      // Check stock again
-      if (inventory.availableQuantity < cart.items[existingItemIndex].quantity) {
-        throw new BadRequestException('Insufficient stock for requested quantity');
+      // Update quantity - need to validate total quantity doesn't exceed stock
+      const newQuantity = cart.items[existingItemIndex].quantity + quantity;
+      const stockAvailable = await this.inventoryRepository.checkAvailability(
+        productId,
+        newQuantity,
+        variantId,
+      );
+      if (!stockAvailable) {
+        throw new BadRequestException(
+          'Insufficient stock for requested quantity',
+        );
       }
+      cart.items[existingItemIndex].quantity = newQuantity;
     } else {
       // Add new item
       cart.items.push({
@@ -120,7 +127,9 @@ export class CartService {
 
     await cart.save();
 
-    this.logger.log(`Added product ${productId} to cart for customer ${customerId}`);
+    this.logger.log(
+      `Added product ${productId} to cart for customer ${customerId}`,
+    );
 
     return this.getOrCreateCart(customerId);
   }
@@ -134,41 +143,31 @@ export class CartService {
     variantId: string | undefined,
     updateDto: UpdateCartItemDto,
   ): Promise<CartDocument> {
-    // Get cart without populate to avoid issues with ObjectId comparison
-    let cart = await this.cartModel
-      .findOne({ customerId: new Types.ObjectId(customerId) })
-      .exec();
-
-    if (!cart) {
-      throw new NotFoundException('Cart not found');
-    }
-
-    const itemIndex = cart.items.findIndex(
-      (item) =>
-        item.productId.toString() === productId &&
-        (variantId ? item.variantId?.toString() === variantId : !item.variantId),
+    // Check inventory availability
+    const hasStock = await this.inventoryRepository.checkAvailability(
+      productId,
+      updateDto.quantity,
+      variantId,
     );
 
-    if (itemIndex === -1) {
-      throw new NotFoundException('Item not found in cart');
-    }
-
-    // Check inventory
-    const inventory = await this.inventoryModel
-      .findOne({
-        productId: new Types.ObjectId(productId),
-        ...(variantId && { variantId: new Types.ObjectId(variantId) }),
-      })
-      .exec();
-
-    if (!inventory || inventory.availableQuantity < updateDto.quantity) {
+    if (!hasStock) {
       throw new BadRequestException('Insufficient stock');
     }
 
-    cart.items[itemIndex].quantity = updateDto.quantity;
-    await cart.save();
+    const updatedCart = await this.cartRepository.updateItemQuantity(
+      customerId,
+      productId,
+      updateDto.quantity,
+      variantId,
+    );
 
-    this.logger.log(`Updated cart item ${productId} for customer ${customerId}`);
+    if (!updatedCart) {
+      throw new NotFoundException('Cart or item not found');
+    }
+
+    this.logger.log(
+      `Updated cart item ${productId} for customer ${customerId}`,
+    );
 
     return this.getOrCreateCart(customerId);
   }
@@ -181,19 +180,11 @@ export class CartService {
     productId: string,
     variantId?: string,
   ): Promise<CartDocument> {
-    const cart = await this.getOrCreateCart(customerId);
+    await this.cartRepository.removeItem(customerId, productId, variantId);
 
-    cart.items = cart.items.filter(
-      (item) =>
-        !(
-          item.productId.toString() === productId &&
-          (variantId ? item.variantId?.toString() === variantId : !item.variantId)
-        ),
+    this.logger.log(
+      `Removed product ${productId} from cart for customer ${customerId}`,
     );
-
-    await cart.save();
-
-    this.logger.log(`Removed product ${productId} from cart for customer ${customerId}`);
 
     return this.getOrCreateCart(customerId);
   }
@@ -202,13 +193,11 @@ export class CartService {
    * Clear cart
    */
   async clearCart(customerId: string): Promise<CartDocument> {
-    const cart = await this.getOrCreateCart(customerId);
-    cart.items = [];
-    await cart.save();
+    const cart = await this.cartRepository.clearCart(customerId);
 
     this.logger.log(`Cleared cart for customer ${customerId}`);
 
-    return cart;
+    return cart || this.getOrCreateCart(customerId);
   }
 
   /**
@@ -218,4 +207,3 @@ export class CartService {
     return this.getOrCreateCart(customerId);
   }
 }
-

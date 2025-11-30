@@ -1,6 +1,16 @@
-import { IsEnum, IsOptional, IsString, IsArray, ValidateNested, IsMongoId } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsMongoId,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { DisputeStatus, DisputePriority } from '../../../../database/schemas/dispute.schema';
+import {
+  DisputeStatus,
+  DisputePriority,
+} from '../../../../database/schemas/dispute.schema';
 import { EvidenceDto } from './create-dispute.dto';
 
 export class UpdateDisputeDto {
@@ -26,4 +36,3 @@ export class UpdateDisputeDto {
   @IsMongoId()
   assignedTo?: string;
 }
-

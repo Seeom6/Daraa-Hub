@@ -27,8 +27,14 @@ export class PaymentController {
   @Post('process')
   @Roles('customer', 'store_owner', 'admin')
   @HttpCode(HttpStatus.OK)
-  async processPayment(@CurrentUser() user: any, @Body() processDto: ProcessPaymentDto) {
-    const payment = await this.paymentService.processPayment(processDto, user.userId);
+  async processPayment(
+    @CurrentUser() user: any,
+    @Body() processDto: ProcessPaymentDto,
+  ) {
+    const payment = await this.paymentService.processPayment(
+      processDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Payment processed successfully',
@@ -57,7 +63,9 @@ export class PaymentController {
   @Get('my-payments')
   @Roles('customer')
   async getMyPayments(@CurrentUser() user: any) {
-    const payments = await this.paymentService.getCustomerPayments(user.profileId);
+    const payments = await this.paymentService.getCustomerPayments(
+      user.profileId,
+    );
     return {
       success: true,
       data: payments,
@@ -118,7 +126,11 @@ export class PaymentController {
     @Param('id') id: string,
     @Body() refundDto: RefundPaymentDto,
   ) {
-    const payment = await this.paymentService.refundPayment(id, refundDto, user.userId);
+    const payment = await this.paymentService.refundPayment(
+      id,
+      refundDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Payment refunded successfully',
@@ -126,4 +138,3 @@ export class PaymentController {
     };
   }
 }
-

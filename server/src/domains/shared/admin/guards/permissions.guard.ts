@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AdminService } from '../services/admin.service';
 
@@ -6,7 +11,7 @@ export const PERMISSIONS_KEY = 'permissions';
 
 export interface RequiredPermission {
   resource: string; // e.g., 'users', 'stores', 'couriers'
-  action: string;   // e.g., 'view', 'approve', 'suspend'
+  action: string; // e.g., 'view', 'approve', 'suspend'
 }
 
 @Injectable()
@@ -17,10 +22,9 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<RequiredPermission[]>(
-      PERMISSIONS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride<
+      RequiredPermission[]
+    >(PERMISSIONS_KEY, [context.getHandler(), context.getClass()]);
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true; // No specific permissions required
@@ -75,4 +79,3 @@ export class PermissionsGuard implements CanActivate {
     return permissions[resource][action] === true;
   }
 }
-

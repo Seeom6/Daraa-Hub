@@ -26,7 +26,9 @@ describe('Phase 6: Dispute & Return Management (E2E)', () => {
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
     app.setGlobalPrefix('api');
 
     await app.init();
@@ -83,7 +85,10 @@ describe('Phase 6: Dispute & Return Management (E2E)', () => {
       .get('/api/auth/me')
       .set('Cookie', storeOwnerCookies);
 
-    if (storeOwnerMeResponse.body.data && storeOwnerMeResponse.body.data.profileId) {
+    if (
+      storeOwnerMeResponse.body.data &&
+      storeOwnerMeResponse.body.data.profileId
+    ) {
       storeId = storeOwnerMeResponse.body.data.profileId;
     } else {
       throw new Error('Failed to get store owner profileId');
@@ -375,4 +380,3 @@ describe('Phase 6: Dispute & Return Management (E2E)', () => {
     });
   });
 });
-

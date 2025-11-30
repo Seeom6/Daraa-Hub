@@ -199,7 +199,13 @@ export class AdminProfile {
 
   @Prop({
     type: String,
-    enum: ['operations', 'customer_service', 'finance', 'marketing', 'technical'],
+    enum: [
+      'operations',
+      'customer_service',
+      'finance',
+      'marketing',
+      'technical',
+    ],
   })
   department?: string;
 
@@ -216,8 +222,7 @@ export class AdminProfile {
 export const AdminProfileSchema = SchemaFactory.createForClass(AdminProfile);
 
 // Indexes
-AdminProfileSchema.index({ accountId: 1 });
+// Note: accountId already has unique: true in @Prop, which creates an index automatically
 AdminProfileSchema.index({ role: 1 });
 AdminProfileSchema.index({ department: 1 });
 AdminProfileSchema.index({ isActive: 1 });
-

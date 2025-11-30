@@ -5,7 +5,7 @@ export type ProductVariantDocument = ProductVariant & Document;
 
 @Schema({ timestamps: true })
 export class ProductVariant {
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId: Types.ObjectId;
 
   @Prop({ required: true, trim: true })
@@ -32,17 +32,17 @@ export class ProductVariant {
   @Prop({ default: 0, min: 0 })
   stock: number;
 
-  @Prop({ default: true, index: true })
+  @Prop({ default: true })
   isActive: boolean;
 
   createdAt: Date;
   updatedAt: Date;
 }
 
-export const ProductVariantSchema = SchemaFactory.createForClass(ProductVariant);
+export const ProductVariantSchema =
+  SchemaFactory.createForClass(ProductVariant);
 
 // Indexes
 ProductVariantSchema.index({ productId: 1 });
-ProductVariantSchema.index({ sku: 1 }, { unique: true, sparse: true });
+// Note: sku already has unique: true, sparse: true in @Prop, which creates an index automatically
 ProductVariantSchema.index({ isActive: 1 });
-

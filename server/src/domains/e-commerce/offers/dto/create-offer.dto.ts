@@ -1,4 +1,16 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsBoolean, IsArray, IsMongoId, IsDate, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsArray,
+  IsMongoId,
+  IsDate,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { DiscountType } from '../../../../database/schemas/offer.schema';
 
@@ -53,4 +65,3 @@ export class CreateOfferDto {
   @IsOptional()
   isActive?: boolean;
 }
-

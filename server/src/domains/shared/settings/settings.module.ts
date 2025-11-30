@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { SystemSettings, SystemSettingsSchema } from '../../../database/schemas/system-settings.schema';
+import {
+  SystemSettings,
+  SystemSettingsSchema,
+} from '../../../database/schemas/system-settings.schema';
 import { SettingsController } from './controllers/settings.controller';
 import { SettingsService } from './services/settings.service';
+import { SettingsCacheService } from './services/settings-cache.service';
+import { SettingsDefaultsService } from './services/settings-defaults.service';
 import { RedisModule } from '../../../infrastructure/redis/redis.module';
 import { AdminModule } from '../admin/admin.module';
 import { SystemSettingsRepository } from './repositories/settings.repository';
@@ -16,8 +21,20 @@ import { SystemSettingsRepository } from './repositories/settings.repository';
     AdminModule,
   ],
   controllers: [SettingsController],
-  providers: [SettingsService, SystemSettingsRepository],
-  exports: [SettingsService, SystemSettingsRepository],
+  providers: [
+    // Repository
+    SystemSettingsRepository,
+    // Specialized Services
+    SettingsCacheService,
+    SettingsDefaultsService,
+    // Facade Service
+    SettingsService,
+  ],
+  exports: [
+    SettingsService,
+    SettingsCacheService,
+    SettingsDefaultsService,
+    SystemSettingsRepository,
+  ],
 })
 export class SettingsModule {}
-

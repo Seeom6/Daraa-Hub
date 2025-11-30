@@ -12,19 +12,19 @@ export class Account {
   @Prop({ required: true, trim: true })
   fullName: string;
 
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, unique: true })
   phone: string;
 
-  @Prop({ sparse: true, index: true })
+  @Prop({ sparse: true })
   email?: string;
 
   @Prop()
   passwordHash?: string;
 
-  @Prop({ 
-    type: String, 
-    enum: ['customer', 'store_owner', 'courier', 'admin'], 
-    default: 'customer' 
+  @Prop({
+    type: String,
+    enum: ['customer', 'store_owner', 'courier', 'admin'],
+    default: 'customer',
   })
   role: 'customer' | 'store_owner' | 'courier' | 'admin';
 
@@ -58,9 +58,18 @@ export class Account {
 
   @Prop({
     type: String,
-    enum: ['CustomerProfile', 'StoreOwnerProfile', 'CourierProfile', 'AdminProfile']
+    enum: [
+      'CustomerProfile',
+      'StoreOwnerProfile',
+      'CourierProfile',
+      'AdminProfile',
+    ],
   })
-  roleProfileRef?: 'CustomerProfile' | 'StoreOwnerProfile' | 'CourierProfile' | 'AdminProfile';
+  roleProfileRef?:
+    | 'CustomerProfile'
+    | 'StoreOwnerProfile'
+    | 'CourierProfile'
+    | 'AdminProfile';
 
   // Last login tracking
   @Prop()
@@ -76,10 +85,9 @@ export class Account {
 export const AccountSchema = SchemaFactory.createForClass(Account);
 
 // Indexes for performance
-AccountSchema.index({ phone: 1 });
+// Note: phone already has unique: true in @Prop, which creates an index automatically
 AccountSchema.index({ email: 1 });
 AccountSchema.index({ role: 1 });
 AccountSchema.index({ isActive: 1, isVerified: 1 });
 AccountSchema.index({ isSuspended: 1 });
 AccountSchema.index({ suspensionExpiresAt: 1 });
-

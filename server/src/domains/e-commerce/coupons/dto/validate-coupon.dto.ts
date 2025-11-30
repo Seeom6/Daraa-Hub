@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsNumber, IsOptional, IsMongoId, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsMongoId,
+  Min,
+} from 'class-validator';
 
 export class ValidateCouponDto {
   @IsString()
@@ -26,4 +33,3 @@ export class ValidateCouponDto {
   @IsOptional()
   productId?: string;
 }
-

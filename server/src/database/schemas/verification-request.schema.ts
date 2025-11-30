@@ -39,34 +39,37 @@ export class VerificationDocument {
  */
 @Schema({ timestamps: true })
 export class VerificationRequest {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Account', required: true })
   accountId: Types.ObjectId;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['store_owner', 'courier'],
     required: true,
-    index: true,
   })
   applicantType: 'store_owner' | 'courier';
 
   @Prop({ type: Types.ObjectId, refPath: 'profileModel', required: true })
   profileId: Types.ObjectId;
 
-  @Prop({ 
+  @Prop({
     type: String,
     enum: ['StoreOwnerProfile', 'CourierProfile'],
     required: true,
   })
   profileModel: 'StoreOwnerProfile' | 'CourierProfile';
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['pending', 'under_review', 'approved', 'rejected', 'info_required'],
     default: 'pending',
-    index: true,
   })
-  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'info_required';
+  status:
+    | 'pending'
+    | 'under_review'
+    | 'approved'
+    | 'rejected'
+    | 'info_required';
 
   @Prop({ type: [VerificationDocument], default: [] })
   documents: VerificationDocument[];
@@ -149,12 +152,16 @@ export class VerificationRequest {
   updatedAt: Date;
 }
 
-export const VerificationRequestSchema = SchemaFactory.createForClass(VerificationRequest);
+export const VerificationRequestSchema =
+  SchemaFactory.createForClass(VerificationRequest);
 
 // Indexes
 VerificationRequestSchema.index({ accountId: 1, status: 1 }); // User's verification status
-VerificationRequestSchema.index({ applicantType: 1, status: 1, submittedAt: -1 }); // Admin review queue
+VerificationRequestSchema.index({
+  applicantType: 1,
+  status: 1,
+  submittedAt: -1,
+}); // Admin review queue
 VerificationRequestSchema.index({ status: 1, submittedAt: -1 }); // All pending verifications
 VerificationRequestSchema.index({ reviewedBy: 1, reviewedAt: -1 }); // Admin's reviewed requests
 VerificationRequestSchema.index({ createdAt: -1 });
-

@@ -18,4 +18,3 @@ export class RegisterDeviceTokenDto {
     model?: string;
   };
 }
-

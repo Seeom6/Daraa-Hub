@@ -1,6 +1,10 @@
 import { IsOptional, IsEnum, IsMongoId, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DisputeStatus, DisputeType, DisputePriority } from '../../../../database/schemas/dispute.schema';
+import {
+  DisputeStatus,
+  DisputeType,
+  DisputePriority,
+} from '../../../../database/schemas/dispute.schema';
 
 export class QueryDisputeDto {
   @IsOptional()
@@ -39,4 +43,3 @@ export class QueryDisputeDto {
   @Min(1)
   limit?: number = 20;
 }
-

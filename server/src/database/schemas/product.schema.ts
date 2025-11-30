@@ -11,21 +11,25 @@ export enum ProductStatus {
 }
 
 export enum ProductUnit {
-  PIECE = 'piece',     // قطعة
-  KG = 'kg',          // كيلوغرام
-  GRAM = 'gram',      // غرام
-  METER = 'meter',    // متر
-  LITER = 'liter',    // لتر
-  BOX = 'box',        // صندوق
-  PACK = 'pack',      // علبة
+  PIECE = 'piece', // قطعة
+  KG = 'kg', // كيلوغرام
+  GRAM = 'gram', // غرام
+  METER = 'meter', // متر
+  LITER = 'liter', // لتر
+  BOX = 'box', // صندوق
+  PACK = 'pack', // علبة
 }
 
 @Schema({ timestamps: true })
 export class Product {
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Category', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
   categoryId: Types.ObjectId;
 
   @Prop({ required: true, trim: true })
@@ -70,7 +74,7 @@ export class Product {
   @Prop({ trim: true })
   mainImage?: string;
 
-  @Prop({ type: [String], default: [], index: true })
+  @Prop({ type: [String], default: [] })
   tags: string[];
 
   @Prop({ type: Map, of: String, default: {} })
@@ -79,10 +83,14 @@ export class Product {
   @Prop({ default: false })
   hasVariants: boolean;
 
-  @Prop({ type: String, enum: ProductStatus, default: ProductStatus.DRAFT, index: true })
+  @Prop({
+    type: String,
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
+  })
   status: ProductStatus;
 
-  @Prop({ default: false, index: true })
+  @Prop({ default: false })
   isFeatured: boolean;
 
   @Prop({ default: 0, min: 0, max: 5 })
@@ -115,8 +123,7 @@ export const ProductSchema = SchemaFactory.createForClass(Product);
 // Indexes
 ProductSchema.index({ storeId: 1, status: 1 });
 ProductSchema.index({ categoryId: 1, status: 1 });
-ProductSchema.index({ slug: 1 }, { unique: true });
-ProductSchema.index({ sku: 1 }, { unique: true, sparse: true });
+// Note: slug and sku already have unique: true in @Prop, which creates indexes automatically
 ProductSchema.index({ status: 1, isFeatured: -1 });
 ProductSchema.index({ rating: -1 });
 ProductSchema.index({ soldCount: -1 });
@@ -141,4 +148,3 @@ ProductSchema.virtual('variants', {
 // Ensure virtuals are included in JSON
 ProductSchema.set('toJSON', { virtuals: true });
 ProductSchema.set('toObject', { virtuals: true });
-

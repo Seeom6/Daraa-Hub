@@ -8,14 +8,14 @@ import { getConnectionToken } from '@nestjs/mongoose';
 
 /**
  * Phase 4: Reviews & Ratings System (E2E Tests)
- * 
+ *
  * Test Coverage:
  * 1. Product Reviews (6 tests)
  * 2. Store Reviews (4 tests)
  * 3. Courier Reviews (4 tests)
  * 4. Review Management (5 tests)
  * 5. Admin Moderation (3 tests)
- * 
+ *
  * Total: 22 E2E tests
  */
 describe('Phase 4: Reviews & Ratings System (E2E)', () => {
@@ -85,7 +85,9 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       });
 
     const customerCookies = customerLoginResponse.headers['set-cookie'];
-    customerCookie = Array.isArray(customerCookies) ? customerCookies : [customerCookies];
+    customerCookie = Array.isArray(customerCookies)
+      ? customerCookies
+      : [customerCookies];
 
     // Get customer profile ID
     const customerMeResponse = await request(app.getHttpServer())
@@ -107,7 +109,9 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       });
 
     const storeOwnerCookies = storeOwnerLoginResponse.headers['set-cookie'];
-    storeOwnerCookie = Array.isArray(storeOwnerCookies) ? storeOwnerCookies : [storeOwnerCookies];
+    storeOwnerCookie = Array.isArray(storeOwnerCookies)
+      ? storeOwnerCookies
+      : [storeOwnerCookies];
 
     // Get store profile ID
     const storeMeResponse = await request(app.getHttpServer())
@@ -129,7 +133,9 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       });
 
     const courierCookies = courierLoginResponse.headers['set-cookie'];
-    courierCookie = Array.isArray(courierCookies) ? courierCookies : [courierCookies];
+    courierCookie = Array.isArray(courierCookies)
+      ? courierCookies
+      : [courierCookies];
 
     // Get courier profile ID
     const courierMeResponse = await request(app.getHttpServer())
@@ -147,7 +153,11 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       .get('/api/products')
       .query({ page: 1, limit: 1 });
 
-    if (productsResponse.body.data && Array.isArray(productsResponse.body.data) && productsResponse.body.data.length > 0) {
+    if (
+      productsResponse.body.data &&
+      Array.isArray(productsResponse.body.data) &&
+      productsResponse.body.data.length > 0
+    ) {
       productId = productsResponse.body.data[0]._id;
     } else {
       throw new Error('No products found for testing');
@@ -375,7 +385,9 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.reviews).toBeDefined();
-      expect(response.body.data.reviews.every((r: any) => r.rating === 5)).toBe(true);
+      expect(response.body.data.reviews.every((r: any) => r.rating === 5)).toBe(
+        true,
+      );
     });
 
     it('2.4 should add store response to store review (Store Owner)', async () => {
@@ -383,7 +395,8 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
         .post(`/api/reviews/${storeReviewId}/response`)
         .set('Cookie', storeOwnerCookie)
         .send({
-          message: 'Thank you for choosing our store! We look forward to serving you again.',
+          message:
+            'Thank you for choosing our store! We look forward to serving you again.',
         });
 
       expect(response.status).toBe(200);
@@ -434,7 +447,11 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.reviews).toBeDefined();
-      expect(response.body.data.reviews.every((r: any) => r.isVerifiedPurchase === true)).toBe(true);
+      expect(
+        response.body.data.reviews.every(
+          (r: any) => r.isVerifiedPurchase === true,
+        ),
+      ).toBe(true);
     });
 
     it('3.4 should not allow store response to courier review (Store Owner)', async () => {
@@ -446,7 +463,9 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
         });
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Cannot respond to courier reviews');
+      expect(response.body.message).toContain(
+        'Cannot respond to courier reviews',
+      );
     });
   });
 
@@ -544,7 +563,9 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.reviews).toBeDefined();
-      expect(response.body.data.reviews.every((r: any) => r.status === 'approved')).toBe(true);
+      expect(
+        response.body.data.reviews.every((r: any) => r.status === 'approved'),
+      ).toBe(true);
     });
 
     it('5.3 should moderate review (Admin)', async () => {
@@ -563,4 +584,3 @@ describe('Phase 4: Reviews & Ratings System (E2E)', () => {
     });
   });
 });
-

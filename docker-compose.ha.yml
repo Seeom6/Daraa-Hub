@@ -1,0 +1,152 @@
+# ============================================
+# Daraa Platform - High Availability Configuration
+# ============================================
+# This file extends docker-compose.yml for production HA setup
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.ha.yml up -d
+#
+# Features:
+# - MongoDB Replica Set (Primary + Secondary + Arbiter)
+# - Redis with persistence
+# - Nginx Load Balancer
+# - Multiple server instances
+
+version: '3.8'
+
+services:
+  # ============================================
+  # MongoDB Replica Set
+  # ============================================
+  mongodb-primary:
+    image: mongo:7.0
+    container_name: daraa-mongodb-primary
+    restart: unless-stopped
+    command: --replSet rs0 --bind_ip_all --auth --keyFile /etc/mongo/mongo-keyfile
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-DaraaSecurePassword2024}
+    volumes:
+      - daraa-mongodb-primary-data:/data/db
+      - ./scripts/mongo-init:/docker-entrypoint-initdb.d:ro
+      - ./secrets/mongo-keyfile:/etc/mongo/mongo-keyfile:ro
+      - ./backups/mongodb:/backups
+    networks:
+      - daraa-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh -u $${MONGO_ROOT_USERNAME} -p $${MONGO_ROOT_PASSWORD} --authenticationDatabase admin localhost:27017/daraa --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  mongodb-secondary:
+    image: mongo:7.0
+    container_name: daraa-mongodb-secondary
+    restart: unless-stopped
+    command: --replSet rs0 --bind_ip_all --auth --keyFile /etc/mongo/mongo-keyfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-DaraaSecurePassword2024}
+    volumes:
+      - daraa-mongodb-secondary-data:/data/db
+      - ./secrets/mongo-keyfile:/etc/mongo/mongo-keyfile:ro
+    networks:
+      - daraa-network
+    depends_on:
+      - mongodb-primary
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  mongodb-arbiter:
+    image: mongo:7.0
+    container_name: daraa-mongodb-arbiter
+    restart: unless-stopped
+    command: --replSet rs0 --bind_ip_all --auth --keyFile /etc/mongo/mongo-keyfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-DaraaSecurePassword2024}
+    volumes:
+      - ./secrets/mongo-keyfile:/etc/mongo/mongo-keyfile:ro
+    networks:
+      - daraa-network
+    depends_on:
+      - mongodb-primary
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================
+  # Nginx Load Balancer
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: daraa-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    networks:
+      - daraa-network
+    depends_on:
+      - server-1
+      - server-2
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # Server Instances (Load Balanced)
+  # ============================================
+  server-1:
+    extends:
+      file: docker-compose.yml
+      service: server
+    container_name: daraa-server-1
+    ports:
+      - "3001:3001"
+    environment:
+      INSTANCE_ID: server-1
+      MONGODB_URI: mongodb://${MONGO_APP_USERNAME:-daraa_app}:${MONGO_APP_PASSWORD:-DaraaAppPassword2024}@daraa-mongodb-primary:27017,daraa-mongodb-secondary:27017/daraa?authSource=daraa&replicaSet=rs0
+
+  server-2:
+    extends:
+      file: docker-compose.yml
+      service: server
+    container_name: daraa-server-2
+    ports:
+      - "3002:3001"
+    environment:
+      INSTANCE_ID: server-2
+      MONGODB_URI: mongodb://${MONGO_APP_USERNAME:-daraa_app}:${MONGO_APP_PASSWORD:-DaraaAppPassword2024}@daraa-mongodb-primary:27017,daraa-mongodb-secondary:27017/daraa?authSource=daraa&replicaSet=rs0
+
+# ============================================
+# Additional Volumes for HA
+# ============================================
+volumes:
+  daraa-mongodb-primary-data:
+    driver: local
+  daraa-mongodb-secondary-data:
+    driver: local
+

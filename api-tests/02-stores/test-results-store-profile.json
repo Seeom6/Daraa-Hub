@@ -1,0 +1,43 @@
+﻿{
+    "StartTime":  {
+                      "value":  "\/Date(1764486249675)\/",
+                      "DisplayHint":  2,
+                      "DateTime":  "Sunday, November 30, 2025 10:04:09 AM"
+                  },
+    "Passed":  2,
+    "TestSuite":  "Store Profile Management",
+    "Skipped":  0,
+    "Tests":  [
+                  {
+                      "Name":  "Get empty store profile",
+                      "Timestamp":  "2025-11-30 10:04:11",
+                      "Duration":  34.79,
+                      "Endpoint":  "GET /account/store-profile",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Update store profile",
+                      "Timestamp":  "2025-11-30 10:04:11",
+                      "Duration":  41.2,
+                      "Endpoint":  "PUT /account/store-profile",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Verify store profile update",
+                      "Timestamp":  "2025-11-30 10:04:11",
+                      "Duration":  0,
+                      "Endpoint":  "GET /account/store-profile",
+                      "Status":  "failed",
+                      "ErrorMessage":  "Store name mismatch"
+                  }
+              ],
+    "EndTime":  {
+                    "value":  "\/Date(1764486251841)\/",
+                    "DisplayHint":  2,
+                    "DateTime":  "Sunday, November 30, 2025 10:04:11 AM"
+                },
+    "TotalTests":  3,
+    "Failed":  1
+}

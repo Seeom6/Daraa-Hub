@@ -6,6 +6,7 @@ import {
   IsObject,
   ValidateNested,
   IsNumber,
+  IsBoolean,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -27,6 +28,10 @@ export class DeliveryAddressDto {
   @IsOptional()
   @IsString()
   district?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  zoneId?: string; // منطقة التوصيل
 
   @IsOptional()
   @IsObject()
@@ -63,5 +68,13 @@ export class CreateOrderDto {
   @IsNumber()
   @Min(0)
   pointsToUse?: number; // Loyalty points to use for payment
-}
 
+  @IsOptional()
+  @IsBoolean()
+  payFromWallet?: boolean; // استخدام المحفظة للدفع
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  walletAmount?: number; // المبلغ المطلوب من المحفظة (للدفع المختلط)
+}

@@ -20,4 +20,10 @@ export * from './notification.schema';
 export * from './notification-template.schema';
 export * from './notification-preference.schema';
 export * from './device-token.schema';
-
+export * from './address.schema';
+export * from './wallet.schema';
+export * from './wallet-transaction.schema';
+export * from './commission.schema';
+export * from './commission-config.schema';
+export * from './delivery-zone.schema';
+export * from './store-delivery-zone.schema';

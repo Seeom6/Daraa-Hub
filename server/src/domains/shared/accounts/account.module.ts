@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { AccountController } from './controllers/account.controller';
@@ -16,14 +16,13 @@ import {
   StoreOwnerProfileSchema,
   CourierProfile,
   CourierProfileSchema,
-  StoreCategory,
-  StoreCategorySchema,
 } from '../../../database/schemas';
 import { AccountRepository } from './repositories/account.repository';
 import { CustomerProfileRepository } from './repositories/customer-profile.repository';
 import { StoreOwnerProfileRepository } from './repositories/store-owner-profile.repository';
 import { CourierProfileRepository } from './repositories/courier-profile.repository';
 import { SecurityProfileRepository } from './repositories/security-profile.repository';
+import { StoreCategoriesModule } from '../store-categories/store-categories.module';
 
 @Module({
   imports: [
@@ -33,8 +32,8 @@ import { SecurityProfileRepository } from './repositories/security-profile.repos
       { name: CustomerProfile.name, schema: CustomerProfileSchema },
       { name: StoreOwnerProfile.name, schema: StoreOwnerProfileSchema },
       { name: CourierProfile.name, schema: CourierProfileSchema },
-      { name: StoreCategory.name, schema: StoreCategorySchema },
     ]),
+    forwardRef(() => StoreCategoriesModule),
   ],
   controllers: [AccountController],
   providers: [
@@ -59,4 +58,3 @@ import { SecurityProfileRepository } from './repositories/security-profile.repos
   ],
 })
 export class AccountModule {}
-

@@ -9,14 +9,14 @@ export type DeviceTokenDocument = DeviceToken & Document;
  */
 @Schema({ timestamps: true })
 export class DeviceToken {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Account', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true, unique: true })
   token: string; // FCM/APNS token
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['ios', 'android', 'web'],
     required: true,
   })
@@ -49,16 +49,15 @@ export const DeviceTokenSchema = SchemaFactory.createForClass(DeviceToken);
 
 // Indexes
 DeviceTokenSchema.index({ userId: 1, isActive: 1 });
-DeviceTokenSchema.index({ token: 1 }, { unique: true });
+// Note: token already has unique: true in @Prop, which creates an index automatically
 DeviceTokenSchema.index({ platform: 1 });
-DeviceTokenSchema.index({ lastUsedAt: 1 });
 
 // TTL index - automatically delete inactive tokens older than 90 days
+// This also serves as the index for lastUsedAt queries
 DeviceTokenSchema.index(
-  { lastUsedAt: 1 }, 
-  { 
+  { lastUsedAt: 1 },
+  {
     expireAfterSeconds: 7776000, // 90 days
-    partialFilterExpression: { isActive: false }
-  }
+    partialFilterExpression: { isActive: false },
+  },
 );
-

@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+} from 'class-validator';
 
 export class SuspendUserDto {
   @IsString()
@@ -22,4 +28,3 @@ export class UnsuspendUserDto {
   @IsBoolean()
   notifyUser?: boolean = true;
 }
-

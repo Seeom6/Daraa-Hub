@@ -9,16 +9,21 @@ export type CustomerProfileDocument = CustomerProfile & Document;
  */
 @Schema({ timestamps: true })
 export class CustomerProfile {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Account',
+    required: true,
+    unique: true,
+  })
   accountId: Types.ObjectId;
 
   @Prop({ type: Number, default: 0, min: 0 })
   loyaltyPoints: number;
 
-  @Prop({ 
-    type: String, 
-    enum: ['bronze', 'silver', 'gold', 'platinum'], 
-    default: 'bronze' 
+  @Prop({
+    type: String,
+    enum: ['bronze', 'silver', 'gold', 'platinum'],
+    default: 'bronze',
   })
   tier: 'bronze' | 'silver' | 'gold' | 'platinum';
 
@@ -35,10 +40,10 @@ export class CustomerProfile {
   updatedAt: Date;
 }
 
-export const CustomerProfileSchema = SchemaFactory.createForClass(CustomerProfile);
+export const CustomerProfileSchema =
+  SchemaFactory.createForClass(CustomerProfile);
 
 // Indexes
-CustomerProfileSchema.index({ accountId: 1 });
+// Note: accountId already has unique: true in @Prop, which creates an index automatically
 CustomerProfileSchema.index({ tier: 1 });
 CustomerProfileSchema.index({ loyaltyPoints: -1 });
-

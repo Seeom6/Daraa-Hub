@@ -3,7 +3,10 @@ import type { Job } from 'bull';
 import { Logger, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Notification, NotificationDocument } from '../../../../database/schemas/notification.schema';
+import {
+  Notification,
+  NotificationDocument,
+} from '../../../../database/schemas/notification.schema';
 import { EmailService } from '../../../../infrastructure/email/email.service';
 import type { ISmsService } from '../../../../infrastructure/sms/sms.interface';
 import { RecipientContactResolverService } from '../services/recipient-contact-resolver.service';
@@ -40,10 +43,13 @@ export class NotificationProcessor {
       // TODO: Implement push notification service (Firebase, OneSignal, etc.)
       // For now, just mark as sent
       await this.updateDeliveryStatus(notificationId, 'push', 'sent');
-      
+
       this.logger.log(`Push notification sent: ${notificationId}`);
     } catch (error) {
-      this.logger.error(`Failed to send push notification: ${notificationId}`, error);
+      this.logger.error(
+        `Failed to send push notification: ${notificationId}`,
+        error,
+      );
       await this.updateDeliveryStatus(notificationId, 'push', 'failed');
       throw error;
     }
@@ -95,7 +101,10 @@ export class NotificationProcessor {
       await this.updateDeliveryStatus(notificationId, 'email', 'sent');
       this.logger.log(`Email notification sent: ${notificationId}`);
     } catch (error) {
-      this.logger.error(`Failed to send email notification: ${notificationId}`, error);
+      this.logger.error(
+        `Failed to send email notification: ${notificationId}`,
+        error,
+      );
       await this.updateDeliveryStatus(notificationId, 'email', 'failed');
       throw error;
     }
@@ -143,7 +152,10 @@ export class NotificationProcessor {
       await this.updateDeliveryStatus(notificationId, 'sms', 'sent');
       this.logger.log(`SMS notification sent: ${notificationId}`);
     } catch (error) {
-      this.logger.error(`Failed to send SMS notification: ${notificationId}`, error);
+      this.logger.error(
+        `Failed to send SMS notification: ${notificationId}`,
+        error,
+      );
       await this.updateDeliveryStatus(notificationId, 'sms', 'failed');
       throw error;
     }
@@ -158,12 +170,15 @@ export class NotificationProcessor {
       // In-app notifications are already stored in database
       // Just mark as sent
       await this.updateDeliveryStatus(notificationId, 'in_app', 'sent');
-      
+
       // TODO: Emit WebSocket event to notify connected clients
-      
+
       this.logger.log(`In-app notification sent: ${notificationId}`);
     } catch (error) {
-      this.logger.error(`Failed to send in-app notification: ${notificationId}`, error);
+      this.logger.error(
+        `Failed to send in-app notification: ${notificationId}`,
+        error,
+      );
       await this.updateDeliveryStatus(notificationId, 'in_app', 'failed');
       throw error;
     }
@@ -182,4 +197,3 @@ export class NotificationProcessor {
       .exec();
   }
 }
-

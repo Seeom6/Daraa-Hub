@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Inventory, InventoryDocument } from '../../../../database/schemas/inventory.schema';
+import {
+  Inventory,
+  InventoryDocument,
+} from '../../../../database/schemas/inventory.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()
@@ -141,4 +144,3 @@ export class InventoryRepository extends BaseRepository<InventoryDocument> {
     return inventory.quantity >= quantity;
   }
 }
-

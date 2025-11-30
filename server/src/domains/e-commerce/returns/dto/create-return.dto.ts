@@ -1,6 +1,18 @@
-import { IsMongoId, IsEnum, IsArray, ValidateNested, IsInt, Min, IsString, IsOptional } from 'class-validator';
+import {
+  IsMongoId,
+  IsEnum,
+  IsArray,
+  ValidateNested,
+  IsInt,
+  Min,
+  IsString,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ReturnReason, ReturnMethod } from '../../../../database/schemas/return.schema';
+import {
+  ReturnReason,
+  ReturnMethod,
+} from '../../../../database/schemas/return.schema';
 
 export class ReturnItemDto {
   @IsMongoId()
@@ -35,4 +47,3 @@ export class CreateReturnDto {
   @IsEnum(ReturnMethod)
   returnMethod: ReturnMethod;
 }
-

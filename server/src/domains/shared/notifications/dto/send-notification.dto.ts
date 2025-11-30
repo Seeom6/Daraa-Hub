@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, IsObject, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsObject,
+  IsArray,
+} from 'class-validator';
 
 export class SendNotificationDto {
   @IsString()
@@ -42,4 +48,3 @@ export class SendBulkNotificationDto {
   @IsEnum(['push', 'email', 'sms', 'in_app'], { each: true })
   channels?: ('push' | 'email' | 'sms' | 'in_app')[];
 }
-

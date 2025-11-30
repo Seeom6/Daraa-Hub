@@ -78,7 +78,9 @@ export class ReviewInteractionService {
     } else if (review.targetType === ReviewTargetType.STORE) {
       // For store reviews, verify it's the same store
       if (review.targetId.toString() !== storeId) {
-        throw new ForbiddenException('You can only respond to reviews for your own store');
+        throw new ForbiddenException(
+          'You can only respond to reviews for your own store',
+        );
       }
     }
 
@@ -127,7 +129,9 @@ export class ReviewInteractionService {
 
     await review.save();
 
-    this.logger.log(`Review ${reviewId} marked as ${helpful ? 'helpful' : 'not helpful'}`);
+    this.logger.log(
+      `Review ${reviewId} marked as ${helpful ? 'helpful' : 'not helpful'}`,
+    );
 
     return review;
   }
@@ -159,7 +163,7 @@ export class ReviewInteractionService {
     const query = { customerId: new Types.ObjectId(customerId) };
 
     const total = await this.reviewRepository.count(query);
-    const reviews = await (this.reviewRepository)
+    const reviews = await this.reviewRepository
       .getModel()
       .find(query)
       .sort({ createdAt: -1 })
@@ -174,4 +178,3 @@ export class ReviewInteractionService {
     };
   }
 }
-

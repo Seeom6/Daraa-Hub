@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsEnum, IsNumber, Min, Max, IsObject } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  Min,
+  Max,
+  IsObject,
+} from 'class-validator';
 
 export class UpdateCourierProfileDto {
   @IsOptional()
@@ -51,4 +59,3 @@ export class UpdateCourierProfileDto {
     sunday?: { start: string; end: string };
   };
 }
-

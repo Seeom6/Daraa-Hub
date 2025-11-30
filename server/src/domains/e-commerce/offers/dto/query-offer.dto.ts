@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsString, IsNumber, Min, IsBoolean, IsMongoId } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsBoolean,
+  IsMongoId,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { DiscountType } from '../../../../database/schemas/offer.schema';
 
@@ -45,4 +53,3 @@ export class QueryOfferDto {
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

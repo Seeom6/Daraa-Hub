@@ -6,6 +6,30 @@ export default () => ({
 
   database: {
     uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/daraa-auth',
+    // Connection Pool Settings
+    maxPoolSize: parseInt(process.env.MONGODB_MAX_POOL_SIZE || '50', 10),
+    minPoolSize: parseInt(process.env.MONGODB_MIN_POOL_SIZE || '10', 10),
+    maxIdleTimeMS: parseInt(
+      process.env.MONGODB_MAX_IDLE_TIME_MS || '30000',
+      10,
+    ),
+    serverSelectionTimeoutMS: parseInt(
+      process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS || '5000',
+      10,
+    ),
+    socketTimeoutMS: parseInt(
+      process.env.MONGODB_SOCKET_TIMEOUT_MS || '45000',
+      10,
+    ),
+    connectTimeoutMS: parseInt(
+      process.env.MONGODB_CONNECT_TIMEOUT_MS || '10000',
+      10,
+    ),
+    // Write Concern
+    retryWrites: process.env.MONGODB_RETRY_WRITES !== 'false',
+    w: process.env.MONGODB_WRITE_CONCERN || 'majority',
+    // Read Preference
+    readPreference: process.env.MONGODB_READ_PREFERENCE || 'primaryPreferred',
   },
 
   jwt: {
@@ -79,6 +103,13 @@ export default () => ({
   rateLimit: {
     ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10), // seconds
     limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10), // requests
+    // Auth endpoints have stricter limits (5 req/min in production, 1000 req/min in test)
+    auth: {
+      ttl: 60, // seconds
+      limit:
+        process.env.NODE_ENV === 'test'
+          ? 1000 // Very relaxed for E2E testing
+          : parseInt(process.env.AUTH_RATE_LIMIT || '5', 10), // Strict for production
+    },
   },
 });
-

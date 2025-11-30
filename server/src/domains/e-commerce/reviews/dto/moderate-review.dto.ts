@@ -10,4 +10,3 @@ export class ModerateReviewDto {
   @MaxLength(500)
   moderationNotes?: string;
 }
-

@@ -7,4 +7,3 @@ export enum UserRole {
   COURIER = 'courier',
   ADMIN = 'admin',
 }
-

@@ -43,7 +43,10 @@ export class CartController {
    */
   @Post('items')
   @HttpCode(HttpStatus.CREATED)
-  async addToCart(@CurrentUser() user: any, @Body() addToCartDto: AddToCartDto) {
+  async addToCart(
+    @CurrentUser() user: any,
+    @Body() addToCartDto: AddToCartDto,
+  ) {
     const cart = await this.cartService.addToCart(user.profileId, addToCartDto);
     return {
       success: true,
@@ -86,7 +89,11 @@ export class CartController {
     @Param('productId') productId: string,
     @Query('variantId') variantId: string | undefined,
   ) {
-    const cart = await this.cartService.removeFromCart(user.profileId, productId, variantId);
+    const cart = await this.cartService.removeFromCart(
+      user.profileId,
+      productId,
+      variantId,
+    );
     return {
       success: true,
       message: 'Item removed from cart',
@@ -108,4 +115,3 @@ export class CartController {
     };
   }
 }
-

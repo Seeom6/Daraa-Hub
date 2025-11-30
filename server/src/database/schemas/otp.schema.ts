@@ -5,7 +5,7 @@ export type OtpDocument = Otp & Document;
 
 @Schema({ timestamps: true })
 export class Otp {
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   phoneNumber: string;
 
   @Prop({ required: true })
@@ -32,7 +32,8 @@ export class Otp {
 
 export const OtpSchema = SchemaFactory.createForClass(Otp);
 
-// Index for faster phone number lookups and automatic deletion of expired OTPs
-OtpSchema.index({ phoneNumber: 1 });
+// Indexes for faster lookups and automatic deletion of expired OTPs
+OtpSchema.index({ phoneNumber: 1, type: 1 }); // Compound index for phone + type queries
+OtpSchema.index({ phoneNumber: 1, isUsed: 1 }); // For checking unused OTPs
 OtpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
-
+OtpSchema.index({ createdAt: -1 }); // For recent OTP queries

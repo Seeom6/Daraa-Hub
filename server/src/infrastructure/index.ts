@@ -10,4 +10,3 @@ export * from './events/events.module';
 export * from './events/event-types';
 export * from './sms/sms.module';
 export * from './sms/sms.interface';
-

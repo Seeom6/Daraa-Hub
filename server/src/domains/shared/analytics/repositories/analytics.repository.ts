@@ -23,14 +23,18 @@ export class ProductAnalyticsRepository extends BaseRepository<ProductAnalyticsD
   /**
    * Find analytics by product ID
    */
-  async findByProductId(productId: string): Promise<ProductAnalyticsDocument | null> {
+  async findByProductId(
+    productId: string,
+  ): Promise<ProductAnalyticsDocument | null> {
     return this.findOne({ productId: new Types.ObjectId(productId) });
   }
 
   /**
    * Increment view count
    */
-  async incrementViews(productId: string): Promise<ProductAnalyticsDocument | null> {
+  async incrementViews(
+    productId: string,
+  ): Promise<ProductAnalyticsDocument | null> {
     return this.productAnalyticsModel.findOneAndUpdate(
       { productId: new Types.ObjectId(productId) },
       { $inc: { views: 1 } },
@@ -41,7 +45,9 @@ export class ProductAnalyticsRepository extends BaseRepository<ProductAnalyticsD
   /**
    * Increment add to cart count
    */
-  async incrementAddToCart(productId: string): Promise<ProductAnalyticsDocument | null> {
+  async incrementAddToCart(
+    productId: string,
+  ): Promise<ProductAnalyticsDocument | null> {
     return this.productAnalyticsModel.findOneAndUpdate(
       { productId: new Types.ObjectId(productId) },
       { $inc: { addToCart: 1 } },
@@ -52,7 +58,10 @@ export class ProductAnalyticsRepository extends BaseRepository<ProductAnalyticsD
   /**
    * Increment purchase count
    */
-  async incrementPurchases(productId: string, quantity: number = 1): Promise<ProductAnalyticsDocument | null> {
+  async incrementPurchases(
+    productId: string,
+    quantity: number = 1,
+  ): Promise<ProductAnalyticsDocument | null> {
     return this.productAnalyticsModel.findOneAndUpdate(
       { productId: new Types.ObjectId(productId) },
       { $inc: { purchases: quantity } },
@@ -94,7 +103,9 @@ export class StoreAnalyticsRepository extends BaseRepository<StoreAnalyticsDocum
   /**
    * Increment order count
    */
-  async incrementOrders(storeId: string): Promise<StoreAnalyticsDocument | null> {
+  async incrementOrders(
+    storeId: string,
+  ): Promise<StoreAnalyticsDocument | null> {
     return this.storeAnalyticsModel.findOneAndUpdate(
       { storeId: new Types.ObjectId(storeId) },
       { $inc: { totalOrders: 1 } },
@@ -102,4 +113,3 @@ export class StoreAnalyticsRepository extends BaseRepository<StoreAnalyticsDocum
     );
   }
 }
-

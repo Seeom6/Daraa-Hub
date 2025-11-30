@@ -9,7 +9,10 @@ export { NotificationRepository } from './notifications/repositories/notificatio
 export { NotificationPreferenceRepository } from './notifications/repositories/notification-preference.repository';
 export { DeviceTokenRepository } from './notifications/repositories/device-token.repository';
 export { NotificationTemplateRepository } from './notifications/repositories/notification-template.repository';
-export { ProductAnalyticsRepository, StoreAnalyticsRepository } from './analytics/repositories/analytics.repository';
+export {
+  ProductAnalyticsRepository,
+  StoreAnalyticsRepository,
+} from './analytics/repositories/analytics.repository';
 export { SystemSettingsRepository } from './settings/repositories/settings.repository';
 export { StoreSettingsRepository } from './store-settings/repositories/store-settings.repository';
 export { VerificationRepository } from './verification/repositories/verification.repository';
@@ -19,4 +22,3 @@ export { ReferralRepository } from './referral/repositories/referral.repository'
 export { PointsTransactionRepository } from './points-transaction/repositories/points-transaction.repository';
 export { AuditLogRepository } from './audit-logs/repositories/audit-log.repository';
 export { StoreCategoryRepository } from './store-categories/repositories/store-category.repository';
-

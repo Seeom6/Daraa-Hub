@@ -1,0 +1,51 @@
+﻿{
+    "StartTime":  {
+                      "value":  "\/Date(1764487123398)\/",
+                      "DisplayHint":  2,
+                      "DateTime":  "Sunday, November 30, 2025 10:18:43 AM"
+                  },
+    "Passed":  4,
+    "TestSuite":  "Store Verification Process",
+    "Skipped":  0,
+    "Tests":  [
+                  {
+                      "Name":  "Check verification status (before)",
+                      "Timestamp":  "2025-11-30 10:18:45",
+                      "Duration":  20.13,
+                      "Endpoint":  "GET /verification/my-status",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Submit verification request",
+                      "Timestamp":  "2025-11-30 10:18:45",
+                      "Duration":  32.73,
+                      "Endpoint":  "POST /verification/submit",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Check verification status (after)",
+                      "Timestamp":  "2025-11-30 10:18:45",
+                      "Duration":  38.04,
+                      "Endpoint":  "GET /verification/my-status",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Reject duplicate verification",
+                      "Timestamp":  "2025-11-30 10:18:45",
+                      "Duration":  12.7,
+                      "Endpoint":  "POST /verification/submit",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  }
+              ],
+    "EndTime":  {
+                    "value":  "\/Date(1764487125611)\/",
+                    "DisplayHint":  2,
+                    "DateTime":  "Sunday, November 30, 2025 10:18:45 AM"
+                },
+    "TotalTests":  4,
+    "Failed":  0
+}

@@ -68,18 +68,22 @@ export class StoreCategoryRepository extends BaseRepository<StoreCategoryDocumen
   /**
    * Update category order
    */
-  async updateOrder(categoryId: string, order: number): Promise<StoreCategoryDocument | null> {
+  async updateOrder(
+    categoryId: string,
+    order: number,
+  ): Promise<StoreCategoryDocument | null> {
     return this.findByIdAndUpdate(categoryId, { order });
   }
 
   /**
    * Toggle category active status
    */
-  async toggleActive(categoryId: string): Promise<StoreCategoryDocument | null> {
+  async toggleActive(
+    categoryId: string,
+  ): Promise<StoreCategoryDocument | null> {
     const category = await this.findById(categoryId);
     if (!category) return null;
 
     return this.findByIdAndUpdate(categoryId, { isActive: !category.isActive });
   }
 }
-

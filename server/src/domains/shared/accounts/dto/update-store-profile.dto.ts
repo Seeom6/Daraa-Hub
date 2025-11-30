@@ -34,4 +34,3 @@ export class UpdateStoreProfileDto {
   @IsString()
   businessPhone?: string;
 }
-

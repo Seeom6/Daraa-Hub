@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsString, IsNumber, Min, IsMongoId, IsBoolean } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsMongoId,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { TransactionType } from '../../../../database/schemas/points-transaction.schema';
 
@@ -44,4 +52,3 @@ export class QueryPointsTransactionDto {
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

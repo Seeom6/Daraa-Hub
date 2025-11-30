@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsBoolean, IsMongoId, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsMongoId,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class QueryCategoryDto {
@@ -42,4 +49,3 @@ export class QueryCategoryDto {
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'asc';
 }
-

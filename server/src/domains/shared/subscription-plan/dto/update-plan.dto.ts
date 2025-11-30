@@ -7,4 +7,3 @@ export class UpdatePlanDto extends PartialType(CreatePlanDto) {
   @IsBoolean()
   isActive?: boolean;
 }
-

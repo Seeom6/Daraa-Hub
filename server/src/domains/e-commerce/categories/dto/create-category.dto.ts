@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsMongoId, IsArray, Min, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsMongoId,
+  IsArray,
+  Min,
+  MaxLength,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateCategoryDto {
@@ -62,4 +71,3 @@ export class CreateCategoryDto {
   @IsString({ each: true })
   seoKeywords?: string[];
 }
-

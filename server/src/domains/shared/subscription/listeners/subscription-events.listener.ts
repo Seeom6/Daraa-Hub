@@ -25,7 +25,10 @@ export class SubscriptionEventsListener {
     endDate: Date;
   }) {
     try {
-      const store = await this.storeProfileModel.findById(payload.storeId).populate('accountId').exec();
+      const store = await this.storeProfileModel
+        .findById(payload.storeId)
+        .populate('accountId')
+        .exec();
       if (!store) return;
 
       await this.notificationsService.sendFromTemplate({
@@ -40,16 +43,26 @@ export class SubscriptionEventsListener {
         },
       });
 
-      this.logger.log(`Subscription activated notification sent to store ${payload.storeId}`);
+      this.logger.log(
+        `Subscription activated notification sent to store ${payload.storeId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send subscription activated notification: ${error.message}`);
+      this.logger.error(
+        `Failed to send subscription activated notification: ${error.message}`,
+      );
     }
   }
 
   @OnEvent('subscription.expired')
-  async handleSubscriptionExpired(payload: { storeId: string; planName: string }) {
+  async handleSubscriptionExpired(payload: {
+    storeId: string;
+    planName: string;
+  }) {
     try {
-      const store = await this.storeProfileModel.findById(payload.storeId).populate('accountId').exec();
+      const store = await this.storeProfileModel
+        .findById(payload.storeId)
+        .populate('accountId')
+        .exec();
       if (!store) return;
 
       await this.notificationsService.sendFromTemplate({
@@ -62,9 +75,13 @@ export class SubscriptionEventsListener {
         },
       });
 
-      this.logger.log(`Subscription expired notification sent to store ${payload.storeId}`);
+      this.logger.log(
+        `Subscription expired notification sent to store ${payload.storeId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send subscription expired notification: ${error.message}`);
+      this.logger.error(
+        `Failed to send subscription expired notification: ${error.message}`,
+      );
     }
   }
 
@@ -76,7 +93,10 @@ export class SubscriptionEventsListener {
     expiryDate: string;
   }) {
     try {
-      const store = await this.storeProfileModel.findById(payload.storeId).populate('accountId').exec();
+      const store = await this.storeProfileModel
+        .findById(payload.storeId)
+        .populate('accountId')
+        .exec();
       if (!store) return;
 
       await this.notificationsService.sendFromTemplate({
@@ -95,14 +115,22 @@ export class SubscriptionEventsListener {
         `Subscription expiry warning sent to store ${payload.storeId} (${payload.daysLeft} days left)`,
       );
     } catch (error) {
-      this.logger.error(`Failed to send subscription expiry warning: ${error.message}`);
+      this.logger.error(
+        `Failed to send subscription expiry warning: ${error.message}`,
+      );
     }
   }
 
   @OnEvent('subscription.dailyLimitReached')
-  async handleDailyLimitReached(payload: { storeId: string; dailyLimit: number }) {
+  async handleDailyLimitReached(payload: {
+    storeId: string;
+    dailyLimit: number;
+  }) {
     try {
-      const store = await this.storeProfileModel.findById(payload.storeId).populate('accountId').exec();
+      const store = await this.storeProfileModel
+        .findById(payload.storeId)
+        .populate('accountId')
+        .exec();
       if (!store) return;
 
       await this.notificationsService.sendFromTemplate({
@@ -115,36 +143,55 @@ export class SubscriptionEventsListener {
         },
       });
 
-      this.logger.log(`Daily limit reached notification sent to store ${payload.storeId}`);
+      this.logger.log(
+        `Daily limit reached notification sent to store ${payload.storeId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send daily limit reached notification: ${error.message}`);
+      this.logger.error(
+        `Failed to send daily limit reached notification: ${error.message}`,
+      );
     }
   }
 
   @OnEvent('subscription.cancelled')
-  async handleSubscriptionCancelled(payload: { storeId: string; reason?: string }) {
+  async handleSubscriptionCancelled(payload: {
+    storeId: string;
+    reason?: string;
+  }) {
     try {
-      const store = await this.storeProfileModel.findById(payload.storeId).populate('accountId').exec();
+      const store = await this.storeProfileModel
+        .findById(payload.storeId)
+        .populate('accountId')
+        .exec();
       if (!store) return;
 
       this.logger.log(`Subscription cancelled for store ${payload.storeId}`);
     } catch (error) {
-      this.logger.error(`Failed to handle subscription cancelled event: ${error.message}`);
+      this.logger.error(
+        `Failed to handle subscription cancelled event: ${error.message}`,
+      );
     }
   }
 
   @OnEvent('subscription.extended')
-  async handleSubscriptionExtended(payload: { storeId: string; newEndDate: Date }) {
+  async handleSubscriptionExtended(payload: {
+    storeId: string;
+    newEndDate: Date;
+  }) {
     try {
-      const store = await this.storeProfileModel.findById(payload.storeId).populate('accountId').exec();
+      const store = await this.storeProfileModel
+        .findById(payload.storeId)
+        .populate('accountId')
+        .exec();
       if (!store) return;
 
       this.logger.log(
         `Subscription extended for store ${payload.storeId} until ${payload.newEndDate}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to handle subscription extended event: ${error.message}`);
+      this.logger.error(
+        `Failed to handle subscription extended event: ${error.message}`,
+      );
     }
   }
 }
-

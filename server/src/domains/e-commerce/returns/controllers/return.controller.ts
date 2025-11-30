@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
@@ -18,7 +28,10 @@ export class ReturnController {
   @Roles('customer')
   async create(@Body() createReturnDto: CreateReturnDto, @Req() req: any) {
     const customerId = req.user.profileId;
-    const returnRequest = await this.returnService.create(createReturnDto, customerId);
+    const returnRequest = await this.returnService.create(
+      createReturnDto,
+      customerId,
+    );
     return {
       success: true,
       data: returnRequest,
@@ -56,7 +69,11 @@ export class ReturnController {
     @Req() req: any,
   ) {
     const storeOwnerId = req.user.profileId;
-    const returnRequest = await this.returnService.storeRespond(id, storeResponseDto, storeOwnerId);
+    const returnRequest = await this.returnService.storeRespond(
+      id,
+      storeResponseDto,
+      storeOwnerId,
+    );
     return {
       success: true,
       data: returnRequest,
@@ -77,7 +94,10 @@ export class ReturnController {
 
   @Put('admin/:id')
   @Roles('admin')
-  async updateReturn(@Param('id') id: string, @Body() updateReturnDto: UpdateReturnDto) {
+  async updateReturn(
+    @Param('id') id: string,
+    @Body() updateReturnDto: UpdateReturnDto,
+  ) {
     const returnRequest = await this.returnService.update(id, updateReturnDto);
     return {
       success: true,
@@ -94,7 +114,11 @@ export class ReturnController {
     @Req() req: any,
   ) {
     const adminId = req.user.profileId;
-    const returnRequest = await this.returnService.adminReview(id, adminReviewDto, adminId);
+    const returnRequest = await this.returnService.adminReview(
+      id,
+      adminReviewDto,
+      adminId,
+    );
     return {
       success: true,
       data: returnRequest,
@@ -145,4 +169,3 @@ export class ReturnController {
     };
   }
 }
-

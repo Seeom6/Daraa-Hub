@@ -5,4 +5,3 @@ export class StoreResponseDto {
   @MaxLength(500)
   message: string;
 }
-

@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Types } from 'mongoose';
 import { CouponDocument } from '../../../../database/schemas/coupon.schema';
@@ -26,7 +31,9 @@ export class CouponUsageService {
     orderId: string,
     discountAmount: number,
   ): Promise<CouponDocument> {
-    const coupon = await this.couponRepository.getModel().findOne({ code: code.toUpperCase() });
+    const coupon = await this.couponRepository
+      .getModel()
+      .findOne({ code: code.toUpperCase() });
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found');
@@ -45,7 +52,9 @@ export class CouponUsageService {
 
     await coupon.save();
 
-    this.logger.log(`Coupon ${code} applied to order ${orderId} by customer ${customerId}`);
+    this.logger.log(
+      `Coupon ${code} applied to order ${orderId} by customer ${customerId}`,
+    );
 
     this.eventEmitter.emit('coupon.applied', {
       couponId: (coupon._id as Types.ObjectId).toString(),
@@ -84,7 +93,9 @@ export class CouponUsageService {
     );
 
     // Get unique users
-    const uniqueUserIds = new Set(coupon.usageHistory.map((usage) => usage.userId.toString()));
+    const uniqueUserIds = new Set(
+      coupon.usageHistory.map((usage) => usage.userId.toString()),
+    );
     const uniqueUsers = uniqueUserIds.size;
 
     // Group usage by day
@@ -110,7 +121,10 @@ export class CouponUsageService {
   /**
    * Get user's coupon usage history
    */
-  async getUserUsageHistory(customerId: string, couponId?: string): Promise<any[]> {
+  async getUserUsageHistory(
+    customerId: string,
+    couponId?: string,
+  ): Promise<any[]> {
     if (!Types.ObjectId.isValid(customerId)) {
       throw new BadRequestException('Invalid customer ID');
     }
@@ -178,4 +192,3 @@ export class CouponUsageService {
     return coupon;
   }
 }
-

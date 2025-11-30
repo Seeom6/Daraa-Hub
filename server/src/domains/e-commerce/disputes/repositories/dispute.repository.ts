@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Dispute, DisputeDocument } from '../../../../database/schemas/dispute.schema';
+import {
+  Dispute,
+  DisputeDocument,
+} from '../../../../database/schemas/dispute.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()
@@ -44,11 +47,8 @@ export class DisputeRepository extends BaseRepository<DisputeDocument> {
     page: number = 1,
     limit: number = 10,
   ): Promise<{ data: DisputeDocument[]; total: number }> {
-    return this.findWithPagination(
-      { status },
-      page,
-      limit,
-      { sort: { createdAt: -1 } },
-    );
+    return this.findWithPagination({ status }, page, limit, {
+      sort: { createdAt: -1 },
+    });
   }
 }

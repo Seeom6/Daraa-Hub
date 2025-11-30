@@ -148,4 +148,3 @@ export class FilterBuilderUtil {
     return sort;
   }
 }
-

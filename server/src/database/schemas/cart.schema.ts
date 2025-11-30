@@ -20,10 +20,10 @@ export interface CartItem {
  */
 @Schema({ timestamps: true })
 export class Cart {
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile' })
   customerId?: Types.ObjectId;
 
-  @Prop({ index: true, sparse: true })
+  @Prop({ sparse: true })
   sessionId?: string; // For guest carts
 
   @Prop({
@@ -31,7 +31,11 @@ export class Cart {
       {
         productId: { type: Types.ObjectId, ref: 'Product', required: true },
         variantId: { type: Types.ObjectId, ref: 'ProductVariant' },
-        storeId: { type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true },
+        storeId: {
+          type: Types.ObjectId,
+          ref: 'StoreOwnerProfile',
+          required: true,
+        },
         quantity: { type: Number, required: true, min: 1 },
         price: { type: Number, required: true, min: 0 },
         pointsPrice: { type: Number, min: 0 },
@@ -55,7 +59,7 @@ export class Cart {
   @Prop({ type: Types.ObjectId, ref: 'Coupon' })
   appliedCoupon?: Types.ObjectId;
 
-  @Prop({ index: true })
+  @Prop()
   expiresAt?: Date; // Cart expiration (e.g., 7 days for guest carts)
 
   createdAt: Date;
@@ -68,15 +72,21 @@ export const CartSchema = SchemaFactory.createForClass(Cart);
 CartSchema.index({ customerId: 1 }, { unique: true, sparse: true });
 CartSchema.index({ sessionId: 1 }, { unique: true, sparse: true });
 CartSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
+CartSchema.index({ 'items.storeId': 1 }); // For store-based cart queries
+CartSchema.index({ 'items.productId': 1 }); // For product-based cart queries
+CartSchema.index({ updatedAt: -1 }); // For recently updated carts
+CartSchema.index({ appliedCoupon: 1 }, { sparse: true }); // For coupon usage tracking
 
 // Pre-save hook to calculate totals
 CartSchema.pre('save', function (next) {
   // Calculate subtotal
-  this.subtotal = this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  
+  this.subtotal = this.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+
   // Calculate total
   this.total = this.subtotal - this.discount;
-  
+
   next();
 });
-

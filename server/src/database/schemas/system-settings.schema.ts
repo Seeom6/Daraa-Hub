@@ -9,15 +9,30 @@ export type SystemSettingsDocument = SystemSettings & Document;
  */
 @Schema({ timestamps: true })
 export class SystemSettings {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, unique: true })
   key: string; // e.g., 'general', 'payment', 'shipping', 'notifications'
 
-  @Prop({ 
-    type: String, 
-    enum: ['general', 'payment', 'shipping', 'notifications', 'security', 'commission', 'features'],
+  @Prop({
+    type: String,
+    enum: [
+      'general',
+      'payment',
+      'shipping',
+      'notifications',
+      'security',
+      'commission',
+      'features',
+    ],
     required: true,
   })
-  category: 'general' | 'payment' | 'shipping' | 'notifications' | 'security' | 'commission' | 'features';
+  category:
+    | 'general'
+    | 'payment'
+    | 'shipping'
+    | 'notifications'
+    | 'security'
+    | 'commission'
+    | 'features';
 
   @Prop({ type: Object, required: true })
   value: Record<string, any>;
@@ -35,10 +50,11 @@ export class SystemSettings {
   updatedAt: Date;
 }
 
-export const SystemSettingsSchema = SchemaFactory.createForClass(SystemSettings);
+export const SystemSettingsSchema =
+  SchemaFactory.createForClass(SystemSettings);
 
 // Indexes
-SystemSettingsSchema.index({ key: 1 });
+// Note: key already has unique: true in @Prop, which creates an index automatically
 SystemSettingsSchema.index({ category: 1 });
 
 // Default settings structure examples:
@@ -159,4 +175,3 @@ SystemSettingsSchema.index({ category: 1 });
  *   }
  * }
  */
-

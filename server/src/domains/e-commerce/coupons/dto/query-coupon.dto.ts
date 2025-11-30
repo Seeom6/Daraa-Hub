@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsString, IsNumber, Min, IsBoolean, IsMongoId } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsBoolean,
+  IsMongoId,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { CouponType } from '../../../../database/schemas/coupon.schema';
 
@@ -48,4 +56,3 @@ export class QueryCouponDto {
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

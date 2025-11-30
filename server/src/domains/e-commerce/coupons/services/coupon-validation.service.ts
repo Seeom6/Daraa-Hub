@@ -1,8 +1,19 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { CouponDocument, CouponType } from '../../../../database/schemas/coupon.schema';
-import { CustomerProfile, CustomerProfileDocument } from '../../../../database/schemas/customer-profile.schema';
+import {
+  CouponDocument,
+  CouponType,
+} from '../../../../database/schemas/coupon.schema';
+import {
+  CustomerProfile,
+  CustomerProfileDocument,
+} from '../../../../database/schemas/customer-profile.schema';
 import { ValidateCouponDto } from '../dto/validate-coupon.dto';
 import { CouponRepository } from '../repositories/coupon.repository';
 
@@ -29,10 +40,13 @@ export class CouponValidationService {
     discountAmount?: number;
     coupon?: CouponDocument;
   }> {
-    const { code, customerId, storeId, categoryId, productId, orderAmount } = validateDto;
+    const { code, customerId, storeId, categoryId, productId, orderAmount } =
+      validateDto;
 
     // Find coupon
-    const coupon = await this.couponRepository.getModel().findOne({ code: code.toUpperCase() });
+    const coupon = await this.couponRepository
+      .getModel()
+      .findOne({ code: code.toUpperCase() });
 
     if (!coupon) {
       return { valid: false, message: 'Coupon not found' };
@@ -54,7 +68,10 @@ export class CouponValidationService {
     }
 
     // Check usage limit
-    if (coupon.usageLimit.total && coupon.usedCount >= coupon.usageLimit.total) {
+    if (
+      coupon.usageLimit.total &&
+      coupon.usedCount >= coupon.usageLimit.total
+    ) {
       return { valid: false, message: 'Coupon usage limit reached' };
     }
 
@@ -65,7 +82,10 @@ export class CouponValidationService {
       ).length;
 
       if (userUsageCount >= coupon.usageLimit.perUser) {
-        return { valid: false, message: 'You have reached the usage limit for this coupon' };
+        return {
+          valid: false,
+          message: 'You have reached the usage limit for this coupon',
+        };
       }
     }
 
@@ -92,7 +112,10 @@ export class CouponValidationService {
         (c) => c.toString() === categoryId,
       );
       if (!isApplicable) {
-        return { valid: false, message: 'Coupon not applicable to this category' };
+        return {
+          valid: false,
+          message: 'Coupon not applicable to this category',
+        };
       }
     }
 
@@ -101,7 +124,10 @@ export class CouponValidationService {
         (p) => p.toString() === productId,
       );
       if (!isApplicable) {
-        return { valid: false, message: 'Coupon not applicable to this product' };
+        return {
+          valid: false,
+          message: 'Coupon not applicable to this product',
+        };
       }
     }
 
@@ -132,7 +158,10 @@ export class CouponValidationService {
     let discountAmount = 0;
     if (coupon.type === CouponType.PERCENTAGE) {
       discountAmount = (orderAmount * coupon.discountValue) / 100;
-      if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+      if (
+        coupon.maxDiscountAmount &&
+        discountAmount > coupon.maxDiscountAmount
+      ) {
         discountAmount = coupon.maxDiscountAmount;
       }
     } else if (coupon.type === CouponType.FIXED) {
@@ -208,4 +237,3 @@ export class CouponValidationService {
     return availableCoupons;
   }
 }
-

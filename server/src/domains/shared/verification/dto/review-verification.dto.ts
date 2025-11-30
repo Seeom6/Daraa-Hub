@@ -16,4 +16,3 @@ export class ReviewVerificationDto {
   @IsString()
   infoRequired?: string;
 }
-

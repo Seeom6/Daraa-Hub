@@ -43,9 +43,13 @@ describe('Phase 1: Store Management & Product Catalog (E2E)', () => {
     connection = moduleFixture.get<Connection>(getConnectionToken());
 
     // Clean up test data from previous runs
-    await connection.collection('categories').deleteMany({ slug: /^electronics/ });
+    await connection
+      .collection('categories')
+      .deleteMany({ slug: /^electronics/ });
     await connection.collection('products').deleteMany({ sku: /^SAMSUNG-S23/ });
-    await connection.collection('productvariants').deleteMany({ sku: /^SAMSUNG-S23/ });
+    await connection
+      .collection('productvariants')
+      .deleteMany({ sku: /^SAMSUNG-S23/ });
     await connection.collection('inventories').deleteMany({});
 
     // Login as admin
@@ -70,7 +74,9 @@ describe('Phase 1: Store Management & Product Catalog (E2E)', () => {
 
     // Extract cookies - set-cookie returns an array
     const storeOwnerCookies = storeOwnerLoginResponse.headers['set-cookie'];
-    storeOwnerCookie = Array.isArray(storeOwnerCookies) ? storeOwnerCookies : [storeOwnerCookies];
+    storeOwnerCookie = Array.isArray(storeOwnerCookies)
+      ? storeOwnerCookies
+      : [storeOwnerCookies];
 
     // Get current user to retrieve profileId
     const meResponse = await request(app.getHttpServer())
@@ -89,13 +95,17 @@ describe('Phase 1: Store Management & Product Catalog (E2E)', () => {
     // Note: We keep products, categories, and inventories for other phases to use
     // Only delete the variant created in tests
     if (variantId) {
-      await connection.collection('productvariants').deleteOne({ _id: variantId });
+      await connection
+        .collection('productvariants')
+        .deleteOne({ _id: variantId });
     }
 
     // Reset inventory to initial state for next phases
     await connection.collection('inventories').updateMany(
       {},
-      { $set: { quantity: 100, reservedQuantity: 0, availableQuantity: 100 } }
+      {
+        $set: { quantity: 100, reservedQuantity: 0, availableQuantity: 100 },
+      },
     );
 
     await app.close();
@@ -157,7 +167,9 @@ describe('Phase 1: Store Management & Product Catalog (E2E)', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.description).toBe('Updated description for electronics');
+      expect(response.body.data.description).toBe(
+        'Updated description for electronics',
+      );
     });
   });
 
@@ -354,4 +366,3 @@ describe('Phase 1: Store Management & Product Catalog (E2E)', () => {
     });
   });
 });
-

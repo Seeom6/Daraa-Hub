@@ -6,4 +6,3 @@ export enum OtpType {
   FORGOT_PASSWORD = 'forgot_password',
   PHONE_VERIFICATION = 'phone_verification',
 }
-

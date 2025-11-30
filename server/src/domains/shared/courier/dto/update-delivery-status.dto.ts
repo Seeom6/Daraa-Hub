@@ -12,4 +12,3 @@ export class UpdateDeliveryStatusDto {
   @IsString()
   proofOfDelivery?: string; // Image URL or signature
 }
-

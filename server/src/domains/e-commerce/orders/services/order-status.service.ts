@@ -1,15 +1,26 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Types } from 'mongoose';
-import { OrderDocument, OrderStatus, PaymentStatus } from '../../../../database/schemas/order.schema';
+import {
+  OrderDocument,
+  OrderStatus,
+  PaymentStatus,
+} from '../../../../database/schemas/order.schema';
 import { MovementType } from '../../../../database/schemas/inventory.schema';
 import { UpdateOrderStatusDto, CancelOrderDto } from '../dto';
 import { OrderRepository } from '../repositories/order.repository';
 import { InventoryRepository } from '../../inventory/repositories/inventory.repository';
+import { CommissionService } from '../../../shared/commission/services/commission.service';
+import { WalletService } from '../../../shared/wallet/services/wallet.service';
 
 /**
  * Service responsible for order status management
- * Handles status transitions, cancellations, and inventory updates
+ * Handles status transitions, cancellations, inventory updates, and commissions
  */
 @Injectable()
 export class OrderStatusService {
@@ -18,6 +29,8 @@ export class OrderStatusService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly inventoryRepository: InventoryRepository,
+    private readonly commissionService: CommissionService,
+    private readonly walletService: WalletService,
     private eventEmitter: EventEmitter2,
   ) {}
 
@@ -49,9 +62,16 @@ export class OrderStatusService {
       notes: updateDto.notes,
     } as any);
 
+    // Handle order delivery - calculate commission and process payouts
+    if (updateDto.status === OrderStatus.DELIVERED) {
+      await this.processOrderDelivery(order);
+    }
+
     await order.save();
 
-    this.logger.log(`Order ${orderId} status updated to ${updateDto.status} by ${updatedBy}`);
+    this.logger.log(
+      `Order ${orderId} status updated to ${updateDto.status} by ${updatedBy}`,
+    );
 
     // Emit event
     this.eventEmitter.emit('order.status_updated', {
@@ -61,6 +81,56 @@ export class OrderStatusService {
     });
 
     return order;
+  }
+
+  /**
+   * Process order delivery - calculate commission and add earnings to store wallet
+   */
+  private async processOrderDelivery(order: OrderDocument): Promise<void> {
+    try {
+      const orderId = (order._id as Types.ObjectId).toString();
+      const storeId = order.storeId.toString();
+      const courierId = order.courierId?.toString();
+
+      // Calculate and record commission
+      const commission = await this.commissionService.calculateOrderCommission(
+        orderId,
+        storeId,
+        order.subtotal,
+        order.deliveryFee,
+        courierId,
+      );
+
+      // Update order with commission reference
+      order.commissionId = commission._id as Types.ObjectId;
+
+      // Add store earnings to wallet
+      await this.walletService.addEarnings(
+        storeId,
+        commission.storeEarnings,
+        orderId,
+        `أرباح الطلب ${order.orderNumber}`,
+      );
+
+      // Add courier earnings to wallet if applicable
+      if (courierId && commission.courierEarnings > 0) {
+        await this.walletService.addEarnings(
+          courierId,
+          commission.courierEarnings,
+          orderId,
+          `أرباح توصيل الطلب ${order.orderNumber}`,
+        );
+      }
+
+      this.logger.log(
+        `Commission calculated for order ${order.orderNumber}: Platform: ${commission.platformFee}, Store: ${commission.storeEarnings}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to process commission for order ${order.orderNumber}: ${error.message}`,
+      );
+      // Don't throw - order delivery should still succeed
+    }
   }
 
   /**
@@ -97,8 +167,12 @@ export class OrderStatusService {
 
       if (inventory) {
         // Release reserved quantity
-        inventory.reservedQuantity = Math.max(0, inventory.reservedQuantity - item.quantity);
-        inventory.availableQuantity = inventory.quantity - inventory.reservedQuantity;
+        inventory.reservedQuantity = Math.max(
+          0,
+          inventory.reservedQuantity - item.quantity,
+        );
+        inventory.availableQuantity =
+          inventory.quantity - inventory.reservedQuantity;
 
         // Add movement record
         inventory.movements.push({
@@ -112,6 +186,25 @@ export class OrderStatusService {
         } as any);
 
         await inventory.save();
+      }
+    }
+
+    // Refund wallet payment if applicable
+    if (order.walletAmountPaid > 0) {
+      try {
+        await this.walletService.refundToWallet(
+          order.customerId.toString(),
+          orderId,
+          order.walletAmountPaid,
+          `استرداد للطلب الملغى ${order.orderNumber}`,
+        );
+        this.logger.log(
+          `Refunded ${order.walletAmountPaid} SYP to customer ${order.customerId} for cancelled order ${order.orderNumber}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to refund wallet for order ${order.orderNumber}: ${error.message}`,
+        );
       }
     }
 
@@ -131,7 +224,9 @@ export class OrderStatusService {
 
     await order.save();
 
-    this.logger.log(`Order ${orderId} cancelled by ${cancelledBy}. Reason: ${cancelDto.reason}`);
+    this.logger.log(
+      `Order ${orderId} cancelled by ${cancelledBy}. Reason: ${cancelDto.reason}`,
+    );
 
     // Emit event
     this.eventEmitter.emit('order.cancelled', {
@@ -146,7 +241,10 @@ export class OrderStatusService {
   /**
    * Validate status transition
    */
-  private validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): void {
+  private validateStatusTransition(
+    currentStatus: OrderStatus,
+    newStatus: OrderStatus,
+  ): void {
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
       [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
@@ -165,4 +263,3 @@ export class OrderStatusService {
     }
   }
 }
-

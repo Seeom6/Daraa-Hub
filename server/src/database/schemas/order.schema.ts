@@ -4,22 +4,22 @@ import { Document, Types } from 'mongoose';
 export type OrderDocument = Order & Document;
 
 export enum OrderStatus {
-  PENDING = 'pending',           // Order created, awaiting confirmation
-  CONFIRMED = 'confirmed',       // Store confirmed the order
-  PREPARING = 'preparing',       // Store is preparing the order
-  READY = 'ready',              // Order ready for pickup
-  PICKED_UP = 'picked_up',      // Courier picked up the order
-  DELIVERING = 'delivering',     // On the way to customer
-  DELIVERED = 'delivered',       // Successfully delivered
-  CANCELLED = 'cancelled',       // Order cancelled
+  PENDING = 'pending', // Order created, awaiting confirmation
+  CONFIRMED = 'confirmed', // Store confirmed the order
+  PREPARING = 'preparing', // Store is preparing the order
+  READY = 'ready', // Order ready for pickup
+  PICKED_UP = 'picked_up', // Courier picked up the order
+  DELIVERING = 'delivering', // On the way to customer
+  DELIVERED = 'delivered', // Successfully delivered
+  CANCELLED = 'cancelled', // Order cancelled
 }
 
 export enum PaymentMethod {
-  CASH = 'cash',                 // Cash on delivery
-  CARD = 'card',                 // Credit/Debit card
-  POINTS = 'points',             // Loyalty points
-  WALLET = 'wallet',             // Digital wallet
-  MIXED = 'mixed',               // Combination of methods
+  CASH = 'cash', // Cash on delivery
+  CARD = 'card', // Credit/Debit card
+  POINTS = 'points', // Loyalty points
+  WALLET = 'wallet', // Digital wallet
+  MIXED = 'mixed', // Combination of methods
 }
 
 export enum PaymentStatus {
@@ -32,13 +32,13 @@ export enum PaymentStatus {
 export interface OrderItem {
   productId: Types.ObjectId;
   variantId?: Types.ObjectId;
-  name: string;              // Product name (snapshot)
-  image?: string;            // Product image (snapshot)
+  name: string; // Product name (snapshot)
+  image?: string; // Product image (snapshot)
   sku?: string;
   quantity: number;
-  price: number;             // Price at time of order
+  price: number; // Price at time of order
   pointsPrice?: number;
-  subtotal: number;          // quantity * price
+  subtotal: number; // quantity * price
 }
 
 export interface DeliveryAddress {
@@ -47,6 +47,7 @@ export interface DeliveryAddress {
   fullAddress: string;
   city: string;
   district?: string;
+  zoneId?: Types.ObjectId; // Delivery Zone
   location?: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
@@ -67,16 +68,24 @@ export interface StatusHistory {
  */
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, unique: true })
   orderNumber: string; // Auto-generated (e.g., "ORD-20250109-0001")
 
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    required: true,
+  })
   customerId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'CourierProfile', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'CourierProfile' })
   courierId?: Types.ObjectId;
 
   @Prop({
@@ -115,10 +124,18 @@ export class Order {
   @Prop({ type: String, enum: PaymentMethod, required: true })
   paymentMethod: PaymentMethod;
 
-  @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.PENDING, index: true })
+  @Prop({
+    type: String,
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
   paymentStatus: PaymentStatus;
 
-  @Prop({ type: String, enum: OrderStatus, default: OrderStatus.PENDING, index: true })
+  @Prop({
+    type: String,
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
   orderStatus: OrderStatus;
 
   @Prop({
@@ -128,6 +145,7 @@ export class Order {
       fullAddress: { type: String, required: true },
       city: { type: String, required: true },
       district: String,
+      zoneId: { type: Types.ObjectId, ref: 'DeliveryZone' },
       location: {
         type: { type: String, enum: ['Point'], default: 'Point' },
         coordinates: { type: [Number], required: true },
@@ -181,6 +199,17 @@ export class Order {
   @Prop({ default: 0, min: 0 })
   pointsUsed: number; // Loyalty points used for this order
 
+  // Wallet Payment
+  @Prop({ default: 0, min: 0 })
+  walletAmountPaid: number; // Amount paid from wallet
+
+  @Prop({ type: Types.ObjectId, ref: 'WalletTransaction' })
+  walletTransactionId?: Types.ObjectId;
+
+  // Commission tracking
+  @Prop({ type: Types.ObjectId, ref: 'Commission' })
+  commissionId?: Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -188,7 +217,7 @@ export class Order {
 export const OrderSchema = SchemaFactory.createForClass(Order);
 
 // Indexes
-OrderSchema.index({ orderNumber: 1 }, { unique: true });
+// Note: orderNumber already has unique: true in @Prop, which creates an index automatically
 OrderSchema.index({ customerId: 1, createdAt: -1 });
 OrderSchema.index({ storeId: 1, orderStatus: 1, createdAt: -1 }); // Store orders by status
 OrderSchema.index({ courierId: 1, orderStatus: 1, createdAt: -1 }); // Courier orders by status
@@ -210,4 +239,3 @@ OrderSchema.pre('save', function (next) {
   }
   next();
 });
-

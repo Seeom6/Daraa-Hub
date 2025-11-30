@@ -54,7 +54,9 @@ describe('Store Categories E2E Tests', () => {
       });
 
     const ownerCookies = storeOwnerLogin.headers['set-cookie'];
-    storeOwnerCookie = Array.isArray(ownerCookies) ? ownerCookies : [ownerCookies];
+    storeOwnerCookie = Array.isArray(ownerCookies)
+      ? ownerCookies
+      : [ownerCookies];
   });
 
   afterAll(async () => {
@@ -64,8 +66,9 @@ describe('Store Categories E2E Tests', () => {
   describe('Public Endpoints (No Auth)', () => {
     beforeAll(async () => {
       // Get a category ID for testing
-      const response = await request(app.getHttpServer())
-        .get('/api/store-categories/slug/restaurants-food');
+      const response = await request(app.getHttpServer()).get(
+        '/api/store-categories/slug/restaurants-food',
+      );
 
       if (response.body && response.body.data) {
         categoryId = response.body.data._id;
@@ -94,7 +97,9 @@ describe('Store Categories E2E Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toBeInstanceOf(Array);
-      expect(response.body.data.every((cat: any) => cat.level === 0)).toBe(true);
+      expect(response.body.data.every((cat: any) => cat.level === 0)).toBe(
+        true,
+      );
     });
 
     it('should get category by slug', async () => {
@@ -130,7 +135,9 @@ describe('Store Categories E2E Tests', () => {
       expect(response.body.data).toBeInstanceOf(Array);
       // May or may not have subcategories
       if (response.body.data.length > 0) {
-        expect(response.body.data.every((cat: any) => cat.level === 1)).toBe(true);
+        expect(response.body.data.every((cat: any) => cat.level === 1)).toBe(
+          true,
+        );
         subcategoryId = response.body.data[0]._id;
       }
     });
@@ -154,7 +161,9 @@ describe('Store Categories E2E Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toBeInstanceOf(Array);
-      expect(response.body.data.every((cat: any) => cat.level === 0)).toBe(true);
+      expect(response.body.data.every((cat: any) => cat.level === 0)).toBe(
+        true,
+      );
     });
 
     it('should filter active categories only', async () => {
@@ -165,7 +174,9 @@ describe('Store Categories E2E Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toBeInstanceOf(Array);
-      expect(response.body.data.every((cat: any) => cat.isActive === true)).toBe(true);
+      expect(
+        response.body.data.every((cat: any) => cat.isActive === true),
+      ).toBe(true);
     });
   });
 
@@ -194,7 +205,10 @@ describe('Store Categories E2E Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('name', 'رياضة ولياقة');
-      expect(response.body.data).toHaveProperty('slug', `sports-fitness-${timestamp}`);
+      expect(response.body.data).toHaveProperty(
+        'slug',
+        `sports-fitness-${timestamp}`,
+      );
       newCategoryId = response.body.data._id;
     });
 
@@ -314,8 +328,9 @@ describe('Store Categories E2E Tests', () => {
       expect([400, 409]).toContain(response.status);
 
       // Cleanup - delete child first, then parent
-      const children = await request(app.getHttpServer())
-        .get(`/api/store-categories/${parentId}/subcategories`);
+      const children = await request(app.getHttpServer()).get(
+        `/api/store-categories/${parentId}/subcategories`,
+      );
 
       if (children.body && children.body.data) {
         for (const child of children.body.data) {
@@ -423,7 +438,9 @@ describe('Store Categories E2E Tests', () => {
         .expect(200);
 
       // Find a subcategory (level = 1)
-      const subcategory = allCategories.body.data.find((cat: any) => cat.level === 1);
+      const subcategory = allCategories.body.data.find(
+        (cat: any) => cat.level === 1,
+      );
 
       if (subcategory) {
         // Try to create a subcategory of subcategory
@@ -438,7 +455,9 @@ describe('Store Categories E2E Tests', () => {
           })
           .expect(400);
 
-        expect(response.body.message).toContain('لا يمكن إنشاء تصنيف فرعي لتصنيف فرعي');
+        expect(response.body.message).toContain(
+          'لا يمكن إنشاء تصنيف فرعي لتصنيف فرعي',
+        );
       } else {
         // If no subcategory exists, skip this test
         expect(true).toBe(true);
@@ -495,4 +514,3 @@ describe('Store Categories E2E Tests', () => {
     });
   });
 });
-

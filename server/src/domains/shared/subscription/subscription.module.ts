@@ -18,6 +18,9 @@ import {
   SystemSettingsSchema,
 } from '../../../database/schemas/system-settings.schema';
 import { SubscriptionService } from './services/subscription.service';
+import { SubscriptionActivationService } from './services/subscription-activation.service';
+import { SubscriptionManagementService } from './services/subscription-management.service';
+import { SubscriptionQueryService } from './services/subscription-query.service';
 import { SubscriptionCronService } from './services/subscription-cron.service';
 import { SubscriptionEventsListener } from './listeners/subscription-events.listener';
 import { SubscriptionController } from './controllers/subscription.controller';
@@ -36,8 +39,25 @@ import { SubscriptionRepository } from './repositories/subscription.repository';
     NotificationsModule,
   ],
   controllers: [SubscriptionController],
-  providers: [SubscriptionService, SubscriptionCronService, SubscriptionEventsListener, SubscriptionRepository],
-  exports: [SubscriptionService, SubscriptionRepository],
+  providers: [
+    // Repository
+    SubscriptionRepository,
+    // Specialized Services
+    SubscriptionActivationService,
+    SubscriptionManagementService,
+    SubscriptionQueryService,
+    // Facade Service
+    SubscriptionService,
+    // Cron & Events
+    SubscriptionCronService,
+    SubscriptionEventsListener,
+  ],
+  exports: [
+    SubscriptionService,
+    SubscriptionActivationService,
+    SubscriptionManagementService,
+    SubscriptionQueryService,
+    SubscriptionRepository,
+  ],
 })
 export class SubscriptionModule {}
-

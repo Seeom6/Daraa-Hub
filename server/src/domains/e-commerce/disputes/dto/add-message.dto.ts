@@ -8,4 +8,3 @@ export class AddMessageDto {
   @IsBoolean()
   isAdminMessage?: boolean;
 }
-

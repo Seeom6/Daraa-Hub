@@ -10,4 +10,3 @@ export interface PaginatedResult<T> {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
-

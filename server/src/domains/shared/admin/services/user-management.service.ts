@@ -2,9 +2,16 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Account, AccountDocument } from '../../../../database/schemas/account.schema';
+import {
+  Account,
+  AccountDocument,
+} from '../../../../database/schemas/account.schema';
 import { SuspendUserDto, UnsuspendUserDto } from '../dto/suspend-user.dto';
-import { USER_SUSPENDED, USER_UNSUSPENDED, USER_BANNED } from '../../../../infrastructure/events/event-types';
+import {
+  USER_SUSPENDED,
+  USER_UNSUSPENDED,
+  USER_BANNED,
+} from '../../../../infrastructure/events/event-types';
 
 @Injectable()
 export class UserManagementService {
@@ -22,7 +29,12 @@ export class UserManagementService {
     isVerified?: boolean;
     page?: number;
     limit?: number;
-  }): Promise<{ users: AccountDocument[]; total: number; page: number; totalPages: number }> {
+  }): Promise<{
+    users: AccountDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const page = filters?.page || 1;
     const limit = filters?.limit || 20;
     const skip = (page - 1) * limit;
@@ -203,4 +215,3 @@ export class UserManagementService {
       .exec();
   }
 }
-

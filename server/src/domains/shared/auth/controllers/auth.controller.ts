@@ -9,7 +9,6 @@ import {
   Get,
   Req,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import type { Response, Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { RegisterStep1Dto } from '../dto/register-step1.dto';
@@ -19,6 +18,7 @@ import { LoginDto } from '../dto/login.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { JwtAuthGuard } from '../../../../common/guards';
+import { AuthThrottle } from '../../../../common/decorators/auth-throttle.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -27,10 +27,10 @@ export class AuthController {
   /**
    * Registration Step 1: Send OTP
    * POST /auth/register/step1
-   * Rate Limit: 5 requests per minute
+   * Rate Limit: 5 requests per minute (production), 100 requests per minute (test)
    */
   @Post('register/step1')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async registerStep1(@Body() dto: RegisterStep1Dto) {
     return this.authService.registerStep1(dto);
@@ -39,10 +39,10 @@ export class AuthController {
   /**
    * Registration Step 2: Verify OTP
    * POST /auth/register/verify-otp
-   * Rate Limit: 5 requests per minute
+   * Rate Limit: 5 requests per minute (production), 100 requests per minute (test)
    */
   @Post('register/verify-otp')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyOtp(dto);
@@ -63,14 +63,14 @@ export class AuthController {
     // Set JWT tokens in HTTP-only cookies
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Disabled for testing - enable in production
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     response.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Disabled for testing - enable in production
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
@@ -85,10 +85,10 @@ export class AuthController {
   /**
    * Login
    * POST /auth/login
-   * Rate Limit: 5 requests per minute
+   * Rate Limit: 5 requests per minute (production), 100 requests per minute (test)
    */
   @Post('login')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() dto: LoginDto,
@@ -104,14 +104,14 @@ export class AuthController {
     // Set JWT tokens in HTTP-only cookies
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Disabled for testing - enable in production
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     response.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Disabled for testing - enable in production
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
@@ -158,6 +158,20 @@ export class AuthController {
   }
 
   /**
+   * Get current user profile (alias for /auth/me)
+   * GET /auth/profile
+   */
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Req() request: Request) {
+    // The user is attached to the request by the JWT strategy
+    return {
+      success: true,
+      data: request.user,
+    };
+  }
+
+  /**
    * Refresh Token
    * POST /auth/refresh
    */
@@ -182,7 +196,7 @@ export class AuthController {
       // Set new access token
       response.cookie('access_token', result.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Disabled for testing - enable in production
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
@@ -202,10 +216,10 @@ export class AuthController {
   /**
    * Forgot Password Step 1: Send OTP
    * POST /auth/forgot-password
-   * Rate Limit: 5 requests per minute
+   * Rate Limit: 5 requests per minute (production), 100 requests per minute (test)
    */
   @Post('forgot-password')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
@@ -214,10 +228,10 @@ export class AuthController {
   /**
    * Forgot Password Step 2: Verify OTP
    * POST /auth/forgot-password/verify-otp
-   * Rate Limit: 5 requests per minute
+   * Rate Limit: 5 requests per minute (production), 100 requests per minute (test)
    */
   @Post('forgot-password/verify-otp')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async verifyForgotPasswordOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyForgotPasswordOtp(dto);
@@ -226,13 +240,12 @@ export class AuthController {
   /**
    * Forgot Password Step 3: Reset Password
    * POST /auth/reset-password
-   * Rate Limit: 5 requests per minute
+   * Rate Limit: 5 requests per minute (production), 100 requests per minute (test)
    */
   @Post('reset-password')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
 }
-

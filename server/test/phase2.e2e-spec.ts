@@ -3,18 +3,18 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { AppModule } from '../src/app.module';
-import { Connection } from 'mongoose';
+import { Connection, Types } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
 
 /**
  * Phase 2: Order Management System (E2E Tests)
- * 
+ *
  * Test Coverage:
  * 1. Cart Module (5 tests)
  * 2. Order Module (8 tests)
  * 3. Payment Module (6 tests)
  * 4. Order + Payment Integration (4 tests)
- * 
+ *
  * Total: 23 E2E tests
  */
 describe('Phase 2: Order Management System (E2E)', () => {
@@ -59,7 +59,9 @@ describe('Phase 2: Order Management System (E2E)', () => {
     await connection.collection('carts').deleteMany({});
     await connection.collection('orders').deleteMany({ orderNumber: /^ORD-/ });
     await connection.collection('payments').deleteMany({});
-    await connection.collection('notifications').deleteMany({ type: { $in: ['order', 'payment'] } });
+    await connection
+      .collection('notifications')
+      .deleteMany({ type: { $in: ['order', 'payment'] } });
 
     // Login as admin
     const adminLoginResponse = await request(app.getHttpServer())
@@ -81,7 +83,9 @@ describe('Phase 2: Order Management System (E2E)', () => {
       });
 
     const customerCookies = customerLoginResponse.headers['set-cookie'];
-    customerCookie = Array.isArray(customerCookies) ? customerCookies : [customerCookies];
+    customerCookie = Array.isArray(customerCookies)
+      ? customerCookies
+      : [customerCookies];
 
     // Get customer user ID
     const customerMeResponse = await request(app.getHttpServer())
@@ -91,7 +95,9 @@ describe('Phase 2: Order Management System (E2E)', () => {
     if (customerMeResponse.body.data && customerMeResponse.body.data.userId) {
       customerId = customerMeResponse.body.data.userId;
     } else {
-      throw new Error(`Failed to get customer userId. Response: ${JSON.stringify(customerMeResponse.body)}`);
+      throw new Error(
+        `Failed to get customer userId. Response: ${JSON.stringify(customerMeResponse.body)}`,
+      );
     }
 
     // Login as store owner
@@ -103,25 +109,34 @@ describe('Phase 2: Order Management System (E2E)', () => {
       });
 
     const storeOwnerCookies = storeOwnerLoginResponse.headers['set-cookie'];
-    storeOwnerCookie = Array.isArray(storeOwnerCookies) ? storeOwnerCookies : [storeOwnerCookies];
+    storeOwnerCookie = Array.isArray(storeOwnerCookies)
+      ? storeOwnerCookies
+      : [storeOwnerCookies];
 
     // Get store owner profile ID
     const storeOwnerMeResponse = await request(app.getHttpServer())
       .get('/api/auth/me')
       .set('Cookie', storeOwnerCookie);
 
-    if (storeOwnerMeResponse.body.data && storeOwnerMeResponse.body.data.profileId) {
+    if (
+      storeOwnerMeResponse.body.data &&
+      storeOwnerMeResponse.body.data.profileId
+    ) {
       storeId = storeOwnerMeResponse.body.data.profileId;
     } else {
       throw new Error('Failed to get store owner profileId');
     }
 
-    // Get an existing product for testing
-    const existingProduct = await connection.collection('products').findOne({ storeId });
+    // Get an existing product for testing (storeId is stored as ObjectId in DB)
+    const existingProduct = await connection.collection('products').findOne({
+      storeId: new Types.ObjectId(storeId),
+    });
     if (existingProduct) {
       productId = existingProduct._id.toString();
     } else {
-      throw new Error('No products found for testing. Please run Phase 1 tests first.');
+      throw new Error(
+        'No products found for testing. Please run Phase 1 tests first.',
+      );
     }
   });
 
@@ -130,13 +145,17 @@ describe('Phase 2: Order Management System (E2E)', () => {
     await connection.collection('carts').deleteMany({});
     await connection.collection('orders').deleteMany({ orderNumber: /^ORD-/ });
     await connection.collection('payments').deleteMany({});
-    await connection.collection('notifications').deleteMany({ type: { $in: ['order', 'payment'] } });
+    await connection
+      .collection('notifications')
+      .deleteMany({ type: { $in: ['order', 'payment'] } });
 
     // Reset inventory to initial state
     // First, ensure all products have inventory
     const products = await connection.collection('products').find({}).toArray();
     for (const product of products) {
-      const existing = await connection.collection('inventories').findOne({ productId: product._id });
+      const existing = await connection
+        .collection('inventories')
+        .findOne({ productId: product._id });
       if (!existing) {
         await connection.collection('inventories').insertOne({
           productId: product._id,
@@ -157,7 +176,9 @@ describe('Phase 2: Order Management System (E2E)', () => {
     // Then reset all inventories
     await connection.collection('inventories').updateMany(
       {},
-      { $set: { quantity: 100, reservedQuantity: 0, availableQuantity: 100 } }
+      {
+        $set: { quantity: 100, reservedQuantity: 0, availableQuantity: 100 },
+      },
     );
 
     await app.close();
@@ -222,9 +243,10 @@ describe('Phase 2: Order Management System (E2E)', () => {
 
       // Extract productId (it may be populated as an object)
       const rawProductId = cartResponse.body.data.items[0].productId;
-      const actualProductId = typeof rawProductId === 'object' && rawProductId._id
-        ? rawProductId._id
-        : rawProductId;
+      const actualProductId =
+        typeof rawProductId === 'object' && rawProductId._id
+          ? rawProductId._id
+          : rawProductId;
 
       // Update the quantity
       const response = await request(app.getHttpServer())
@@ -236,7 +258,9 @@ describe('Phase 2: Order Management System (E2E)', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.items.some((item: any) => item.quantity === 3)).toBe(true);
+      expect(
+        response.body.data.items.some((item: any) => item.quantity === 3),
+      ).toBe(true);
     });
 
     it('1.4 should remove item from cart (Customer)', async () => {
@@ -525,7 +549,9 @@ describe('Phase 2: Order Management System (E2E)', () => {
 
       expect(orderResponse.body.data._id).toBe(orderId);
       expect(paymentResponse.body.data.orderId).toBe(orderId);
-      expect(orderResponse.body.data.paymentMethod).toBe(paymentResponse.body.data.paymentMethod);
+      expect(orderResponse.body.data.paymentMethod).toBe(
+        paymentResponse.body.data.paymentMethod,
+      );
     });
 
     it('4.2 should verify notifications were sent for order creation', async () => {
@@ -598,4 +624,3 @@ describe('Phase 2: Order Management System (E2E)', () => {
     });
   });
 });
-

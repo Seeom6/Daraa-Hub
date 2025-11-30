@@ -8,17 +8,25 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrderDocument, OrderStatus, PaymentStatus, OrderItem } from '../../../../database/schemas/order.schema';
+import {
+  OrderDocument,
+  OrderStatus,
+  PaymentStatus,
+  PaymentMethod,
+  OrderItem,
+} from '../../../../database/schemas/order.schema';
 import { CreateOrderDto } from '../dto';
 import { OrderRepository } from '../repositories/order.repository';
 import { CartRepository } from '../../cart/repositories/cart.repository';
 import { InventoryRepository } from '../../inventory/repositories/inventory.repository';
 import { StoreOwnerProfileRepository } from '../../../shared/accounts/repositories/store-owner-profile.repository';
 import { StoreSettingsService } from '../../../shared/store-settings/services/store-settings.service';
+import { WalletService } from '../../../shared/wallet/services/wallet.service';
+import { DeliveryZoneService } from '../../../shared/delivery-zones/services/delivery-zone.service';
 
 /**
  * Service responsible for order creation
- * Handles cart validation, inventory reservation, and order creation
+ * Handles cart validation, inventory reservation, wallet payment, and order creation
  */
 @Injectable()
 export class OrderCreationService {
@@ -30,15 +38,28 @@ export class OrderCreationService {
     private readonly inventoryRepository: InventoryRepository,
     private readonly storeOwnerProfileRepository: StoreOwnerProfileRepository,
     private readonly storeSettingsService: StoreSettingsService,
+    private readonly walletService: WalletService,
+    private readonly deliveryZoneService: DeliveryZoneService,
     private eventEmitter: EventEmitter2,
   ) {}
 
   /**
    * Create order from cart
    */
-  async createOrder(customerId: string, createOrderDto: CreateOrderDto): Promise<OrderDocument> {
-    const { storeId, paymentMethod, deliveryAddress, appliedCoupon, customerNotes, pointsToUse } =
-      createOrderDto;
+  async createOrder(
+    customerId: string,
+    createOrderDto: CreateOrderDto,
+  ): Promise<OrderDocument> {
+    const {
+      storeId,
+      paymentMethod,
+      deliveryAddress,
+      appliedCoupon,
+      customerNotes,
+      pointsToUse,
+      payFromWallet,
+      walletAmount,
+    } = createOrderDto;
 
     // Get customer cart
     const cart = await this.cartRepository
@@ -53,7 +74,9 @@ export class OrderCreationService {
     }
 
     // Filter items for this store only
-    const storeItems = cart.items.filter((item) => item.storeId.toString() === storeId);
+    const storeItems = cart.items.filter(
+      (item) => item.storeId.toString() === storeId,
+    );
 
     if (storeItems.length === 0) {
       throw new BadRequestException('No items from this store in cart');
@@ -92,7 +115,8 @@ export class OrderCreationService {
 
       // Reserve inventory
       inventory.reservedQuantity += cartItem.quantity;
-      inventory.availableQuantity = inventory.quantity - inventory.reservedQuantity;
+      inventory.availableQuantity =
+        inventory.quantity - inventory.reservedQuantity;
       await inventory.save();
 
       const itemSubtotal = cartItem.price * cartItem.quantity;
@@ -111,18 +135,79 @@ export class OrderCreationService {
       });
     }
 
-    // Calculate totals
-    const deliveryFee = await this.storeSettingsService.calculateShippingFee(
-      storeId,
-      deliveryAddress.city,
-      subtotal,
-    );
+    // Calculate delivery fee using DeliveryZone if zoneId provided
+    let deliveryFee = 0;
+    let zoneId: Types.ObjectId | undefined;
+
+    if (deliveryAddress.zoneId) {
+      // Use delivery zone for fee calculation
+      const feeResult = await this.deliveryZoneService.calculateDeliveryFee(
+        storeId,
+        deliveryAddress.zoneId,
+        subtotal,
+      );
+      deliveryFee = feeResult.fee;
+      zoneId = new Types.ObjectId(deliveryAddress.zoneId);
+    } else {
+      // Fallback to store settings
+      deliveryFee = await this.storeSettingsService.calculateShippingFee(
+        storeId,
+        deliveryAddress.city,
+        subtotal,
+      );
+    }
+
     const discount = 0; // TODO: Apply coupon if provided
     const tax = 0; // TODO: Calculate tax if applicable
     const total = subtotal + deliveryFee + tax - discount;
 
-    // Generate order number
+    // Generate order number early for wallet transaction description
     const orderNumber = await this.generateOrderNumber();
+
+    // Handle wallet payment
+    let walletAmountPaid = 0;
+    let finalPaymentStatus = PaymentStatus.PENDING;
+    let finalPaymentMethod = paymentMethod;
+
+    if (
+      payFromWallet ||
+      paymentMethod === PaymentMethod.WALLET ||
+      paymentMethod === PaymentMethod.MIXED
+    ) {
+      const amountToPay = walletAmount || total;
+
+      // Check wallet balance
+      const wallet = await this.walletService.getWallet(customerId);
+
+      if (wallet.balance < amountToPay) {
+        throw new BadRequestException(
+          `رصيد المحفظة غير كافٍ. الرصيد الحالي: ${wallet.balance} ل.س`,
+        );
+      }
+
+      // Deduct from wallet using payFromWallet
+      await this.walletService.payFromWallet(
+        customerId,
+        orderNumber, // Use order number as temporary orderId
+        amountToPay,
+      );
+
+      walletAmountPaid = amountToPay;
+
+      // Set payment status
+      if (amountToPay >= total) {
+        finalPaymentStatus = PaymentStatus.PAID;
+        finalPaymentMethod = PaymentMethod.WALLET;
+      } else {
+        finalPaymentMethod = PaymentMethod.MIXED;
+      }
+    }
+
+    // Prepare delivery address with zoneId
+    const orderDeliveryAddress = {
+      ...deliveryAddress,
+      zoneId,
+    };
 
     // Create order
     const order = await this.orderRepository.create({
@@ -135,13 +220,16 @@ export class OrderCreationService {
       discount,
       tax,
       total,
-      paymentMethod,
-      paymentStatus: paymentMethod === 'cash' ? PaymentStatus.PENDING : PaymentStatus.PENDING,
+      paymentMethod: finalPaymentMethod,
+      paymentStatus: finalPaymentStatus,
       orderStatus: OrderStatus.PENDING,
-      deliveryAddress,
-      appliedCoupon: appliedCoupon ? new Types.ObjectId(appliedCoupon) : undefined,
+      deliveryAddress: orderDeliveryAddress,
+      appliedCoupon: appliedCoupon
+        ? new Types.ObjectId(appliedCoupon)
+        : undefined,
       customerNotes,
       pointsUsed: pointsToUse || 0,
+      walletAmountPaid,
       statusHistory: [
         {
           status: OrderStatus.PENDING,
@@ -152,7 +240,9 @@ export class OrderCreationService {
     });
 
     // Remove items from cart
-    cart.items = cart.items.filter((item) => item.storeId.toString() !== storeId);
+    cart.items = cart.items.filter(
+      (item) => item.storeId.toString() !== storeId,
+    );
     await cart.save();
 
     this.logger.log(`Order ${orderNumber} created for customer ${customerId}`);
@@ -164,6 +254,8 @@ export class OrderCreationService {
       storeId,
       orderNumber,
       total,
+      paymentMethod: finalPaymentMethod,
+      walletAmountPaid,
     });
 
     return order;
@@ -179,8 +271,16 @@ export class OrderCreationService {
     const day = date.getDate().toString().padStart(2, '0');
 
     // Get count of orders today
-    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    const startOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const endOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1,
+    );
 
     const todayOrdersCount = await this.orderRepository
       .getModel()
@@ -194,4 +294,3 @@ export class OrderCreationService {
     return `ORD-${year}${month}${day}-${sequence}`;
   }
 }
-

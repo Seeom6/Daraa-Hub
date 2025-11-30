@@ -7,11 +7,45 @@ export class CreateAuditLogDto {
   @IsString()
   action: string;
 
-  @IsEnum(['user', 'store', 'courier', 'product', 'order', 'payment', 'system', 'security'])
-  category: 'user' | 'store' | 'courier' | 'product' | 'order' | 'payment' | 'system' | 'security';
+  @IsEnum([
+    'user',
+    'store',
+    'courier',
+    'product',
+    'order',
+    'payment',
+    'system',
+    'security',
+  ])
+  category:
+    | 'user'
+    | 'store'
+    | 'courier'
+    | 'product'
+    | 'order'
+    | 'payment'
+    | 'system'
+    | 'security';
 
-  @IsEnum(['create', 'read', 'update', 'delete', 'approve', 'reject', 'suspend', 'other'])
-  actionType: 'create' | 'read' | 'update' | 'delete' | 'approve' | 'reject' | 'suspend' | 'other';
+  @IsEnum([
+    'create',
+    'read',
+    'update',
+    'delete',
+    'approve',
+    'reject',
+    'suspend',
+    'other',
+  ])
+  actionType:
+    | 'create'
+    | 'read'
+    | 'update'
+    | 'delete'
+    | 'approve'
+    | 'reject'
+    | 'suspend'
+    | 'other';
 
   @IsOptional()
   @IsString()
@@ -51,4 +85,3 @@ export class CreateAuditLogDto {
   @IsString()
   description?: string;
 }
-

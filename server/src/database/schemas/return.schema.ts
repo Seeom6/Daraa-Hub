@@ -82,16 +82,24 @@ export class AdminReview {
 
 @Schema({ timestamps: true })
 export class Return {
-  @Prop({ type: Types.ObjectId, ref: 'Order', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Order', required: true })
   orderId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    required: true,
+  })
   customerId: Types.ObjectId;
 
   @Prop({ type: [ReturnItem], required: true })
   items: ReturnItem[];
 
-  @Prop({ type: String, enum: Object.values(ReturnStatus), default: ReturnStatus.REQUESTED, index: true })
+  @Prop({
+    type: String,
+    enum: Object.values(ReturnStatus),
+    default: ReturnStatus.REQUESTED,
+  })
   status: ReturnStatus;
 
   @Prop({ type: String, enum: Object.values(ReturnMethod), required: true })
@@ -135,4 +143,3 @@ ReturnSchema.index({ orderId: 1 });
 ReturnSchema.index({ customerId: 1, status: 1 });
 ReturnSchema.index({ status: 1 });
 ReturnSchema.index({ createdAt: -1 });
-

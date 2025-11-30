@@ -1,4 +1,10 @@
-import { IsOptional, IsMongoId, IsBoolean, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsMongoId,
+  IsBoolean,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class QueryInventoryDto {
@@ -38,4 +44,3 @@ export class QueryInventoryDto {
   @IsOptional()
   sortOrder?: 'asc' | 'desc' = 'asc';
 }
-

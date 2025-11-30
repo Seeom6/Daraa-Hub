@@ -1,10 +1,25 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { StoreSubscription, StoreSubscriptionDocument, SubscriptionStatus } from '../../../../database/schemas/store-subscription.schema';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas/store-owner-profile.schema';
-import { SystemSettings, SystemSettingsDocument } from '../../../../database/schemas/system-settings.schema';
+import {
+  StoreSubscription,
+  StoreSubscriptionDocument,
+  SubscriptionStatus,
+} from '../../../../database/schemas/store-subscription.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas/store-owner-profile.schema';
+import {
+  SystemSettings,
+  SystemSettingsDocument,
+} from '../../../../database/schemas/system-settings.schema';
 
 /**
  * Service responsible for product subscription checks
@@ -27,10 +42,16 @@ export class ProductSubscriptionService {
   /**
    * Check subscription limits before creating product
    */
-  async checkSubscriptionLimits(storeId: string, imageCount: number): Promise<void> {
+  async checkSubscriptionLimits(
+    storeId: string,
+    imageCount: number,
+  ): Promise<void> {
     // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
+    const settings = await this.settingsModel
+      .findOne({ key: 'subscription' })
+      .exec();
+    const subscriptionSystemEnabled =
+      settings?.value?.subscriptionSystemEnabled === true;
 
     if (!subscriptionSystemEnabled) {
       // Subscription system is disabled, allow all
@@ -102,8 +123,11 @@ export class ProductSubscriptionService {
    */
   async incrementDailyUsage(storeId: string): Promise<void> {
     // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
+    const settings = await this.settingsModel
+      .findOne({ key: 'subscription' })
+      .exec();
+    const subscriptionSystemEnabled =
+      settings?.value?.subscriptionSystemEnabled === true;
 
     if (!subscriptionSystemEnabled) {
       return;
@@ -119,8 +143,9 @@ export class ProductSubscriptionService {
 
     if (subscription) {
       await subscription.incrementTodayUsage();
-      this.logger.log(`Daily usage incremented for store ${storeId}: ${subscription.getTodayUsage()}`);
+      this.logger.log(
+        `Daily usage incremented for store ${storeId}: ${subscription.getTodayUsage()}`,
+      );
     }
   }
 }
-

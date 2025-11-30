@@ -10,4 +10,3 @@ export class RedeemPointsDto {
   @IsNotEmpty()
   description: string;
 }
-

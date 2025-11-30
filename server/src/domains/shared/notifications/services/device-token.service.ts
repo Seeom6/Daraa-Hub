@@ -1,7 +1,10 @@
-import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { DeviceToken, DeviceTokenDocument } from '../../../../database/schemas/device-token.schema';
+import {
+  DeviceToken,
+  DeviceTokenDocument,
+} from '../../../../database/schemas/device-token.schema';
 import { RegisterDeviceTokenDto } from '../dto/register-device-token.dto';
 
 @Injectable()
@@ -49,7 +52,9 @@ export class DeviceTokenService {
     });
 
     await deviceToken.save();
-    this.logger.log(`Registered new device token for user ${userId} on ${registerDto.platform}`);
+    this.logger.log(
+      `Registered new device token for user ${userId} on ${registerDto.platform}`,
+    );
 
     return deviceToken;
   }
@@ -140,13 +145,12 @@ export class DeviceTokenService {
    */
   async markAsInvalid(token: string): Promise<void> {
     await this.deviceTokenModel
-      .updateOne(
-        { token },
-        { isActive: false },
-      )
+      .updateOne({ token }, { isActive: false })
       .exec();
 
-    this.logger.warn(`Marked device token as invalid: ${token.substring(0, 20)}...`);
+    this.logger.warn(
+      `Marked device token as invalid: ${token.substring(0, 20)}...`,
+    );
   }
 
   /**
@@ -167,4 +171,3 @@ export class DeviceTokenService {
     return result.deletedCount;
   }
 }
-

@@ -1,0 +1,59 @@
+﻿{
+    "StartTime":  {
+                      "value":  "\/Date(1764487873199)\/",
+                      "DisplayHint":  2,
+                      "DateTime":  "Sunday, November 30, 2025 10:31:13 AM"
+                  },
+    "Passed":  5,
+    "TestSuite":  "Complete Store Lifecycle",
+    "Skipped":  0,
+    "Tests":  [
+                  {
+                      "Name":  "Store Owner Registration",
+                      "Timestamp":  "2025-11-30 10:31:15",
+                      "Duration":  0,
+                      "Endpoint":  "Multiple",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Store Profile Setup",
+                      "Timestamp":  "2025-11-30 10:31:15",
+                      "Duration":  36.06,
+                      "Endpoint":  "PUT /account/store-profile",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Verification Submission",
+                      "Timestamp":  "2025-11-30 10:31:15",
+                      "Duration":  44.48,
+                      "Endpoint":  "POST /verification/submit",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Get Pending Requests",
+                      "Timestamp":  "2025-11-30 10:31:15",
+                      "Duration":  35.98,
+                      "Endpoint":  "GET /verification/requests",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  },
+                  {
+                      "Name":  "Approve Verification",
+                      "Timestamp":  "2025-11-30 10:31:15",
+                      "Duration":  36.67,
+                      "Endpoint":  "PATCH /verification/requests/:id/review",
+                      "Status":  "passed",
+                      "ErrorMessage":  ""
+                  }
+              ],
+    "EndTime":  {
+                    "value":  "\/Date(1764487875492)\/",
+                    "DisplayHint":  2,
+                    "DateTime":  "Sunday, November 30, 2025 10:31:15 AM"
+                },
+    "TotalTests":  5,
+    "Failed":  0
+}

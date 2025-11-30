@@ -57,7 +57,12 @@ export class UsageHistoryItem {
 
 @Schema({ timestamps: true })
 export class Coupon {
-  @Prop({ required: true, unique: true, uppercase: true, trim: true, index: true })
+  @Prop({
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true,
+  })
   code: string;
 
   @Prop({ type: String, enum: CouponType, required: true })
@@ -78,10 +83,10 @@ export class Coupon {
   @Prop({ default: 0, min: 0 })
   usedCount: number;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   validFrom: Date;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   validUntil: Date;
 
   @Prop({ type: ApplicableTo, default: () => ({}) })
@@ -90,7 +95,7 @@ export class Coupon {
   @Prop({ default: false })
   autoApply: boolean; // Auto-apply if conditions met
 
-  @Prop({ default: true, index: true })
+  @Prop({ default: true })
   isActive: boolean;
 
   @Prop({ type: Types.ObjectId, ref: 'AdminProfile', required: true })
@@ -106,9 +111,8 @@ export class Coupon {
 export const CouponSchema = SchemaFactory.createForClass(Coupon);
 
 // Indexes
-CouponSchema.index({ code: 1 }, { unique: true });
+// Note: code already has unique: true in @Prop, which creates an index automatically
 CouponSchema.index({ isActive: 1, validFrom: 1, validUntil: 1 });
 CouponSchema.index({ 'applicableTo.stores': 1 });
 CouponSchema.index({ 'applicableTo.categories': 1 });
 CouponSchema.index({ 'applicableTo.products': 1 });
-

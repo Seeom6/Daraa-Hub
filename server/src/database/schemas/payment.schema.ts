@@ -41,13 +41,21 @@ export interface RefundInfo {
  */
 @Schema({ timestamps: true })
 export class Payment {
-  @Prop({ type: Types.ObjectId, ref: 'Order', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Order', required: true, unique: true })
   orderId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    required: true,
+  })
   customerId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+  })
   storeId: Types.ObjectId;
 
   @Prop({ required: true, min: 0 })
@@ -66,7 +74,11 @@ export class Payment {
   })
   paymentBreakdown?: PaymentBreakdown; // For mixed payments
 
-  @Prop({ type: String, enum: PaymentStatusType, default: PaymentStatusType.PENDING, index: true })
+  @Prop({
+    type: String,
+    enum: PaymentStatusType,
+    default: PaymentStatusType.PENDING,
+  })
   status: PaymentStatusType;
 
   @Prop()
@@ -111,11 +123,10 @@ export class Payment {
 export const PaymentSchema = SchemaFactory.createForClass(Payment);
 
 // Indexes
-PaymentSchema.index({ orderId: 1 }, { unique: true });
+// Note: orderId already has unique: true in @Prop, which creates an index automatically
 PaymentSchema.index({ customerId: 1, createdAt: -1 });
 PaymentSchema.index({ storeId: 1, status: 1, createdAt: -1 }); // Store payments by status
 PaymentSchema.index({ status: 1, createdAt: -1 }); // All payments by status
 PaymentSchema.index({ paymentMethod: 1, status: 1 }); // Payment method analytics
 PaymentSchema.index({ transactionId: 1 }, { sparse: true });
 PaymentSchema.index({ createdAt: -1 });
-

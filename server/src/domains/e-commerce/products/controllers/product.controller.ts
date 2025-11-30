@@ -53,7 +53,10 @@ export class ProductController {
     @Body() createProductDto: CreateProductDto,
     @CurrentUser() user: any,
   ) {
-    const product = await this.productService.create(createProductDto, user.userId);
+    const product = await this.productService.create(
+      createProductDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Product created successfully',
@@ -124,13 +127,20 @@ export class ProductController {
   ) {
     // Verify ownership if store owner
     if (user.role === 'store_owner') {
-      const isOwner = await this.productService.verifyOwnership(id, user.profileId);
+      const isOwner = await this.productService.verifyOwnership(
+        id,
+        user.profileId,
+      );
       if (!isOwner) {
         throw new ForbiddenException('You can only update your own products');
       }
     }
 
-    const product = await this.productService.update(id, updateProductDto, user.userId);
+    const product = await this.productService.update(
+      id,
+      updateProductDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Product updated successfully',
@@ -150,7 +160,10 @@ export class ProductController {
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
     // Verify ownership if store owner
     if (user.role === 'store_owner') {
-      const isOwner = await this.productService.verifyOwnership(id, user.profileId);
+      const isOwner = await this.productService.verifyOwnership(
+        id,
+        user.profileId,
+      );
       if (!isOwner) {
         throw new ForbiddenException('You can only delete your own products');
       }
@@ -182,18 +195,23 @@ export class ProductController {
 
     // Verify ownership if store owner
     if (user.role === 'store_owner') {
-      const isOwner = await this.productService.verifyOwnership(id, user.profileId);
+      const isOwner = await this.productService.verifyOwnership(
+        id,
+        user.profileId,
+      );
       if (!isOwner) {
-        throw new ForbiddenException('You can only upload images to your own products');
+        throw new ForbiddenException(
+          'You can only upload images to your own products',
+        );
       }
     }
 
     // Upload all files to S3
-    const uploadPromises = files.map(file =>
+    const uploadPromises = files.map((file) =>
       this.storageService.uploadFile(file, 'products'),
     );
     const uploadResults = await Promise.all(uploadPromises);
-    const imageUrls = uploadResults.map(result => result.url);
+    const imageUrls = uploadResults.map((result) => result.url);
 
     // Add images to product
     const product = await this.productMediaService.addImages(id, imageUrls);
@@ -223,9 +241,14 @@ export class ProductController {
   ) {
     // Verify ownership if store owner
     if (user.role === 'store_owner') {
-      const isOwner = await this.productService.verifyOwnership(id, user.profileId);
+      const isOwner = await this.productService.verifyOwnership(
+        id,
+        user.profileId,
+      );
       if (!isOwner) {
-        throw new ForbiddenException('You can only remove images from your own products');
+        throw new ForbiddenException(
+          'You can only remove images from your own products',
+        );
       }
     }
 
@@ -254,14 +277,20 @@ export class ProductController {
   ) {
     // Verify ownership if store owner
     if (user.role === 'store_owner') {
-      const isOwner = await this.productService.verifyOwnership(productId, user.profileId);
+      const isOwner = await this.productService.verifyOwnership(
+        productId,
+        user.profileId,
+      );
       if (!isOwner) {
-        throw new ForbiddenException('You can only add variants to your own products');
+        throw new ForbiddenException(
+          'You can only add variants to your own products',
+        );
       }
     }
 
     createVariantDto.productId = productId;
-    const variant = await this.productVariantService.createVariant(createVariantDto);
+    const variant =
+      await this.productVariantService.createVariant(createVariantDto);
 
     return {
       success: true,
@@ -277,7 +306,8 @@ export class ProductController {
    */
   @Get(':id/variants')
   async getVariants(@Param('id') productId: string) {
-    const variants = await this.productVariantService.findVariantsByProduct(productId);
+    const variants =
+      await this.productVariantService.findVariantsByProduct(productId);
     return {
       success: true,
       data: variants,
@@ -297,7 +327,10 @@ export class ProductController {
     @Body() updateVariantDto: UpdateVariantDto,
     @CurrentUser() user: any,
   ) {
-    const variant = await this.productVariantService.updateVariant(variantId, updateVariantDto);
+    const variant = await this.productVariantService.updateVariant(
+      variantId,
+      updateVariantDto,
+    );
     return {
       success: true,
       message: 'Variant updated successfully',
@@ -321,4 +354,3 @@ export class ProductController {
     await this.productVariantService.removeVariant(variantId);
   }
 }
-

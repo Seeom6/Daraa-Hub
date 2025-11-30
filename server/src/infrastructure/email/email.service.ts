@@ -46,7 +46,7 @@ export class EmailService {
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       const emailConfig = this.configService.get('email');
-      
+
       const mailOptions = {
         from: `"${emailConfig.from.name}" <${emailConfig.from.address}>`,
         to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
@@ -84,7 +84,11 @@ export class EmailService {
     });
   }
 
-  async sendVerificationEmail(to: string, name: string, verificationUrl: string): Promise<boolean> {
+  async sendVerificationEmail(
+    to: string,
+    name: string,
+    verificationUrl: string,
+  ): Promise<boolean> {
     const html = `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>تأكيد البريد الإلكتروني</h2>
@@ -107,7 +111,11 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetEmail(to: string, name: string, resetUrl: string): Promise<boolean> {
+  async sendPasswordResetEmail(
+    to: string,
+    name: string,
+    resetUrl: string,
+  ): Promise<boolean> {
     const html = `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>إعادة تعيين كلمة المرور</h2>
@@ -132,4 +140,3 @@ export class EmailService {
     });
   }
 }
-

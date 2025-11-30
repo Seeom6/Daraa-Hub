@@ -20,7 +20,10 @@ import { NotificationsService } from '../services/notifications.service';
 import { NotificationPreferenceService } from '../services/notification-preference.service';
 import { DeviceTokenService } from '../services/device-token.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
-import { SendNotificationDto, SendBulkNotificationDto } from '../dto/send-notification.dto';
+import {
+  SendNotificationDto,
+  SendBulkNotificationDto,
+} from '../dto/send-notification.dto';
 import { UpdateNotificationPreferenceDto } from '../dto/update-notification-preference.dto';
 import { RegisterDeviceTokenDto } from '../dto/register-device-token.dto';
 
@@ -116,8 +119,12 @@ export class NotificationsController {
   @UseGuards(AdminGuard, PermissionsGuard)
   @RequirePermissions({ resource: 'notifications', action: 'send_bulk' })
   @HttpCode(HttpStatus.CREATED)
-  async createNotification(@Body() createNotificationDto: CreateNotificationDto) {
-    const notification = await this.notificationsService.create(createNotificationDto);
+  async createNotification(
+    @Body() createNotificationDto: CreateNotificationDto,
+  ) {
+    const notification = await this.notificationsService.create(
+      createNotificationDto,
+    );
     return {
       success: true,
       message: 'Notification created successfully',
@@ -130,7 +137,8 @@ export class NotificationsController {
   @RequirePermissions({ resource: 'notifications', action: 'send_bulk' })
   @HttpCode(HttpStatus.OK)
   async sendNotification(@Body() sendNotificationDto: SendNotificationDto) {
-    const notification = await this.notificationsService.sendFromTemplate(sendNotificationDto);
+    const notification =
+      await this.notificationsService.sendFromTemplate(sendNotificationDto);
     return {
       success: true,
       message: 'Notification sent successfully',
@@ -177,7 +185,9 @@ export class NotificationsController {
   @Get('preferences')
   @HttpCode(HttpStatus.OK)
   async getPreferences(@Req() req: any) {
-    const preferences = await this.notificationPreferenceService.getPreferences(req.user.sub);
+    const preferences = await this.notificationPreferenceService.getPreferences(
+      req.user.sub,
+    );
     return {
       success: true,
       data: preferences,
@@ -190,10 +200,11 @@ export class NotificationsController {
     @Req() req: any,
     @Body() updateDto: UpdateNotificationPreferenceDto,
   ) {
-    const preferences = await this.notificationPreferenceService.updatePreferences(
-      req.user.sub,
-      updateDto,
-    );
+    const preferences =
+      await this.notificationPreferenceService.updatePreferences(
+        req.user.sub,
+        updateDto,
+      );
     return {
       success: true,
       message: 'Notification preferences updated successfully',
@@ -239,4 +250,3 @@ export class NotificationsController {
     };
   }
 }
-

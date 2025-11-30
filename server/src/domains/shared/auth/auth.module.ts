@@ -8,6 +8,8 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { OtpService } from './services/otp.service';
 import { TokenService } from './services/token.service';
+import { RegistrationService } from './services/registration.service';
+import { PasswordResetService } from './services/password-reset.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { Otp, OtpSchema } from '../../../database/schemas';
 import { AccountModule } from '../accounts/account.module';
@@ -22,7 +24,8 @@ import { OTPRepository } from './repositories/otp.repository';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: (configService.get<string>('jwt.accessTokenExpiry') || '7d') as any,
+          expiresIn: (configService.get<string>('jwt.accessTokenExpiry') ||
+            '7d') as any,
         },
       }),
       inject: [ConfigService],
@@ -32,8 +35,24 @@ import { OTPRepository } from './repositories/otp.repository';
     SmsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, OtpService, TokenService, JwtStrategy, OTPRepository],
-  exports: [AuthService, OtpService, TokenService, JwtStrategy, PassportModule, OTPRepository],
+  providers: [
+    AuthService,
+    OtpService,
+    TokenService,
+    RegistrationService,
+    PasswordResetService,
+    JwtStrategy,
+    OTPRepository,
+  ],
+  exports: [
+    AuthService,
+    OtpService,
+    TokenService,
+    RegistrationService,
+    PasswordResetService,
+    JwtStrategy,
+    PassportModule,
+    OTPRepository,
+  ],
 })
 export class AuthModule {}
-

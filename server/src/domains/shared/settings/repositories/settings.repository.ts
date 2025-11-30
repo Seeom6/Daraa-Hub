@@ -34,7 +34,9 @@ export class SystemSettingsRepository extends BaseRepository<SystemSettingsDocum
   /**
    * Update system settings
    */
-  async updateSettings(data: Partial<SystemSettings>): Promise<SystemSettingsDocument | null> {
+  async updateSettings(
+    data: Partial<SystemSettings>,
+  ): Promise<SystemSettingsDocument | null> {
     const settings = await this.getSettings();
     if (!settings) return null;
 
@@ -52,11 +54,15 @@ export class SystemSettingsRepository extends BaseRepository<SystemSettingsDocum
   /**
    * Update setting by key
    */
-  async updateSetting(key: string, value: any): Promise<SystemSettingsDocument | null> {
+  async updateSetting(
+    key: string,
+    value: any,
+  ): Promise<SystemSettingsDocument | null> {
     const settings = await this.getSettings();
     if (!settings) return null;
 
-    return this.findByIdAndUpdate((settings as any)._id.toString(), { [key]: value });
+    return this.findByIdAndUpdate((settings as any)._id.toString(), {
+      [key]: value,
+    });
   }
 }
-

@@ -20,7 +20,10 @@ import { Roles } from '../../../../common/decorators/roles.decorator';
 import { StoreCategoriesService } from '../services/store-categories.service';
 import { StoreCategoryStatisticsService } from '../services/store-category-statistics.service';
 import { CreateStoreCategoryDto, UpdateStoreCategoryDto } from '../dto';
-import { StoreOwnerProfile, StoreOwnerProfileDocument } from '../../../../database/schemas';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileDocument,
+} from '../../../../database/schemas';
 
 @Controller('store-categories')
 export class StoreCategoriesController {
@@ -86,9 +89,12 @@ export class StoreCategoriesController {
    * الحصول على التصنيفات الرئيسية فقط (عام)
    */
   @Get('root')
-  async findRootCategories(@Query('includeSubcategories') includeSubcategories?: string) {
+  async findRootCategories(
+    @Query('includeSubcategories') includeSubcategories?: string,
+  ) {
     const include = includeSubcategories === 'true';
-    const categories = await this.storeCategoriesService.findRootCategories(include);
+    const categories =
+      await this.storeCategoriesService.findRootCategories(include);
     return {
       success: true,
       data: categories,
@@ -126,7 +132,10 @@ export class StoreCategoriesController {
     @Query('includeSubcategories') includeSubcategories?: string,
   ) {
     const include = includeSubcategories === 'true';
-    const category = await this.storeCategoriesService.findBySlug(slug, include);
+    const category = await this.storeCategoriesService.findBySlug(
+      slug,
+      include,
+    );
     return {
       success: true,
       data: category,
@@ -154,7 +163,8 @@ export class StoreCategoriesController {
    */
   @Get(':id/subcategories')
   async findSubcategories(@Param('id') id: string) {
-    const subcategories = await this.storeCategoriesService.findSubcategories(id);
+    const subcategories =
+      await this.storeCategoriesService.findSubcategories(id);
     return {
       success: true,
       data: subcategories,
@@ -168,7 +178,10 @@ export class StoreCategoriesController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
-  async update(@Param('id') id: string, @Body() updateDto: UpdateStoreCategoryDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateStoreCategoryDto,
+  ) {
     const category = await this.storeCategoriesService.update(id, updateDto);
     return {
       success: true,
@@ -283,7 +296,9 @@ export class StoreCategoriesController {
     // Get stores
     const stores = await this.storeOwnerProfileModel
       .find(query)
-      .select('storeName storeDescription storeLogo rating totalReviews primaryCategory storeCategories verificationStatus')
+      .select(
+        'storeName storeDescription storeLogo rating totalReviews primaryCategory storeCategories verificationStatus',
+      )
       .populate('primaryCategory', 'name slug icon')
       .populate('storeCategories', 'name slug icon')
       .sort({ rating: -1, totalReviews: -1 })
@@ -304,4 +319,3 @@ export class StoreCategoriesController {
     };
   }
 }
-

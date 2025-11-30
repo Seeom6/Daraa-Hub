@@ -77,7 +77,9 @@ export class DeviceTokenRepository extends BaseRepository<DeviceTokenDocument> {
     const token = await this.findByDeviceId(deviceId);
     if (!token) return null;
 
-    return this.findByIdAndUpdate((token as any)._id.toString(), { isActive: false });
+    return this.findByIdAndUpdate((token as any)._id.toString(), {
+      isActive: false,
+    });
   }
 
   /**
@@ -102,4 +104,3 @@ export class DeviceTokenRepository extends BaseRepository<DeviceTokenDocument> {
     return result.deletedCount;
   }
 }
-

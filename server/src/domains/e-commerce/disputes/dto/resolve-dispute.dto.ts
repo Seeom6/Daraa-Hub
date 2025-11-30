@@ -14,4 +14,3 @@ export class ResolveDisputeDto {
   @IsString()
   notes?: string;
 }
-

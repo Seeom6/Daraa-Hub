@@ -1,6 +1,9 @@
 import { IsEnum, IsOptional, IsNumber, Min, IsDate } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ReturnStatus, RefundMethod } from '../../../../database/schemas/return.schema';
+import {
+  ReturnStatus,
+  RefundMethod,
+} from '../../../../database/schemas/return.schema';
 
 export class UpdateReturnDto {
   @IsOptional()
@@ -21,4 +24,3 @@ export class UpdateReturnDto {
   @IsDate()
   pickupScheduled?: Date;
 }
-

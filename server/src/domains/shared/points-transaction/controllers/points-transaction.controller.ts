@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { PointsTransactionService } from '../services/points-transaction.service';
 import { CreatePointsTransactionDto } from '../dto/create-points-transaction.dto';
 import { QueryPointsTransactionDto } from '../dto/query-points-transaction.dto';
@@ -12,7 +20,9 @@ import { CurrentUser } from '../../../../common/decorators/current-user.decorato
 @Controller('points')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PointsTransactionController {
-  constructor(private readonly pointsTransactionService: PointsTransactionService) {}
+  constructor(
+    private readonly pointsTransactionService: PointsTransactionService,
+  ) {}
 
   /**
    * Get current user's points balance
@@ -21,7 +31,9 @@ export class PointsTransactionController {
   @Get('balance')
   @Roles('customer')
   async getBalance(@CurrentUser() user: any) {
-    const balance = await this.pointsTransactionService.getBalance(user.profileId);
+    const balance = await this.pointsTransactionService.getBalance(
+      user.profileId,
+    );
     return {
       success: true,
       data: balance,
@@ -34,7 +46,10 @@ export class PointsTransactionController {
    */
   @Get('transactions')
   @Roles('customer')
-  async getTransactions(@CurrentUser() user: any, @Query() queryDto: QueryPointsTransactionDto) {
+  async getTransactions(
+    @CurrentUser() user: any,
+    @Query() queryDto: QueryPointsTransactionDto,
+  ) {
     queryDto.customerId = user.profileId;
     const result = await this.pointsTransactionService.findAll(queryDto);
     return {
@@ -63,8 +78,14 @@ export class PointsTransactionController {
    */
   @Post('redeem')
   @Roles('customer')
-  async redeemPoints(@CurrentUser() user: any, @Body() redeemDto: RedeemPointsDto) {
-    const transaction = await this.pointsTransactionService.redeemPoints(user.profileId, redeemDto);
+  async redeemPoints(
+    @CurrentUser() user: any,
+    @Body() redeemDto: RedeemPointsDto,
+  ) {
+    const transaction = await this.pointsTransactionService.redeemPoints(
+      user.profileId,
+      redeemDto,
+    );
     return {
       success: true,
       message: 'Points redeemed successfully',
@@ -78,9 +99,15 @@ export class PointsTransactionController {
    */
   @Get('expiring')
   @Roles('customer')
-  async getExpiringPoints(@CurrentUser() user: any, @Query('days') days?: number) {
+  async getExpiringPoints(
+    @CurrentUser() user: any,
+    @Query('days') days?: number,
+  ) {
     const daysAhead = days ? parseInt(days.toString()) : 30;
-    const result = await this.pointsTransactionService.getExpiringPoints(user.profileId, daysAhead);
+    const result = await this.pointsTransactionService.getExpiringPoints(
+      user.profileId,
+      daysAhead,
+    );
     return {
       success: true,
       data: result,
@@ -137,4 +164,3 @@ export class PointsTransactionController {
     };
   }
 }
-

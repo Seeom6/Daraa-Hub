@@ -1,4 +1,11 @@
-import { IsEnum, IsNumber, IsString, IsOptional, IsMongoId, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsMongoId,
+  Min,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { MovementType } from '../../../../database/schemas/inventory.schema';
 
@@ -24,4 +31,3 @@ export class StockMovementDto {
   @Transform(({ value }) => value?.trim())
   notes?: string;
 }
-

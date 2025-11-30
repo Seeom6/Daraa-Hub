@@ -9,7 +9,7 @@ export type NotificationTemplateDocument = NotificationTemplate & Document;
  */
 @Schema({ timestamps: true })
 export class NotificationTemplate {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, unique: true })
   code: string; // e.g., 'order_placed', 'store_approved', 'user_suspended'
 
   @Prop({ required: true })
@@ -18,18 +18,35 @@ export class NotificationTemplate {
   @Prop()
   description?: string;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: [
-      'order', 'payment', 'delivery', 'verification', 'account', 
-      'promotion', 'system', 'security', 'review', 'dispute'
+      'order',
+      'payment',
+      'delivery',
+      'verification',
+      'account',
+      'promotion',
+      'system',
+      'security',
+      'review',
+      'dispute',
     ],
     required: true,
   })
-  type: 'order' | 'payment' | 'delivery' | 'verification' | 'account' | 
-        'promotion' | 'system' | 'security' | 'review' | 'dispute';
+  type:
+    | 'order'
+    | 'payment'
+    | 'delivery'
+    | 'verification'
+    | 'account'
+    | 'promotion'
+    | 'system'
+    | 'security'
+    | 'review'
+    | 'dispute';
 
-  @Prop({ 
+  @Prop({
     type: [String],
     enum: ['customer', 'store_owner', 'courier', 'admin'],
     default: ['customer'],
@@ -74,15 +91,15 @@ export class NotificationTemplate {
     variables?: string[];
   };
 
-  @Prop({ 
+  @Prop({
     type: [String],
     enum: ['push', 'email', 'sms', 'in_app'],
     default: ['in_app'],
   })
   defaultChannels: ('push' | 'email' | 'sms' | 'in_app')[];
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['info', 'success', 'warning', 'error'],
     default: 'info',
   })
@@ -98,10 +115,10 @@ export class NotificationTemplate {
   updatedAt: Date;
 }
 
-export const NotificationTemplateSchema = SchemaFactory.createForClass(NotificationTemplate);
+export const NotificationTemplateSchema =
+  SchemaFactory.createForClass(NotificationTemplate);
 
 // Indexes
-NotificationTemplateSchema.index({ code: 1 });
+// Note: code already has unique: true in @Prop, which creates an index automatically
 NotificationTemplateSchema.index({ type: 1 });
 NotificationTemplateSchema.index({ isActive: 1 });
-

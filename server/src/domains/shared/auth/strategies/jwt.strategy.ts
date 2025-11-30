@@ -19,7 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('jwt.secret') || 'default-secret-key',
+      secretOrKey:
+        configService.get<string>('jwt.secret') || 'default-secret-key',
     });
   }
 
@@ -30,7 +31,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Account not found or inactive');
     }
 
-    const profileId = account.roleProfileId ? account.roleProfileId.toString() : null;
+    const profileId = account.roleProfileId
+      ? account.roleProfileId.toString()
+      : null;
 
     return {
       sub: payload.sub,
@@ -41,4 +44,3 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
   }
 }
-

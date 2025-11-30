@@ -65,10 +65,10 @@ export const LocationSchema = SchemaFactory.createForClass(Location);
 
 @Schema({ timestamps: true, collection: 'useractivities' })
 export class UserActivity {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Account', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   sessionId: string;
 
   @Prop({ type: [EventSchema], default: [] })
@@ -93,4 +93,3 @@ export const UserActivitySchema = SchemaFactory.createForClass(UserActivity);
 UserActivitySchema.index({ userId: 1, createdAt: -1 });
 UserActivitySchema.index({ sessionId: 1 });
 UserActivitySchema.index({ 'events.type': 1, 'events.timestamp': -1 });
-

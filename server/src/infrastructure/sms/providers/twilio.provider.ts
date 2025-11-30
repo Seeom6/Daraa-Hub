@@ -13,7 +13,8 @@ export class TwilioSmsProvider implements ISmsService {
   private twilioPhoneNumber: string;
 
   constructor(private configService: ConfigService) {
-    const accountSid = this.configService.get<string>('twilio.accountSid') || '';
+    const accountSid =
+      this.configService.get<string>('twilio.accountSid') || '';
     const authToken = this.configService.get<string>('twilio.authToken') || '';
     this.twilioPhoneNumber =
       this.configService.get<string>('twilio.phoneNumber') || '';
@@ -29,10 +30,7 @@ export class TwilioSmsProvider implements ISmsService {
         this.twilioClient = twilio.default(accountSid, authToken);
         this.logger.log('Twilio client initialized successfully');
       } catch (error) {
-        this.logger.error(
-          'Failed to initialize Twilio client:',
-          error.message,
-        );
+        this.logger.error('Failed to initialize Twilio client:', error.message);
         throw error;
       }
     } else {
@@ -74,4 +72,3 @@ export class TwilioSmsProvider implements ISmsService {
     }
   }
 }
-

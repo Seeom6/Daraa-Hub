@@ -44,8 +44,11 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
+    const settings = await this.settingsModel
+      .findOne({ key: 'subscription' })
+      .exec();
+    const subscriptionSystemEnabled =
+      settings?.value?.subscriptionSystemEnabled === true;
 
     if (!subscriptionSystemEnabled) {
       // Subscription system is disabled, allow all
@@ -53,7 +56,9 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     // Get store profile
-    const storeProfile = await this.storeProfileModel.findOne({ userId: user.userId }).exec();
+    const storeProfile = await this.storeProfileModel
+      .findOne({ userId: user.userId })
+      .exec();
     if (!storeProfile) {
       throw new ForbiddenException('Store profile not found');
     }
@@ -104,4 +109,3 @@ export class SubscriptionGuard implements CanActivate {
     return true;
   }
 }
-

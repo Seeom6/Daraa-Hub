@@ -105,4 +105,3 @@ export class ReferralRepository extends BaseRepository<ReferralDocument> {
     ]);
   }
 }
-

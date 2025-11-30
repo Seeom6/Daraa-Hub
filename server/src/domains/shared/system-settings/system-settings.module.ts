@@ -18,4 +18,3 @@ import { SystemSettingsController } from './controllers/system-settings.controll
   exports: [SystemSettingsService],
 })
 export class SystemSettingsModule {}
-

@@ -37,8 +37,14 @@ export class OrderController {
   @Post()
   @Roles('customer')
   @HttpCode(HttpStatus.CREATED)
-  async createOrder(@CurrentUser() user: any, @Body() createOrderDto: CreateOrderDto) {
-    const order = await this.orderCreationService.createOrder(user.profileId, createOrderDto);
+  async createOrder(
+    @CurrentUser() user: any,
+    @Body() createOrderDto: CreateOrderDto,
+  ) {
+    const order = await this.orderCreationService.createOrder(
+      user.profileId,
+      createOrderDto,
+    );
     return {
       success: true,
       message: 'Order created successfully',
@@ -118,20 +124,24 @@ export class OrderController {
 
     // Authorization check
     // customerId and storeId are populated, so we need to get the _id
-    const customerIdStr = order.customerId && typeof order.customerId === 'object'
-      ? (order.customerId as any)._id.toString()
-      : (order.customerId as any)?.toString();
+    const customerIdStr =
+      order.customerId && typeof order.customerId === 'object'
+        ? (order.customerId as any)._id.toString()
+        : (order.customerId as any)?.toString();
 
-    const storeIdStr = order.storeId && typeof order.storeId === 'object'
-      ? (order.storeId as any)._id.toString()
-      : (order.storeId as any)?.toString();
+    const storeIdStr =
+      order.storeId && typeof order.storeId === 'object'
+        ? (order.storeId as any)._id.toString()
+        : (order.storeId as any)?.toString();
 
     if (
       user.role === 'customer' &&
       customerIdStr &&
       customerIdStr !== user.profileId
     ) {
-      throw new UnauthorizedException('You are not authorized to view this order');
+      throw new UnauthorizedException(
+        'You are not authorized to view this order',
+      );
     }
 
     if (
@@ -139,7 +149,9 @@ export class OrderController {
       storeIdStr &&
       storeIdStr !== user.profileId
     ) {
-      throw new UnauthorizedException('You are not authorized to view this order');
+      throw new UnauthorizedException(
+        'You are not authorized to view this order',
+      );
     }
 
     return {
@@ -159,7 +171,11 @@ export class OrderController {
     @Param('id') id: string,
     @Body() updateDto: UpdateOrderStatusDto,
   ) {
-    const order = await this.orderStatusService.updateStatus(id, updateDto, user.userId);
+    const order = await this.orderStatusService.updateStatus(
+      id,
+      updateDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Order status updated successfully',
@@ -178,7 +194,11 @@ export class OrderController {
     @Param('id') id: string,
     @Body() cancelDto: CancelOrderDto,
   ) {
-    const order = await this.orderStatusService.cancelOrder(id, cancelDto, user.userId);
+    const order = await this.orderStatusService.cancelOrder(
+      id,
+      cancelDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Order cancelled successfully',
@@ -186,4 +206,3 @@ export class OrderController {
     };
   }
 }
-

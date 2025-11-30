@@ -61,9 +61,9 @@ export class SubscriptionPlan {
   updatedAt: Date;
 }
 
-export const SubscriptionPlanSchema = SchemaFactory.createForClass(SubscriptionPlan);
+export const SubscriptionPlanSchema =
+  SchemaFactory.createForClass(SubscriptionPlan);
 
 // Indexes
-SubscriptionPlanSchema.index({ type: 1 }, { unique: true });
+// Note: type already has unique: true in @Prop, which creates an index automatically
 SubscriptionPlanSchema.index({ isActive: 1, order: 1 });
-

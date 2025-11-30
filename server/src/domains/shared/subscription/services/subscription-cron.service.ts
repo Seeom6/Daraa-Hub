@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   StoreSubscription,
@@ -37,8 +37,11 @@ export class SubscriptionCronService {
   @Cron(CronExpression.EVERY_HOUR)
   async checkExpiredSubscriptions(): Promise<void> {
     // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
+    const settings = await this.settingsModel
+      .findOne({ key: 'subscription' })
+      .exec();
+    const subscriptionSystemEnabled =
+      settings?.value?.subscriptionSystemEnabled === true;
 
     if (!subscriptionSystemEnabled) {
       return;
@@ -60,7 +63,9 @@ export class SubscriptionCronService {
       await subscription.save();
 
       // Update store profile
-      const store = await this.storeProfileModel.findById(subscription.storeId).exec();
+      const store = await this.storeProfileModel
+        .findById(subscription.storeId)
+        .exec();
       if (store) {
         store.hasActiveSubscription = false;
         store.currentPlanId = undefined;
@@ -71,7 +76,9 @@ export class SubscriptionCronService {
         await store.save();
       }
 
-      this.logger.log(`Subscription ${subscription._id} expired for store ${subscription.storeId}`);
+      this.logger.log(
+        `Subscription ${subscription._id} expired for store ${subscription.storeId}`,
+      );
 
       // Emit event for notification
       this.eventEmitter.emit('subscription.expired', {
@@ -81,7 +88,9 @@ export class SubscriptionCronService {
     }
 
     if (expiredSubscriptions.length > 0) {
-      this.logger.log(`Processed ${expiredSubscriptions.length} expired subscriptions`);
+      this.logger.log(
+        `Processed ${expiredSubscriptions.length} expired subscriptions`,
+      );
     }
   }
 
@@ -91,16 +100,22 @@ export class SubscriptionCronService {
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async checkExpiringSoonSubscriptions(): Promise<void> {
     // Check if subscription system is enabled
-    const settings = await this.settingsModel.findOne({ key: 'subscription' }).exec();
-    const subscriptionSystemEnabled = settings?.value?.subscriptionSystemEnabled === true;
+    const settings = await this.settingsModel
+      .findOne({ key: 'subscription' })
+      .exec();
+    const subscriptionSystemEnabled =
+      settings?.value?.subscriptionSystemEnabled === true;
 
     if (!subscriptionSystemEnabled) {
       return;
     }
 
-    const warningDays = settings?.value?.notificationSettings?.subscriptionExpiryWarningDays || 3;
+    const warningDays =
+      settings?.value?.notificationSettings?.subscriptionExpiryWarningDays || 3;
     const now = new Date();
-    const warningDate = new Date(now.getTime() + warningDays * 24 * 60 * 60 * 1000);
+    const warningDate = new Date(
+      now.getTime() + warningDays * 24 * 60 * 60 * 1000,
+    );
 
     const expiringSoonSubscriptions = await this.subscriptionModel
       .find({
@@ -113,7 +128,8 @@ export class SubscriptionCronService {
 
     for (const subscription of expiringSoonSubscriptions) {
       const daysLeft = Math.ceil(
-        (subscription.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        (subscription.endDate.getTime() - now.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
 
       this.logger.log(
@@ -141,10 +157,11 @@ export class SubscriptionCronService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async resetDailyUsageCounters(): Promise<void> {
-    this.logger.log('Daily usage counters reset automatically by date-based logic');
+    this.logger.log(
+      'Daily usage counters reset automatically by date-based logic',
+    );
     // Note: Daily usage is tracked by date in the dailyUsage array,
     // so no manual reset is needed. The getTodayUsage() method
     // automatically returns 0 for new days.
   }
 }
-

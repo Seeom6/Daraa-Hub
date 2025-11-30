@@ -19,4 +19,3 @@ import { SubscriptionPlanRepository } from './repositories/subscription-plan.rep
   exports: [SubscriptionPlanService, SubscriptionPlanRepository],
 })
 export class SubscriptionPlanModule {}
-

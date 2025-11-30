@@ -10,7 +10,12 @@ export class StoreCategory {
   @Prop({ required: true, trim: true })
   name: string; // اسم التصنيف بالعربية (مثال: "مطاعم وأطعمة")
 
-  @Prop({ required: true, unique: true, lowercase: true, trim: true, index: true })
+  @Prop({
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  })
   slug: string; // معرف فريد (مثال: "restaurants-food")
 
   @Prop({ trim: true })
@@ -22,7 +27,11 @@ export class StoreCategory {
   @Prop({ trim: true })
   image?: string; // صورة التصنيف
 
-  @Prop({ type: Types.ObjectId, ref: 'StoreCategory', default: null, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreCategory',
+    default: null,
+  })
   parentCategory?: Types.ObjectId; // التصنيف الأب (للتصنيفات الفرعية)
 
   @Prop({ default: 0, min: 0 })
@@ -31,10 +40,10 @@ export class StoreCategory {
   @Prop({ default: 0 })
   order: number; // ترتيب العرض
 
-  @Prop({ default: true, index: true })
+  @Prop({ default: true })
   isActive: boolean; // هل التصنيف نشط؟
 
-  @Prop({ default: false, index: true })
+  @Prop({ default: false })
   isDeleted: boolean; // هل التصنيف محذوف؟ (soft delete)
 
   @Prop()
@@ -77,7 +86,7 @@ export class StoreCategory {
 export const StoreCategorySchema = SchemaFactory.createForClass(StoreCategory);
 
 // Indexes
-StoreCategorySchema.index({ slug: 1 }, { unique: true });
+// Note: slug already has unique: true in @Prop, which creates an index automatically
 StoreCategorySchema.index({ parentCategory: 1 });
 StoreCategorySchema.index({ isActive: 1, order: 1 });
 StoreCategorySchema.index({ level: 1 });

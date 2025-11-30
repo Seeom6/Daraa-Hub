@@ -156,4 +156,3 @@ export class ResponseBuilder {
     return BaseResponseDto.error(message, { statusCode: 403 });
   }
 }
-

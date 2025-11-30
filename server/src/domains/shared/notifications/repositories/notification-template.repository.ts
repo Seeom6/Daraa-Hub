@@ -26,7 +26,9 @@ export class NotificationTemplateRepository extends BaseRepository<NotificationT
   /**
    * Find templates by category
    */
-  async findByCategory(category: string): Promise<NotificationTemplateDocument[]> {
+  async findByCategory(
+    category: string,
+  ): Promise<NotificationTemplateDocument[]> {
     return this.find({ category, isActive: true }, { sort: { code: 1 } });
   }
 
@@ -40,7 +42,9 @@ export class NotificationTemplateRepository extends BaseRepository<NotificationT
   /**
    * Toggle template active status
    */
-  async toggleActive(templateId: string): Promise<NotificationTemplateDocument | null> {
+  async toggleActive(
+    templateId: string,
+  ): Promise<NotificationTemplateDocument | null> {
     const template = await this.findById(templateId);
     if (!template) return null;
 
@@ -60,11 +64,12 @@ export class NotificationTemplateRepository extends BaseRepository<NotificationT
   /**
    * Get templates by channel
    */
-  async findByChannel(channel: string): Promise<NotificationTemplateDocument[]> {
+  async findByChannel(
+    channel: string,
+  ): Promise<NotificationTemplateDocument[]> {
     return this.find({
       channels: channel,
       isActive: true,
     });
   }
 }
-

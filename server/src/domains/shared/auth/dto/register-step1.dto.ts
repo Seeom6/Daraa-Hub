@@ -17,4 +17,3 @@ export class RegisterStep1Dto {
   @IsString()
   countryCode: string;
 }
-

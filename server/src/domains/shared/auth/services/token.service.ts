@@ -54,4 +54,3 @@ export class TokenService {
     return this.jwtService.decode(token);
   }
 }
-

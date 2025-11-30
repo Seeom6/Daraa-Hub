@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Order, OrderDocument } from '../../../../database/schemas/order.schema';
+import {
+  Order,
+  OrderDocument,
+} from '../../../../database/schemas/order.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()
@@ -221,4 +224,3 @@ export class OrderRepository extends BaseRepository<OrderDocument> {
     );
   }
 }
-

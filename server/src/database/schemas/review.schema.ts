@@ -27,21 +27,24 @@ export interface StoreResponse {
  */
 @Schema({ timestamps: true })
 export class Review {
-  @Prop({ type: Types.ObjectId, ref: 'CustomerProfile', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'CustomerProfile',
+    required: true,
+  })
   customerId: Types.ObjectId;
 
   @Prop({
     type: String,
     enum: ReviewTargetType,
     required: true,
-    index: true,
   })
   targetType: ReviewTargetType;
 
-  @Prop({ type: Types.ObjectId, required: true, index: true })
+  @Prop({ type: Types.ObjectId, required: true })
   targetId: Types.ObjectId; // Product/Store/Courier ID
 
-  @Prop({ type: Types.ObjectId, ref: 'Order', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Order' })
   orderId?: Types.ObjectId; // For verification of purchase
 
   @Prop({ required: true, min: 1, max: 5 })
@@ -69,7 +72,6 @@ export class Review {
     type: String,
     enum: ReviewStatus,
     default: ReviewStatus.APPROVED, // Auto-approve by default
-    index: true,
   })
   status: ReviewStatus;
 
@@ -103,5 +105,7 @@ ReviewSchema.index({ rating: 1 }); // Filter by rating
 ReviewSchema.index({ isVerifiedPurchase: 1 }); // Verified purchases
 
 // Compound index for preventing duplicate reviews
-ReviewSchema.index({ customerId: 1, targetType: 1, targetId: 1, orderId: 1 }, { unique: true, sparse: true });
-
+ReviewSchema.index(
+  { customerId: 1, targetType: 1, targetId: 1, orderId: 1 },
+  { unique: true, sparse: true },
+);

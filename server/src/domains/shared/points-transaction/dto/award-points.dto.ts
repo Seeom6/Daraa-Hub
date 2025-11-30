@@ -21,4 +21,3 @@ export class AwardPointsDto {
   @Type(() => Date)
   expiresAt?: Date;
 }
-

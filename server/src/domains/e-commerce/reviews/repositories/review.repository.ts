@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Review, ReviewDocument } from '../../../../database/schemas/review.schema';
+import {
+  Review,
+  ReviewDocument,
+} from '../../../../database/schemas/review.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()

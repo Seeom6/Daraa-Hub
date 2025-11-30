@@ -139,4 +139,3 @@ export class OtpService {
     return attempts >= this.otpMaxAttempts;
   }
 }
-

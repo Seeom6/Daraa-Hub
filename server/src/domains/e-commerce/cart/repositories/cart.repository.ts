@@ -156,7 +156,10 @@ export class CartRepository extends BaseRepository<CartDocument> {
       return 0;
     }
 
-    return cart.items.reduce((total: number, item: any) => total + item.quantity, 0);
+    return cart.items.reduce(
+      (total: number, item: any) => total + item.quantity,
+      0,
+    );
   }
 
   /**
@@ -183,13 +186,17 @@ export class CartRepository extends BaseRepository<CartDocument> {
     for (const sourceItem of sourceCart.items) {
       const existingItemIndex = targetCart.items.findIndex(
         (item: any) =>
-          item.productId.toString() === (sourceItem as any).productId.toString() &&
+          item.productId.toString() ===
+            (sourceItem as any).productId.toString() &&
           (!sourceItem.variantId ||
-            item.variantId?.toString() === (sourceItem as any).variantId?.toString()),
+            item.variantId?.toString() ===
+              (sourceItem as any).variantId?.toString()),
       );
 
       if (existingItemIndex > -1) {
-        targetCart.items[existingItemIndex].quantity += (sourceItem as any).quantity;
+        targetCart.items[existingItemIndex].quantity += (
+          sourceItem as any
+        ).quantity;
       } else {
         targetCart.items.push(sourceItem);
       }
@@ -201,4 +208,3 @@ export class CartRepository extends BaseRepository<CartDocument> {
     return targetCart.save();
   }
 }
-

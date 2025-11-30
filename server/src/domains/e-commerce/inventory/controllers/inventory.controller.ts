@@ -40,7 +40,10 @@ export class InventoryController {
     @Body() createInventoryDto: CreateInventoryDto,
     @CurrentUser() user: any,
   ) {
-    const inventory = await this.inventoryService.create(createInventoryDto, user.userId);
+    const inventory = await this.inventoryService.create(
+      createInventoryDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Inventory created successfully',
@@ -96,7 +99,10 @@ export class InventoryController {
     @Param('productId') productId: string,
     @Query('variantId') variantId?: string,
   ) {
-    const inventory = await this.inventoryService.findByProduct(productId, variantId);
+    const inventory = await this.inventoryService.findByProduct(
+      productId,
+      variantId,
+    );
     return {
       success: true,
       data: {
@@ -119,7 +125,11 @@ export class InventoryController {
     @Body() updateInventoryDto: UpdateInventoryDto,
     @CurrentUser() user: any,
   ) {
-    const inventory = await this.inventoryService.update(id, updateInventoryDto, user.userId);
+    const inventory = await this.inventoryService.update(
+      id,
+      updateInventoryDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Inventory updated successfully',
@@ -140,7 +150,11 @@ export class InventoryController {
     @Body() movementDto: StockMovementDto,
     @CurrentUser() user: any,
   ) {
-    const inventory = await this.inventoryService.addStock(id, movementDto, user.userId);
+    const inventory = await this.inventoryService.addStock(
+      id,
+      movementDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Stock added successfully',
@@ -161,7 +175,11 @@ export class InventoryController {
     @Body() movementDto: StockMovementDto,
     @CurrentUser() user: any,
   ) {
-    const inventory = await this.inventoryService.removeStock(id, movementDto, user.userId);
+    const inventory = await this.inventoryService.removeStock(
+      id,
+      movementDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Stock removed successfully',
@@ -169,4 +187,3 @@ export class InventoryController {
     };
   }
 }
-

@@ -54,9 +54,12 @@ export class OrderEventsListener {
    * جلب accountId من customerProfileId
    * Get accountId from customerProfileId
    */
-  private async getCustomerAccountId(customerProfileId: string): Promise<string | null> {
+  private async getCustomerAccountId(
+    customerProfileId: string,
+  ): Promise<string | null> {
     try {
-      const customerProfile = await this.customerProfileRepository.findById(customerProfileId);
+      const customerProfile =
+        await this.customerProfileRepository.findById(customerProfileId);
 
       if (!customerProfile) {
         this.logger.warn(`Customer profile not found: ${customerProfileId}`);
@@ -81,7 +84,9 @@ export class OrderEventsListener {
 
     try {
       // Get store owner account
-      this.logger.debug(`Looking for store owner with storeId: ${event.storeId}`);
+      this.logger.debug(
+        `Looking for store owner with storeId: ${event.storeId}`,
+      );
       const storeOwner = await this.accountRepository
         .getModel()
         .findOne({
@@ -98,10 +103,14 @@ export class OrderEventsListener {
 
       // Notification to customer
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       if (customerAccountId) {
-        this.logger.debug(`Creating customer notification for accountId: ${customerAccountId}`);
+        this.logger.debug(
+          `Creating customer notification for accountId: ${customerAccountId}`,
+        );
         await this.notificationsService.create({
           recipientId: customerAccountId,
           recipientRole: 'customer',
@@ -121,12 +130,16 @@ export class OrderEventsListener {
         });
         this.logger.debug(`Customer notification created`);
       } else {
-        this.logger.warn(`Could not create customer notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not create customer notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
 
       // Notification to store owner
       if (storeOwner) {
-        this.logger.debug(`Creating store owner notification for: ${storeOwner._id}`);
+        this.logger.debug(
+          `Creating store owner notification for: ${storeOwner._id}`,
+        );
         await this.notificationsService.create({
           recipientId: (storeOwner._id as any).toString(),
           recipientRole: 'store_owner',
@@ -149,7 +162,10 @@ export class OrderEventsListener {
 
       this.logger.log(`Notifications sent for order ${event.orderNumber}`);
     } catch (error) {
-      this.logger.error(`Failed to send notifications for order ${event.orderNumber}:`, error);
+      this.logger.error(
+        `Failed to send notifications for order ${event.orderNumber}:`,
+        error,
+      );
     }
   }
 
@@ -159,7 +175,9 @@ export class OrderEventsListener {
    */
   @OnEvent('order.status_updated')
   async handleOrderStatusUpdated(event: OrderStatusUpdatedEvent) {
-    this.logger.log(`Order status updated: ${event.orderNumber} - ${event.oldStatus} -> ${event.newStatus}`);
+    this.logger.log(
+      `Order status updated: ${event.orderNumber} - ${event.oldStatus} -> ${event.newStatus}`,
+    );
 
     try {
       const statusMessages = {
@@ -171,11 +189,15 @@ export class OrderEventsListener {
         delivered: 'تم توصيل طلبك',
       };
 
-      const message = statusMessages[event.newStatus] || `تم تحديث حالة الطلب إلى ${event.newStatus}`;
+      const message =
+        statusMessages[event.newStatus] ||
+        `تم تحديث حالة الطلب إلى ${event.newStatus}`;
 
       // Notification to customer
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       if (customerAccountId) {
         await this.notificationsService.create({
@@ -197,12 +219,19 @@ export class OrderEventsListener {
           },
         });
 
-        this.logger.log(`Status update notification sent for order ${event.orderNumber}`);
+        this.logger.log(
+          `Status update notification sent for order ${event.orderNumber}`,
+        );
       } else {
-        this.logger.warn(`Could not send status update notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not send status update notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to send status update notification for order ${event.orderNumber}:`, error);
+      this.logger.error(
+        `Failed to send status update notification for order ${event.orderNumber}:`,
+        error,
+      );
     }
   }
 
@@ -212,7 +241,9 @@ export class OrderEventsListener {
    */
   @OnEvent('order.cancelled')
   async handleOrderCancelled(event: OrderCancelledEvent) {
-    this.logger.log(`Order cancelled: ${event.orderNumber} - Reason: ${event.reason}`);
+    this.logger.log(
+      `Order cancelled: ${event.orderNumber} - Reason: ${event.reason}`,
+    );
 
     try {
       // Get store owner account
@@ -226,7 +257,9 @@ export class OrderEventsListener {
 
       // Notification to customer
       // Get customer account ID from customer profile ID
-      const customerAccountId = await this.getCustomerAccountId(event.customerId);
+      const customerAccountId = await this.getCustomerAccountId(
+        event.customerId,
+      );
 
       if (customerAccountId) {
         await this.notificationsService.create({
@@ -247,7 +280,9 @@ export class OrderEventsListener {
           },
         });
       } else {
-        this.logger.warn(`Could not send cancellation notification - account ID not found for customer: ${event.customerId}`);
+        this.logger.warn(
+          `Could not send cancellation notification - account ID not found for customer: ${event.customerId}`,
+        );
       }
 
       // Notification to store owner
@@ -271,10 +306,14 @@ export class OrderEventsListener {
         });
       }
 
-      this.logger.log(`Cancellation notifications sent for order ${event.orderNumber}`);
+      this.logger.log(
+        `Cancellation notifications sent for order ${event.orderNumber}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send cancellation notifications for order ${event.orderNumber}:`, error);
+      this.logger.error(
+        `Failed to send cancellation notifications for order ${event.orderNumber}:`,
+        error,
+      );
     }
   }
 }
-

@@ -26,7 +26,12 @@ export class LoginHistoryEntry {
  */
 @Schema({ timestamps: true })
 export class SecurityProfile {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Account',
+    required: true,
+    unique: true,
+  })
   accountId: Types.ObjectId;
 
   @Prop({ default: false })
@@ -50,14 +55,16 @@ export class SecurityProfile {
   @Prop({ type: Date })
   lockedUntil?: Date;
 
-  @Prop({ 
-    type: [{ 
-      ip: String, 
-      device: String, 
-      timestamp: Date, 
-      success: Boolean 
-    }], 
-    default: [] 
+  @Prop({
+    type: [
+      {
+        ip: String,
+        device: String,
+        timestamp: Date,
+        success: Boolean,
+      },
+    ],
+    default: [],
   })
   loginHistory: LoginHistoryEntry[];
 
@@ -65,9 +72,9 @@ export class SecurityProfile {
   updatedAt: Date;
 }
 
-export const SecurityProfileSchema = SchemaFactory.createForClass(SecurityProfile);
+export const SecurityProfileSchema =
+  SchemaFactory.createForClass(SecurityProfile);
 
 // Indexes
-SecurityProfileSchema.index({ accountId: 1 });
+// Note: accountId already has unique: true in @Prop, which creates an index automatically
 SecurityProfileSchema.index({ phoneVerified: 1 });
-

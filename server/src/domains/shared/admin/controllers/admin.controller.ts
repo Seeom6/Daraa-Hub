@@ -65,8 +65,14 @@ export class AdminController {
   ) {
     const filters = {
       role,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-      isVerified: isVerified === 'true' ? true : isVerified === 'false' ? false : undefined,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isVerified:
+        isVerified === 'true'
+          ? true
+          : isVerified === 'false'
+            ? false
+            : undefined,
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 20,
     };
@@ -130,7 +136,11 @@ export class AdminController {
     await this.adminService.logActivity(
       req.user.sub,
       'suspend_user',
-      { userId: id, reason: suspendDto.reason, duration: suspendDto.durationDays },
+      {
+        userId: id,
+        reason: suspendDto.reason,
+        duration: suspendDto.durationDays,
+      },
       req.ip,
       req.headers['user-agent'],
     );
@@ -222,4 +232,3 @@ export class AdminController {
     };
   }
 }
-

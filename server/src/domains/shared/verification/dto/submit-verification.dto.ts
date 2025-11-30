@@ -1,4 +1,11 @@
-import { IsString, IsEnum, IsOptional, IsObject, ValidateNested, IsArray, IsMongoId } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  ValidateNested,
+  IsArray,
+  IsMongoId,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class PersonalInfoDto {
@@ -96,11 +103,23 @@ export class UploadDocumentDto {
   @IsString()
   verificationRequestId: string;
 
-  @IsEnum(['national_id', 'commercial_register', 'tax_certificate', 'vehicle_license', 'driver_license', 'other'])
-  documentType: 'national_id' | 'commercial_register' | 'tax_certificate' | 'vehicle_license' | 'driver_license' | 'other';
+  @IsEnum([
+    'national_id',
+    'commercial_register',
+    'tax_certificate',
+    'vehicle_license',
+    'driver_license',
+    'other',
+  ])
+  documentType:
+    | 'national_id'
+    | 'commercial_register'
+    | 'tax_certificate'
+    | 'vehicle_license'
+    | 'driver_license'
+    | 'other';
 
   @IsOptional()
   @IsString()
   description?: string;
 }
-

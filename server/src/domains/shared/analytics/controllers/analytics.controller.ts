@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
@@ -19,7 +27,9 @@ export class AnalyticsController {
   async trackEvent(@Body() trackEventDto: TrackEventDto, @Req() req: any) {
     const userId = req.user.userId;
     const deviceInfo = {
-      type: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'desktop',
+      type: req.headers['user-agent']?.includes('Mobile')
+        ? 'mobile'
+        : 'desktop',
       os: 'Unknown',
       browser: 'Unknown',
       userAgent: req.headers['user-agent'] || 'Unknown',
@@ -70,7 +80,10 @@ export class AnalyticsController {
   @Get('products')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner', 'admin')
-  async getProductAnalytics(@Query() query: QueryAnalyticsDto, @Req() req: any) {
+  async getProductAnalytics(
+    @Query() query: QueryAnalyticsDto,
+    @Req() req: any,
+  ) {
     // If store owner, filter by their store
     if (req.user.role === 'store_owner') {
       query.storeId = req.user.profileId;
@@ -120,7 +133,10 @@ export class AnalyticsController {
     const userId = req.user.profileId;
     const role = req.user.role;
 
-    const metrics = await this.analyticsService.getDashboardMetrics(userId, role);
+    const metrics = await this.analyticsService.getDashboardMetrics(
+      userId,
+      role,
+    );
 
     return {
       success: true,
@@ -147,4 +163,3 @@ export class AnalyticsController {
     };
   }
 }
-

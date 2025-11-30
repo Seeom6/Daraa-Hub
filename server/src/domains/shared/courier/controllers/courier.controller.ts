@@ -57,7 +57,10 @@ export class CourierController {
     @CurrentUser() user: any,
     @Body() updateDto: UpdateCourierProfileDto,
   ) {
-    const profile = await this.courierService.updateProfile(user.sub, updateDto);
+    const profile = await this.courierService.updateProfile(
+      user.sub,
+      updateDto,
+    );
     return {
       success: true,
       message: 'Profile updated successfully',
@@ -93,7 +96,10 @@ export class CourierController {
     @CurrentUser() user: any,
     @Body() updateDto: UpdateLocationDto,
   ) {
-    const profile = await this.courierService.updateLocation(user.sub, updateDto);
+    const profile = await this.courierService.updateLocation(
+      user.sub,
+      updateDto,
+    );
     return {
       success: true,
       message: 'Location updated successfully',
@@ -161,7 +167,11 @@ export class CourierController {
     @Param('orderId') orderId: string,
     @Body() dto: { notes?: string },
   ) {
-    const order = await this.courierService.acceptOrder(user.sub, orderId, dto.notes);
+    const order = await this.courierService.acceptOrder(
+      user.sub,
+      orderId,
+      dto.notes,
+    );
     return {
       success: true,
       message: 'Order accepted successfully',
@@ -211,4 +221,3 @@ export class CourierController {
     };
   }
 }
-

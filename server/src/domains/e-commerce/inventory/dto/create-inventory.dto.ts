@@ -35,4 +35,3 @@ export class CreateInventoryDto {
   @Type(() => Number)
   reorderQuantity?: number;
 }
-

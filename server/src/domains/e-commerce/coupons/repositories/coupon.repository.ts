@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Coupon, CouponDocument } from '../../../../database/schemas/coupon.schema';
+import {
+  Coupon,
+  CouponDocument,
+} from '../../../../database/schemas/coupon.schema';
 import { BaseRepository } from '../../../shared/base/base.repository';
 
 @Injectable()
@@ -60,7 +63,10 @@ export class CouponRepository extends BaseRepository<CouponDocument> {
       return { valid: false, message: 'Coupon has expired' };
     }
 
-    if (coupon.usageLimit?.total && coupon.usedCount >= coupon.usageLimit.total) {
+    if (
+      coupon.usageLimit?.total &&
+      coupon.usedCount >= coupon.usageLimit.total
+    ) {
       return { valid: false, message: 'Coupon usage limit reached' };
     }
 
@@ -79,12 +85,7 @@ export class CouponRepository extends BaseRepository<CouponDocument> {
    */
   async incrementUsage(couponId: string): Promise<CouponDocument | null> {
     return this.couponModel
-      .findByIdAndUpdate(
-        couponId,
-        { $inc: { usedCount: 1 } },
-        { new: true },
-      )
+      .findByIdAndUpdate(couponId, { $inc: { usedCount: 1 } }, { new: true })
       .exec();
   }
 }
-

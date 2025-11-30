@@ -1,13 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  UserActivity,
-  UserActivityDocument,
-  EventType,
-  DeviceType,
-} from '../../../../database/schemas/user-activity.schema';
+import { UserActivityDocument } from '../../../../database/schemas/user-activity.schema';
 import {
   ProductAnalytics,
   ProductAnalyticsDocument,
@@ -18,18 +10,24 @@ import {
   StoreAnalyticsDocument,
 } from '../../../../database/schemas/store-analytics.schema';
 import { TrackEventDto, QueryAnalyticsDto } from '../dto';
+import { UserActivityService } from './user-activity.service';
+import { ProductAnalyticsService } from './product-analytics.service';
+import { StoreAnalyticsService } from './store-analytics.service';
 
+/**
+ * Analytics Facade Service
+ * Provides unified access to all analytics sub-services
+ * Maintains backward compatibility with existing code
+ */
 @Injectable()
 export class AnalyticsService {
   constructor(
-    @InjectModel(UserActivity.name)
-    private userActivityModel: Model<UserActivityDocument>,
-    @InjectModel(ProductAnalytics.name)
-    private productAnalyticsModel: Model<ProductAnalyticsDocument>,
-    @InjectModel(StoreAnalytics.name)
-    private storeAnalyticsModel: Model<StoreAnalyticsDocument>,
-    private eventEmitter: EventEmitter2,
+    private readonly userActivityService: UserActivityService,
+    private readonly productAnalyticsService: ProductAnalyticsService,
+    private readonly storeAnalyticsService: StoreAnalyticsService,
   ) {}
+
+  // ==================== User Activity ====================
 
   /**
    * Track user event
@@ -40,52 +38,12 @@ export class AnalyticsService {
     deviceInfo?: any,
     locationInfo?: any,
   ): Promise<UserActivityDocument> {
-    const { type, data, sessionId } = trackEventDto;
-
-    // Find or create user activity session
-    let userActivity = await this.userActivityModel.findOne({
-      userId: new Types.ObjectId(userId),
-      sessionId: sessionId || 'default',
-    });
-
-    const event = {
-      type,
-      data: data || {},
-      timestamp: new Date(),
-    };
-
-    if (userActivity) {
-      // Add event to existing session
-      userActivity.events.push(event);
-      await userActivity.save();
-    } else {
-      // Create new session
-      userActivity = await this.userActivityModel.create({
-        userId: new Types.ObjectId(userId),
-        sessionId: sessionId || 'default',
-        events: [event],
-        device: deviceInfo || {
-          type: DeviceType.DESKTOP,
-          os: 'Unknown',
-          browser: 'Unknown',
-          userAgent: 'Unknown',
-        },
-        location: locationInfo || {
-          city: 'Unknown',
-          country: 'Unknown',
-          ip: 'Unknown',
-        },
-      });
-    }
-
-    // Emit event for further processing
-    this.eventEmitter.emit('analytics.event.tracked', {
+    return this.userActivityService.trackEvent(
       userId,
-      type,
-      data,
-    });
-
-    return userActivity;
+      trackEventDto,
+      deviceInfo,
+      locationInfo,
+    );
   }
 
   /**
@@ -95,42 +53,10 @@ export class AnalyticsService {
     userId: string,
     query: QueryAnalyticsDto,
   ): Promise<{ data: UserActivityDocument[]; meta: any }> {
-    const { page = 1, limit = 10, startDate, endDate } = query;
-    const skip = (page - 1) * limit;
-
-    const filter: any = {};
-
-    // Only filter by userId if provided
-    if (userId) {
-      filter.userId = new Types.ObjectId(userId);
-    }
-
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
-
-    const [data, total] = await Promise.all([
-      this.userActivityModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.userActivityModel.countDocuments(filter),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return this.userActivityService.getUserActivity(userId, query);
   }
+
+  // ==================== Product Analytics ====================
 
   /**
    * Update product analytics
@@ -141,34 +67,12 @@ export class AnalyticsService {
     period: AnalyticsPeriod,
     updates: Partial<ProductAnalytics>,
   ): Promise<ProductAnalyticsDocument> {
-    const date = this.getPeriodStartDate(period);
-
-    const analytics = await this.productAnalyticsModel.findOneAndUpdate(
-      {
-        productId: new Types.ObjectId(productId),
-        storeId: new Types.ObjectId(storeId),
-        period,
-        date,
-      },
-      {
-        $inc: updates,
-        $setOnInsert: {
-          productId: new Types.ObjectId(productId),
-          storeId: new Types.ObjectId(storeId),
-          period,
-          date,
-        },
-      },
-      { upsert: true, new: true },
+    return this.productAnalyticsService.updateProductAnalytics(
+      productId,
+      storeId,
+      period,
+      updates,
     );
-
-    // Calculate conversion rate
-    if (analytics.views > 0) {
-      analytics.conversionRate = (analytics.purchaseCount / analytics.views) * 100;
-      await analytics.save();
-    }
-
-    return analytics;
   }
 
   /**
@@ -177,43 +81,10 @@ export class AnalyticsService {
   async getProductAnalytics(
     query: QueryAnalyticsDto,
   ): Promise<{ data: ProductAnalyticsDocument[]; meta: any }> {
-    const { page = 1, limit = 10, period, startDate, endDate, productId, storeId } = query;
-    const skip = (page - 1) * limit;
-
-    const filter: any = {};
-
-    if (productId) filter.productId = new Types.ObjectId(productId);
-    if (storeId) filter.storeId = new Types.ObjectId(storeId);
-    if (period) filter.period = period;
-
-    if (startDate || endDate) {
-      filter.date = {};
-      if (startDate) filter.date.$gte = new Date(startDate);
-      if (endDate) filter.date.$lte = new Date(endDate);
-    }
-
-    const [data, total] = await Promise.all([
-      this.productAnalyticsModel
-        .find(filter)
-        .populate('productId', 'name images')
-        .populate('storeId', 'storeName')
-        .sort({ date: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.productAnalyticsModel.countDocuments(filter),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return this.productAnalyticsService.getProductAnalytics(query);
   }
+
+  // ==================== Store Analytics ====================
 
   /**
    * Update store analytics
@@ -223,33 +94,11 @@ export class AnalyticsService {
     period: AnalyticsPeriod,
     updates: Partial<StoreAnalytics>,
   ): Promise<StoreAnalyticsDocument> {
-    const date = this.getPeriodStartDate(period);
-
-    const analytics = await this.storeAnalyticsModel.findOneAndUpdate(
-      {
-        storeId: new Types.ObjectId(storeId),
-        period,
-        date,
-      },
-      {
-        $inc: updates,
-        $setOnInsert: {
-          storeId: new Types.ObjectId(storeId),
-          period,
-          date,
-        },
-      },
-      { upsert: true, new: true },
+    return this.storeAnalyticsService.updateStoreAnalytics(
+      storeId,
+      period,
+      updates,
     );
-
-    // Calculate derived metrics
-    if (analytics.totalOrders > 0) {
-      analytics.averageOrderValue = analytics.totalRevenue / analytics.totalOrders;
-    }
-    analytics.netRevenue = analytics.totalRevenue - analytics.totalCommission;
-    await analytics.save();
-
-    return analytics;
   }
 
   /**
@@ -258,121 +107,15 @@ export class AnalyticsService {
   async getStoreAnalytics(
     query: QueryAnalyticsDto,
   ): Promise<{ data: StoreAnalyticsDocument[]; meta: any }> {
-    const { page = 1, limit = 10, period, startDate, endDate, storeId } = query;
-    const skip = (page - 1) * limit;
-
-    const filter: any = {};
-
-    if (storeId) filter.storeId = new Types.ObjectId(storeId);
-    if (period) filter.period = period;
-
-    if (startDate || endDate) {
-      filter.date = {};
-      if (startDate) filter.date.$gte = new Date(startDate);
-      if (endDate) filter.date.$lte = new Date(endDate);
-    }
-
-    const [data, total] = await Promise.all([
-      this.storeAnalyticsModel
-        .find(filter)
-        .populate('storeId', 'storeName')
-        .sort({ date: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.storeAnalyticsModel.countDocuments(filter),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return this.storeAnalyticsService.getStoreAnalytics(query);
   }
+
+  // ==================== Dashboard ====================
 
   /**
    * Get dashboard metrics
    */
   async getDashboardMetrics(userId: string, role: string): Promise<any> {
-    if (role === 'store_owner') {
-      return this.getStoreDashboard(userId);
-    } else if (role === 'admin') {
-      return this.getAdminDashboard();
-    }
-
-    return {};
-  }
-
-  /**
-   * Get store owner dashboard
-   */
-  private async getStoreDashboard(storeId: string): Promise<any> {
-    const today = this.getPeriodStartDate(AnalyticsPeriod.DAILY);
-
-    const todayAnalytics = await this.storeAnalyticsModel.findOne({
-      storeId: new Types.ObjectId(storeId),
-      period: AnalyticsPeriod.DAILY,
-      date: today,
-    });
-
-    const monthlyAnalytics = await this.storeAnalyticsModel.findOne({
-      storeId: new Types.ObjectId(storeId),
-      period: AnalyticsPeriod.MONTHLY,
-      date: this.getPeriodStartDate(AnalyticsPeriod.MONTHLY),
-    });
-
-    return {
-      today: todayAnalytics || {},
-      monthly: monthlyAnalytics || {},
-    };
-  }
-
-  /**
-   * Get admin dashboard
-   */
-  private async getAdminDashboard(): Promise<any> {
-    const today = this.getPeriodStartDate(AnalyticsPeriod.DAILY);
-
-    const todayStats = await this.storeAnalyticsModel.aggregate([
-      {
-        $match: {
-          period: AnalyticsPeriod.DAILY,
-          date: today,
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalOrders: { $sum: '$totalOrders' },
-          totalRevenue: { $sum: '$totalRevenue' },
-          totalCommission: { $sum: '$totalCommission' },
-        },
-      },
-    ]);
-
-    return todayStats[0] || {};
-  }
-
-  /**
-   * Get period start date
-   */
-  private getPeriodStartDate(period: AnalyticsPeriod): Date {
-    const now = new Date();
-    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    if (period === AnalyticsPeriod.WEEKLY) {
-      const day = date.getDay();
-      const diff = date.getDate() - day;
-      return new Date(date.setDate(diff));
-    } else if (period === AnalyticsPeriod.MONTHLY) {
-      return new Date(date.getFullYear(), date.getMonth(), 1);
-    }
-
-    return date; // Daily
+    return this.storeAnalyticsService.getDashboardMetrics(userId, role);
   }
 }
-

@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, IsObject, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsObject,
+  IsArray,
+} from 'class-validator';
 
 export class CreateNotificationDto {
   @IsString()
@@ -13,8 +19,29 @@ export class CreateNotificationDto {
   @IsString()
   message: string;
 
-  @IsEnum(['order', 'payment', 'delivery', 'verification', 'account', 'promotion', 'system', 'security', 'review', 'dispute'])
-  type: 'order' | 'payment' | 'delivery' | 'verification' | 'account' | 'promotion' | 'system' | 'security' | 'review' | 'dispute';
+  @IsEnum([
+    'order',
+    'payment',
+    'delivery',
+    'verification',
+    'account',
+    'promotion',
+    'system',
+    'security',
+    'review',
+    'dispute',
+  ])
+  type:
+    | 'order'
+    | 'payment'
+    | 'delivery'
+    | 'verification'
+    | 'account'
+    | 'promotion'
+    | 'system'
+    | 'security'
+    | 'review'
+    | 'dispute';
 
   @IsOptional()
   @IsEnum(['info', 'success', 'warning', 'error'])
@@ -48,4 +75,3 @@ export class CreateNotificationDto {
   @IsOptional()
   expiresAt?: Date;
 }
-

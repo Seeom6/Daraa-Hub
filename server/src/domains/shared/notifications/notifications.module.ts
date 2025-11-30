@@ -1,17 +1,45 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bull';
-import { Notification, NotificationSchema } from '../../../database/schemas/notification.schema';
-import { NotificationTemplate, NotificationTemplateSchema } from '../../../database/schemas/notification-template.schema';
-import { NotificationPreference, NotificationPreferenceSchema } from '../../../database/schemas/notification-preference.schema';
-import { DeviceToken, DeviceTokenSchema } from '../../../database/schemas/device-token.schema';
-import { Account, AccountSchema } from '../../../database/schemas/account.schema';
-import { CustomerProfile, CustomerProfileSchema } from '../../../database/schemas/customer-profile.schema';
-import { StoreOwnerProfile, StoreOwnerProfileSchema } from '../../../database/schemas/store-owner-profile.schema';
-import { CourierProfile, CourierProfileSchema } from '../../../database/schemas/courier-profile.schema';
-import { AdminProfile, AdminProfileSchema } from '../../../database/schemas/admin-profile.schema';
+import {
+  Notification,
+  NotificationSchema,
+} from '../../../database/schemas/notification.schema';
+import {
+  NotificationTemplate,
+  NotificationTemplateSchema,
+} from '../../../database/schemas/notification-template.schema';
+import {
+  NotificationPreference,
+  NotificationPreferenceSchema,
+} from '../../../database/schemas/notification-preference.schema';
+import {
+  DeviceToken,
+  DeviceTokenSchema,
+} from '../../../database/schemas/device-token.schema';
+import {
+  Account,
+  AccountSchema,
+} from '../../../database/schemas/account.schema';
+import {
+  CustomerProfile,
+  CustomerProfileSchema,
+} from '../../../database/schemas/customer-profile.schema';
+import {
+  StoreOwnerProfile,
+  StoreOwnerProfileSchema,
+} from '../../../database/schemas/store-owner-profile.schema';
+import {
+  CourierProfile,
+  CourierProfileSchema,
+} from '../../../database/schemas/courier-profile.schema';
+import {
+  AdminProfile,
+  AdminProfileSchema,
+} from '../../../database/schemas/admin-profile.schema';
 import { NotificationsController } from './controllers/notifications.controller';
 import { NotificationsService } from './services/notifications.service';
+import { NotificationTemplateService } from './services/notification-template.service';
 import { NotificationPreferenceService } from './services/notification-preference.service';
 import { DeviceTokenService } from './services/device-token.service';
 import { RecipientContactResolverService } from './services/recipient-contact-resolver.service';
@@ -33,7 +61,10 @@ import { NotificationTemplateRepository } from './repositories/notification-temp
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
       { name: NotificationTemplate.name, schema: NotificationTemplateSchema },
-      { name: NotificationPreference.name, schema: NotificationPreferenceSchema },
+      {
+        name: NotificationPreference.name,
+        schema: NotificationPreferenceSchema,
+      },
       { name: DeviceToken.name, schema: DeviceTokenSchema },
       { name: Account.name, schema: AccountSchema },
       { name: CustomerProfile.name, schema: CustomerProfileSchema },
@@ -50,7 +81,8 @@ import { NotificationTemplateRepository } from './repositories/notification-temp
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret') || 'default-secret',
         signOptions: {
-          expiresIn: (configService.get<string>('jwt.expiresIn') || '7d') as any,
+          expiresIn: (configService.get<string>('jwt.expiresIn') ||
+            '7d') as any,
         },
       }),
     }),
@@ -62,6 +94,7 @@ import { NotificationTemplateRepository } from './repositories/notification-temp
   controllers: [NotificationsController],
   providers: [
     NotificationsService,
+    NotificationTemplateService,
     NotificationPreferenceService,
     DeviceTokenService,
     RecipientContactResolverService,
@@ -74,6 +107,7 @@ import { NotificationTemplateRepository } from './repositories/notification-temp
   ],
   exports: [
     NotificationsService,
+    NotificationTemplateService,
     NotificationPreferenceService,
     DeviceTokenService,
     NotificationRepository,
@@ -83,4 +117,3 @@ import { NotificationTemplateRepository } from './repositories/notification-temp
   ],
 })
 export class NotificationsModule {}
-

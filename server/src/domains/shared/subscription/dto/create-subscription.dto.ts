@@ -1,4 +1,11 @@
-import { IsMongoId, IsEnum, IsOptional, IsNumber, IsString, Min } from 'class-validator';
+import {
+  IsMongoId,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  IsString,
+  Min,
+} from 'class-validator';
 import { SubscriptionPaymentMethod } from '../../../../database/schemas/store-subscription.schema';
 
 export class CreateSubscriptionDto {
@@ -24,4 +31,3 @@ export class CreateSubscriptionDto {
   @IsString()
   notes?: string;
 }
-

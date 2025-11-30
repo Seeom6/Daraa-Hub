@@ -51,7 +51,7 @@ export class Category {
 export const CategorySchema = SchemaFactory.createForClass(Category);
 
 // Indexes
-CategorySchema.index({ slug: 1 }, { unique: true });
+// Note: slug already has unique: true in @Prop, which creates an index automatically
 CategorySchema.index({ parentCategory: 1 });
 CategorySchema.index({ isActive: 1, order: 1 });
 CategorySchema.index({ level: 1 });
@@ -67,4 +67,3 @@ CategorySchema.virtual('subcategories', {
 // Ensure virtuals are included in JSON
 CategorySchema.set('toJSON', { virtuals: true });
 CategorySchema.set('toObject', { virtuals: true });
-

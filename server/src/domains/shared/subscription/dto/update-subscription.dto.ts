@@ -1,4 +1,10 @@
-import { IsEnum, IsOptional, IsString, IsDate, IsBoolean } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsDate,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { SubscriptionStatus } from '../../../../database/schemas/store-subscription.schema';
 
@@ -24,4 +30,3 @@ export class UpdateSubscriptionDto {
   @IsString()
   notes?: string;
 }
-

@@ -19,7 +19,9 @@ export class SubscriptionRepository extends BaseRepository<StoreSubscriptionDocu
   /**
    * Find subscription by store ID
    */
-  async findByStoreId(storeId: string): Promise<StoreSubscriptionDocument | null> {
+  async findByStoreId(
+    storeId: string,
+  ): Promise<StoreSubscriptionDocument | null> {
     return this.subscriptionModel
       .findOne({ storeId: new Types.ObjectId(storeId) })
       .sort({ createdAt: -1 })
@@ -29,7 +31,9 @@ export class SubscriptionRepository extends BaseRepository<StoreSubscriptionDocu
   /**
    * Find active subscription by store ID
    */
-  async findActiveByStoreId(storeId: string): Promise<StoreSubscriptionDocument | null> {
+  async findActiveByStoreId(
+    storeId: string,
+  ): Promise<StoreSubscriptionDocument | null> {
     return this.findOne({
       storeId: new Types.ObjectId(storeId),
       status: 'active',
@@ -56,7 +60,9 @@ export class SubscriptionRepository extends BaseRepository<StoreSubscriptionDocu
   /**
    * Find expiring subscriptions
    */
-  async findExpiring(daysAhead: number = 7): Promise<StoreSubscriptionDocument[]> {
+  async findExpiring(
+    daysAhead: number = 7,
+  ): Promise<StoreSubscriptionDocument[]> {
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
@@ -106,4 +112,3 @@ export class SubscriptionRepository extends BaseRepository<StoreSubscriptionDocu
     ]);
   }
 }
-

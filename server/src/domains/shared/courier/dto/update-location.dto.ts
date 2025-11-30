@@ -7,4 +7,3 @@ export class UpdateLocationDto {
   @IsNumber({}, { each: true })
   coordinates: number[]; // [longitude, latitude]
 }
-

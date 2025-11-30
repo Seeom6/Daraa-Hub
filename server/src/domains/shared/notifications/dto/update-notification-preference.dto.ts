@@ -1,4 +1,10 @@
-import { IsOptional, IsObject, IsEnum, IsBoolean, IsString, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ChannelPreferencesDto {
@@ -102,4 +108,3 @@ export class UpdateNotificationPreferenceDto {
   @IsEnum(['instant', 'daily', 'weekly', 'never'])
   emailDigest?: 'instant' | 'daily' | 'weekly' | 'never';
 }
-

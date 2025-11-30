@@ -26,7 +26,12 @@ export interface StorePaymentMethod {
 
 @Schema({ timestamps: true })
 export class StoreSettings {
-  @Prop({ type: Types.ObjectId, ref: 'StoreOwnerProfile', required: true, unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'StoreOwnerProfile',
+    required: true,
+    unique: true,
+  })
   storeId: Types.ObjectId;
 
   // Business Hours
@@ -181,6 +186,4 @@ export class StoreSettings {
 
 export const StoreSettingsSchema = SchemaFactory.createForClass(StoreSettings);
 
-// Indexes
-StoreSettingsSchema.index({ storeId: 1 }, { unique: true });
-
+// Note: storeId already has unique: true in @Prop, which creates an index automatically

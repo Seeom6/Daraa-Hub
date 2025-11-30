@@ -11,4 +11,3 @@ export { ReviewRepository } from './reviews/repositories/review.repository';
 export { PaymentRepository } from './payment/repositories/payment.repository';
 export { ReturnRepository } from './returns/repositories/return.repository';
 export { DisputeRepository } from './disputes/repositories/dispute.repository';
-

@@ -61,8 +61,10 @@ export class SystemSettingsService {
       allowOnlinePayment: updateDto.allowOnlinePayment ?? false,
       trialPeriodDays: updateDto.trialPeriodDays ?? 0,
       notificationSettings: {
-        subscriptionExpiryWarningDays: updateDto.subscriptionExpiryWarningDays ?? 3,
-        notifyOnSubscriptionExpiry: updateDto.notifyOnSubscriptionExpiry ?? true,
+        subscriptionExpiryWarningDays:
+          updateDto.subscriptionExpiryWarningDays ?? 3,
+        notifyOnSubscriptionExpiry:
+          updateDto.notifyOnSubscriptionExpiry ?? true,
         notifyOnDailyLimitReached: updateDto.notifyOnDailyLimitReached ?? true,
         notifyOnPaymentSuccess: updateDto.notifyOnPaymentSuccess ?? true,
         notifyOnPaymentFailure: updateDto.notifyOnPaymentFailure ?? true,
@@ -100,4 +102,3 @@ export class SystemSettingsService {
     return settings.subscriptionSystemEnabled === true;
   }
 }
-

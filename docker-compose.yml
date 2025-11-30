@@ -1,33 +1,90 @@
 version: '3.8'
 
 services:
-  # MongoDB Database Service
+  # ============================================
+  # MongoDB Primary - Main Database
+  # ============================================
   mongodb:
     image: mongo:7.0
     container_name: daraa-mongodb
     restart: unless-stopped
+    command: --auth --bind_ip_all
     ports:
       - "27017:27017"
     environment:
-      # Optional: Uncomment to enable authentication
-      # MONGO_INITDB_ROOT_USERNAME: admin
-      # MONGO_INITDB_ROOT_PASSWORD: your_secure_password
-      MONGO_INITDB_DATABASE: daraa-auth
+      # MongoDB Authentication (Required for Production)
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-DaraaSecurePassword2024}
+      MONGO_INITDB_DATABASE: daraa
     volumes:
       # Named volume for data persistence
       - daraa-mongodb-data:/data/db
-      # Optional: MongoDB configuration
+      # MongoDB configuration
       - daraa-mongodb-config:/data/configdb
+      # Initialization scripts
+      - ./scripts/mongo-init:/docker-entrypoint-initdb.d:ro
+      # Backup directory
+      - ./backups/mongodb:/backups
     networks:
       - daraa-network
+    # Resource Limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/daraa-auth --quiet
+      test: echo 'db.runCommand("ping").ok' | mongosh -u $${MONGO_ROOT_USERNAME} -p $${MONGO_ROOT_PASSWORD} --authenticationDatabase admin localhost:27017/daraa --quiet
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
-  # NestJS Server Service
+  # ============================================
+  # Redis - Caching & Session Store
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: daraa-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-DaraaRedisPassword2024} --maxmemory 1gb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - daraa-redis-data:/data
+    networks:
+      - daraa-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-DaraaRedisPassword2024}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ============================================
+  # NestJS Application Server
+  # ============================================
   server:
     build:
       context: ./server
@@ -40,48 +97,109 @@ services:
       # Server Configuration
       NODE_ENV: production
       PORT: 3001
-      CLIENT_URL: http://localhost:3000
-      
-      # Database Configuration
-      MONGODB_URI: mongodb://daraa-mongodb:27017/daraa-auth
-      
+      APP_URL: ${APP_URL:-http://localhost:3001}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+
+      # Database Configuration (with Authentication)
+      MONGODB_URI: mongodb://${MONGO_APP_USERNAME:-daraa_app}:${MONGO_APP_PASSWORD:-DaraaAppPassword2024}@daraa-mongodb:27017/daraa?authSource=daraa
+
+      # MongoDB Connection Pool Settings
+      MONGODB_MAX_POOL_SIZE: 50
+      MONGODB_MIN_POOL_SIZE: 10
+      MONGODB_MAX_IDLE_TIME_MS: 30000
+      MONGODB_SERVER_SELECTION_TIMEOUT_MS: 5000
+      MONGODB_SOCKET_TIMEOUT_MS: 45000
+      MONGODB_CONNECT_TIMEOUT_MS: 10000
+
+      # Redis Configuration
+      REDIS_HOST: daraa-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-DaraaRedisPassword2024}
+      REDIS_DB: 0
+
       # JWT Configuration
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      JWT_EXPIRES_IN: 7d
-      
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+
       # Cookie Configuration
-      COOKIE_SECRET: ${COOKIE_SECRET:-your-super-secret-cookie-key-change-this-in-production}
-      
-      # Twilio Configuration (Optional)
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-your_twilio_account_sid}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-your_twilio_auth_token}
-      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-your_twilio_phone_number}
-      
+      COOKIE_SECRET: ${COOKIE_SECRET}
+
+      # Twilio Configuration
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+
+      # AWS Configuration
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-daraa-uploads}
+
+      # Email Configuration
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_SECURE: ${EMAIL_SECURE:-false}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Daraa Platform}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-noreply@daraa.com}
+
       # OTP Configuration
       OTP_EXPIRY_MINUTES: 5
       OTP_MAX_ATTEMPTS: 3
       OTP_LENGTH: 6
+
+      # Rate Limiting (Relaxed for development/testing)
+      RATE_LIMIT_TTL: 60
+      RATE_LIMIT_MAX: 1000
+      AUTH_RATE_LIMIT: 1000
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - daraa-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
-      timeout: 3s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
-# Named volumes for data persistence
+# ============================================
+# Named Volumes for Data Persistence
+# ============================================
 volumes:
   daraa-mongodb-data:
     driver: local
   daraa-mongodb-config:
     driver: local
+  daraa-redis-data:
+    driver: local
 
-# Custom network for service communication
+# ============================================
+# Custom Network for Service Communication
+# ============================================
 networks:
   daraa-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
 

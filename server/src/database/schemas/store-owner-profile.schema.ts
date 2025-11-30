@@ -9,7 +9,12 @@ export type StoreOwnerProfileDocument = StoreOwnerProfile & Document;
  */
 @Schema({ timestamps: true })
 export class StoreOwnerProfile {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, unique: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Account',
+    required: true,
+    unique: true,
+  })
   accountId: Types.ObjectId;
 
   @Prop({ trim: true })
@@ -24,16 +29,20 @@ export class StoreOwnerProfile {
   @Prop()
   storeBanner?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'StoreCategory', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'StoreCategory' })
   primaryCategory?: Types.ObjectId; // التصنيف الرئيسي للمتجر
 
-  @Prop({ type: [Types.ObjectId], ref: 'StoreCategory', default: [], index: true })
+  @Prop({
+    type: [Types.ObjectId],
+    ref: 'StoreCategory',
+    default: [],
+  })
   storeCategories: Types.ObjectId[]; // تصنيفات المتجر (يمكن أن يكون للمتجر عدة تصنيفات)
 
   @Prop({
     type: String,
     enum: ['pending', 'approved', 'rejected', 'suspended'],
-    default: 'pending'
+    default: 'pending',
   })
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
 
@@ -125,7 +134,8 @@ export class StoreOwnerProfile {
   updatedAt: Date;
 }
 
-export const StoreOwnerProfileSchema = SchemaFactory.createForClass(StoreOwnerProfile);
+export const StoreOwnerProfileSchema =
+  SchemaFactory.createForClass(StoreOwnerProfile);
 
 // Virtuals
 StoreOwnerProfileSchema.virtual('inventory', {
@@ -136,7 +146,7 @@ StoreOwnerProfileSchema.virtual('inventory', {
 
 // Middleware to update storeCount in categories
 // Store original categories before update
-StoreOwnerProfileSchema.pre('save', async function(next) {
+StoreOwnerProfileSchema.pre('save', async function (next) {
   if (!this.isNew && this.isModified('storeCategories')) {
     // Store original categories in a temporary property
     const original: any = await this.model('StoreOwnerProfile')
@@ -151,7 +161,7 @@ StoreOwnerProfileSchema.pre('save', async function(next) {
 });
 
 // Update storeCount after save
-StoreOwnerProfileSchema.post('save', async function(doc) {
+StoreOwnerProfileSchema.post('save', async function (doc) {
   const StoreCategory = this.model('StoreCategory');
 
   if (doc.isNew) {
@@ -159,29 +169,37 @@ StoreOwnerProfileSchema.post('save', async function(doc) {
     if (doc.storeCategories && doc.storeCategories.length > 0) {
       await StoreCategory.updateMany(
         { _id: { $in: doc.storeCategories } },
-        { $inc: { storeCount: 1 } }
+        { $inc: { storeCount: 1 } },
       );
     }
   } else if ((doc as any)._originalCategories) {
     // Updated document - calculate diff
-    const oldCategories = ((doc as any)._originalCategories || []).map((id: any) => id.toString());
-    const newCategories = (doc.storeCategories || []).map((id: any) => id.toString());
+    const oldCategories = ((doc as any)._originalCategories || []).map(
+      (id: any) => id.toString(),
+    );
+    const newCategories = (doc.storeCategories || []).map((id: any) =>
+      id.toString(),
+    );
 
     // Categories to add (increment)
-    const toAdd = newCategories.filter((id: string) => !oldCategories.includes(id));
+    const toAdd = newCategories.filter(
+      (id: string) => !oldCategories.includes(id),
+    );
     if (toAdd.length > 0) {
       await StoreCategory.updateMany(
         { _id: { $in: toAdd } },
-        { $inc: { storeCount: 1 } }
+        { $inc: { storeCount: 1 } },
       );
     }
 
     // Categories to remove (decrement)
-    const toRemove = oldCategories.filter((id: string) => !newCategories.includes(id));
+    const toRemove = oldCategories.filter(
+      (id: string) => !newCategories.includes(id),
+    );
     if (toRemove.length > 0) {
       await StoreCategory.updateMany(
         { _id: { $in: toRemove } },
-        { $inc: { storeCount: -1 } }
+        { $inc: { storeCount: -1 } },
       );
     }
 
@@ -191,25 +209,29 @@ StoreOwnerProfileSchema.post('save', async function(doc) {
 });
 
 // عند حذف StoreOwnerProfile
-StoreOwnerProfileSchema.pre('deleteOne', { document: true, query: false }, async function() {
-  const StoreCategory = this.model('StoreCategory');
+StoreOwnerProfileSchema.pre(
+  'deleteOne',
+  { document: true, query: false },
+  async function () {
+    const StoreCategory = this.model('StoreCategory');
 
-  if (this.storeCategories && this.storeCategories.length > 0) {
-    await StoreCategory.updateMany(
-      { _id: { $in: this.storeCategories } },
-      { $inc: { storeCount: -1 } }
-    );
-  }
-});
+    if (this.storeCategories && this.storeCategories.length > 0) {
+      await StoreCategory.updateMany(
+        { _id: { $in: this.storeCategories } },
+        { $inc: { storeCount: -1 } },
+      );
+    }
+  },
+);
 
-StoreOwnerProfileSchema.pre('findOneAndDelete', async function() {
+StoreOwnerProfileSchema.pre('findOneAndDelete', async function () {
   const StoreCategory = (this as any).model('StoreCategory');
   const doc = await (this as any).model.findOne(this.getQuery());
 
   if (doc && doc.storeCategories && doc.storeCategories.length > 0) {
     await StoreCategory.updateMany(
       { _id: { $in: doc.storeCategories } },
-      { $inc: { storeCount: -1 } }
+      { $inc: { storeCount: -1 } },
     );
   }
 });
@@ -240,7 +262,7 @@ StoreOwnerProfileSchema.set('toJSON', { virtuals: true });
 StoreOwnerProfileSchema.set('toObject', { virtuals: true });
 
 // Indexes
-StoreOwnerProfileSchema.index({ accountId: 1 });
+// Note: accountId already has unique: true in @Prop, which creates an index automatically
 StoreOwnerProfileSchema.index({ verificationStatus: 1 });
 StoreOwnerProfileSchema.index({ rating: -1 });
 StoreOwnerProfileSchema.index({ isStoreActive: 1 });
@@ -248,4 +270,3 @@ StoreOwnerProfileSchema.index({ isStoreSuspended: 1 });
 StoreOwnerProfileSchema.index({ primaryCategory: 1 });
 StoreOwnerProfileSchema.index({ storeCategories: 1 });
 StoreOwnerProfileSchema.index({ verificationSubmittedAt: 1 });
-

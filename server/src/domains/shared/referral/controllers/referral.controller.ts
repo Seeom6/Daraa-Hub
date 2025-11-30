@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ReferralService } from '../services/referral.service';
 import { ApplyReferralDto } from '../dto/apply-referral.dto';
 import { QueryReferralDto } from '../dto/query-referral.dto';
@@ -19,7 +27,9 @@ export class ReferralController {
   @Get('my-code')
   @Roles('customer')
   async getMyReferralCode(@CurrentUser() user: any) {
-    const referral = await this.referralService.getOrCreateReferralCode(user.profileId);
+    const referral = await this.referralService.getOrCreateReferralCode(
+      user.profileId,
+    );
     return {
       success: true,
       data: referral,
@@ -32,9 +42,15 @@ export class ReferralController {
    */
   @Post('apply')
   @Roles('customer')
-  async applyReferralCode(@CurrentUser() user: any, @Body() applyDto: ApplyReferralDto) {
+  async applyReferralCode(
+    @CurrentUser() user: any,
+    @Body() applyDto: ApplyReferralDto,
+  ) {
     applyDto.referredId = user.profileId;
-    const referral = await this.referralService.applyReferralCode(applyDto.code, applyDto.referredId);
+    const referral = await this.referralService.applyReferralCode(
+      applyDto.code,
+      applyDto.referredId,
+    );
     return {
       success: true,
       message: 'Referral code applied successfully',
@@ -62,7 +78,10 @@ export class ReferralController {
    */
   @Get('my')
   @Roles('customer')
-  async getMyReferrals(@CurrentUser() user: any, @Query() queryDto: QueryReferralDto) {
+  async getMyReferrals(
+    @CurrentUser() user: any,
+    @Query() queryDto: QueryReferralDto,
+  ) {
     queryDto.referrerId = user.profileId;
     const result = await this.referralService.findAll(queryDto);
     return {
@@ -114,4 +133,3 @@ export class ReferralController {
     };
   }
 }
-

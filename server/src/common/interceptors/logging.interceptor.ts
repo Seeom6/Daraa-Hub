@@ -19,7 +19,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
     // Log request
     this.logger.log(`→ ${method} ${url}`);
-    
+
     // Don't log sensitive data like passwords
     if (body && Object.keys(body).length > 0) {
       const sanitizedBody = { ...body };
@@ -39,4 +39,3 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 }
-

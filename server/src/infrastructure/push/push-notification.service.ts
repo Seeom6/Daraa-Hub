@@ -30,7 +30,9 @@ export class PushNotificationService {
       this.logger.warn('Firebase configuration not found. Push notifications will be disabled.');
     }
     */
-    this.logger.log('Push Notification Service initialized (FCM not configured yet)');
+    this.logger.log(
+      'Push Notification Service initialized (FCM not configured yet)',
+    );
   }
 
   /**
@@ -80,7 +82,9 @@ export class PushNotificationService {
       */
 
       // Temporary mock implementation
-      this.logger.log(`[MOCK] Push notification sent to device: ${token.substring(0, 20)}...`);
+      this.logger.log(
+        `[MOCK] Push notification sent to device: ${token.substring(0, 20)}...`,
+      );
       this.logger.log(`[MOCK] Title: ${payload.title}`);
       this.logger.log(`[MOCK] Body: ${payload.body}`);
       return true;
@@ -153,7 +157,9 @@ export class PushNotificationService {
       */
 
       // Temporary mock implementation
-      this.logger.log(`[MOCK] Push notifications sent to ${tokens.length} devices`);
+      this.logger.log(
+        `[MOCK] Push notifications sent to ${tokens.length} devices`,
+      );
       this.logger.log(`[MOCK] Title: ${payload.title}`);
       this.logger.log(`[MOCK] Body: ${payload.body}`);
       return { successCount: tokens.length, failureCount: 0 };
@@ -195,7 +201,9 @@ export class PushNotificationService {
       this.logger.log(`[MOCK] Body: ${payload.body}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send push notification to topic: ${error.message}`);
+      this.logger.error(
+        `Failed to send push notification to topic: ${error.message}`,
+      );
       return false;
     }
   }
@@ -214,7 +222,9 @@ export class PushNotificationService {
       */
 
       // Temporary mock implementation
-      this.logger.log(`[MOCK] Subscribed ${tokens.length} devices to topic: ${topic}`);
+      this.logger.log(
+        `[MOCK] Subscribed ${tokens.length} devices to topic: ${topic}`,
+      );
       return true;
     } catch (error) {
       this.logger.error(`Failed to subscribe to topic: ${error.message}`);
@@ -225,7 +235,10 @@ export class PushNotificationService {
   /**
    * Unsubscribe device from a topic
    */
-  async unsubscribeFromTopic(tokens: string[], topic: string): Promise<boolean> {
+  async unsubscribeFromTopic(
+    tokens: string[],
+    topic: string,
+  ): Promise<boolean> {
     try {
       // TODO: Implement FCM topic unsubscription
       // Uncomment when FCM is configured
@@ -236,7 +249,9 @@ export class PushNotificationService {
       */
 
       // Temporary mock implementation
-      this.logger.log(`[MOCK] Unsubscribed ${tokens.length} devices from topic: ${topic}`);
+      this.logger.log(
+        `[MOCK] Unsubscribed ${tokens.length} devices from topic: ${topic}`,
+      );
       return true;
     } catch (error) {
       this.logger.error(`Failed to unsubscribe from topic: ${error.message}`);
@@ -244,4 +259,3 @@ export class PushNotificationService {
     }
   }
 }
-

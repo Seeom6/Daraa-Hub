@@ -1,4 +1,13 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsMongoId, Min, ValidateNested } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsMongoId,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { RewardType } from '../../../../database/schemas/referral.schema';
 
@@ -39,4 +48,3 @@ export class CreateReferralDto {
   @IsOptional()
   code?: string; // Optional, will be auto-generated if not provided
 }
-

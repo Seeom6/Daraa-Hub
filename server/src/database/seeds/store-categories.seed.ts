@@ -334,4 +334,3 @@ export const storeCategoriesSeed = [
     seoKeywords: ['خدمات', 'صيانة', 'تنظيف', 'توصيل'],
   },
 ];
-

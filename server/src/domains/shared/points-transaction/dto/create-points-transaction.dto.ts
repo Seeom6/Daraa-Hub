@@ -1,4 +1,12 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsMongoId, IsDate } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsMongoId,
+  IsDate,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { TransactionType } from '../../../../database/schemas/points-transaction.schema';
 
@@ -36,4 +44,3 @@ export class CreatePointsTransactionDto {
   @IsOptional()
   expiresAt?: Date;
 }
-

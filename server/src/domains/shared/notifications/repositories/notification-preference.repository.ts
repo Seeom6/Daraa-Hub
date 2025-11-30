@@ -19,18 +19,24 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
   /**
    * Find preferences by user ID
    */
-  async findByUserId(userId: string): Promise<NotificationPreferenceDocument | null> {
+  async findByUserId(
+    userId: string,
+  ): Promise<NotificationPreferenceDocument | null> {
     return this.findOne({ userId: new Types.ObjectId(userId) });
   }
 
   /**
    * Get or create preferences for user
    */
-  async getOrCreatePreferences(userId: string): Promise<NotificationPreferenceDocument> {
+  async getOrCreatePreferences(
+    userId: string,
+  ): Promise<NotificationPreferenceDocument> {
     let preferences = await this.findByUserId(userId);
 
     if (!preferences) {
-      preferences = await this.create({ userId: new Types.ObjectId(userId) } as any);
+      preferences = await this.create({
+        userId: new Types.ObjectId(userId),
+      } as any);
     }
 
     return preferences;
@@ -84,4 +90,3 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
     return (preferences as any).categories?.[category] !== false;
   }
 }
-

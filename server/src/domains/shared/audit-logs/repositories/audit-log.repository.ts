@@ -40,12 +40,9 @@ export class AuditLogRepository extends BaseRepository<AuditLogDocument> {
     page: number = 1,
     limit: number = 10,
   ): Promise<{ data: AuditLogDocument[]; total: number }> {
-    return this.findWithPagination(
-      { action },
-      page,
-      limit,
-      { sort: { createdAt: -1 } },
-    );
+    return this.findWithPagination({ action }, page, limit, {
+      sort: { createdAt: -1 },
+    });
   }
 
   /**
@@ -125,4 +122,3 @@ export class AuditLogRepository extends BaseRepository<AuditLogDocument> {
     ]);
   }
 }
-

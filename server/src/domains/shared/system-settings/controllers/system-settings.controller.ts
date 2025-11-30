@@ -45,10 +45,11 @@ export class SystemSettingsController {
     @Body() updateDto: UpdateSubscriptionSettingsDto,
     @CurrentUser() user: any,
   ) {
-    const settings = await this.systemSettingsService.updateSubscriptionSettings(
-      updateDto,
-      user.userId,
-    );
+    const settings =
+      await this.systemSettingsService.updateSubscriptionSettings(
+        updateDto,
+        user.userId,
+      );
     return {
       success: true,
       message: 'Subscription settings updated successfully',
@@ -56,4 +57,3 @@ export class SystemSettingsController {
     };
   }
 }
-

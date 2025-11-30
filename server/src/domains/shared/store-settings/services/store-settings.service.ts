@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { StoreSettings, StoreSettingsDocument } from '../../../../database/schemas/store-settings.schema';
+import {
+  StoreSettings,
+  StoreSettingsDocument,
+} from '../../../../database/schemas/store-settings.schema';
 import { UpdateStoreSettingsDto } from '../dto';
 
 @Injectable()
@@ -23,7 +26,9 @@ export class StoreSettingsService {
       throw new BadRequestException('Invalid store ID');
     }
 
-    let settings = await this.storeSettingsModel.findOne({ storeId: new Types.ObjectId(storeId) }).exec();
+    let settings = await this.storeSettingsModel
+      .findOne({ storeId: new Types.ObjectId(storeId) })
+      .exec();
 
     if (!settings) {
       // Create default settings for the store
@@ -69,11 +74,15 @@ export class StoreSettingsService {
     Object.assign(settings, updateStoreSettingsDto);
     const updated = await settings.save();
 
-    this.logger.log(`Store settings updated for store: ${storeId} by user: ${userId}`);
+    this.logger.log(
+      `Store settings updated for store: ${storeId} by user: ${userId}`,
+    );
     return updated;
   }
 
-  async getPublicSettings(storeId: string): Promise<Partial<StoreSettingsDocument>> {
+  async getPublicSettings(
+    storeId: string,
+  ): Promise<Partial<StoreSettingsDocument>> {
     const settings = await this.findByStoreId(storeId);
 
     // Return only public-facing settings
@@ -82,7 +91,7 @@ export class StoreSettingsService {
       shippingZones: settings.shippingZones,
       defaultShippingFee: settings.defaultShippingFee,
       freeShippingThreshold: settings.freeShippingThreshold,
-      paymentMethods: settings.paymentMethods.filter(pm => pm.isEnabled),
+      paymentMethods: settings.paymentMethods.filter((pm) => pm.isEnabled),
       minOrderAmount: settings.minOrderAmount,
       maxOrderAmount: settings.maxOrderAmount,
       allowCashOnDelivery: settings.allowCashOnDelivery,
@@ -116,17 +125,22 @@ export class StoreSettingsService {
     }
 
     const now = new Date();
-    const dayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const dayName = now
+      .toLocaleDateString('en-US', { weekday: 'long' })
+      .toLowerCase();
     const currentTime = now.toTimeString().slice(0, 5); // 'HH:MM'
 
-    const todayHours = settings.businessHours.find(bh => bh.day === dayName);
+    const todayHours = settings.businessHours.find((bh) => bh.day === dayName);
 
     if (!todayHours || !todayHours.isOpen) {
       return false;
     }
 
     if (todayHours.openTime && todayHours.closeTime) {
-      return currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime;
+      return (
+        currentTime >= todayHours.openTime &&
+        currentTime <= todayHours.closeTime
+      );
     }
 
     return true;
@@ -136,25 +150,30 @@ export class StoreSettingsService {
     const settings = await this.findByStoreId(storeId);
 
     // Find shipping zone for the city
-    const zone = settings.shippingZones.find(z =>
-      z.cities.some(c => c.toLowerCase() === city.toLowerCase()),
+    const zone = settings.shippingZones.find((z) =>
+      z.cities.some((c) => c.toLowerCase() === city.toLowerCase()),
     );
 
     return zone ? zone.shippingFee : settings.defaultShippingFee;
   }
 
-  async calculateShippingFee(storeId: string, city: string, orderTotal: number): Promise<number> {
+  async calculateShippingFee(
+    storeId: string,
+    city: string,
+    orderTotal: number,
+  ): Promise<number> {
     const settings = await this.getOrCreate(storeId);
 
     // Find shipping zone for the city
-    const zone = settings.shippingZones.find(z =>
-      z.cities.some(c => c.toLowerCase() === city.toLowerCase()),
+    const zone = settings.shippingZones.find((z) =>
+      z.cities.some((c) => c.toLowerCase() === city.toLowerCase()),
     );
 
     let shippingFee = zone ? zone.shippingFee : settings.defaultShippingFee;
 
     // Check for free shipping threshold
-    const freeShippingThreshold = zone?.freeShippingThreshold || settings.freeShippingThreshold;
+    const freeShippingThreshold =
+      zone?.freeShippingThreshold || settings.freeShippingThreshold;
 
     if (freeShippingThreshold > 0 && orderTotal >= freeShippingThreshold) {
       shippingFee = 0;
@@ -163,4 +182,3 @@ export class StoreSettingsService {
     return shippingFee;
   }
 }
-

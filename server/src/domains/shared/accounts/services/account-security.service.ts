@@ -1,18 +1,14 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import {
-  Account,
-  AccountDocument,
-  SecurityProfile,
-  SecurityProfileDocument,
-} from '../../../../database/schemas';
+import { AccountDocument } from '../../../../database/schemas';
 import { AccountRepository } from '../repositories/account.repository';
+import { SecurityProfileRepository } from '../repositories/security-profile.repository';
 
 /**
  * Account Security Service
  * Handles password management, login history, and account locking
+ * Uses Repository Pattern for all database operations
  */
 @Injectable()
 export class AccountSecurityService {
@@ -21,14 +17,18 @@ export class AccountSecurityService {
 
   constructor(
     private readonly accountRepository: AccountRepository,
-    @InjectModel(SecurityProfile.name) private securityProfileModel: Model<SecurityProfileDocument>,
+    private readonly securityProfileRepository: SecurityProfileRepository,
   ) {}
 
   /**
    * Set password for account
    */
-  async setPassword(phone: string, password: string, email?: string): Promise<AccountDocument> {
-    const account = await this.accountRepository.getModel().findOne({ phone });
+  async setPassword(
+    phone: string,
+    password: string,
+    email?: string,
+  ): Promise<AccountDocument> {
+    const account = await this.accountRepository.findByPhone(phone);
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -49,7 +49,10 @@ export class AccountSecurityService {
   /**
    * Validate password
    */
-  async validatePassword(account: AccountDocument, password: string): Promise<boolean> {
+  async validatePassword(
+    account: AccountDocument,
+    password: string,
+  ): Promise<boolean> {
     if (!account.passwordHash) {
       return false;
     }
@@ -60,7 +63,7 @@ export class AccountSecurityService {
    * Update password
    */
   async updatePassword(phone: string, newPassword: string): Promise<void> {
-    const account = await this.accountRepository.getModel().findOne({ phone });
+    const account = await this.accountRepository.findByPhone(phone);
     if (!account) {
       throw new NotFoundException('Account not found');
     }
@@ -80,7 +83,10 @@ export class AccountSecurityService {
     device: string,
     success: boolean,
   ): Promise<void> {
-    const securityProfile = await this.securityProfileModel.findOne({ accountId });
+    const securityProfile =
+      await this.securityProfileRepository.findByAccountId(
+        accountId.toString(),
+      );
     if (!securityProfile) {
       this.logger.warn(`Security profile not found for account: ${accountId}`);
       return;
@@ -106,7 +112,9 @@ export class AccountSecurityService {
       // Lock account after 5 failed attempts
       if (securityProfile.failedAttempts >= 5) {
         securityProfile.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-        this.logger.warn(`Account locked due to failed login attempts: ${accountId}`);
+        this.logger.warn(
+          `Account locked due to failed login attempts: ${accountId}`,
+        );
       }
     } else {
       // Reset failed attempts on successful login
@@ -121,7 +129,10 @@ export class AccountSecurityService {
    * Check if account is locked
    */
   async isAccountLocked(accountId: Types.ObjectId): Promise<boolean> {
-    const securityProfile = await this.securityProfileModel.findOne({ accountId });
+    const securityProfile =
+      await this.securityProfileRepository.findByAccountId(
+        accountId.toString(),
+      );
     if (!securityProfile || !securityProfile.lockedUntil) {
       return false;
     }
@@ -137,4 +148,3 @@ export class AccountSecurityService {
     return true;
   }
 }
-

@@ -9,11 +9,11 @@ export type NotificationDocument = Notification & Document;
  */
 @Schema({ timestamps: true })
 export class Notification {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Account', required: true })
   recipientId: Types.ObjectId;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['customer', 'store_owner', 'courier', 'admin'],
     required: true,
   })
@@ -25,20 +25,36 @@ export class Notification {
   @Prop({ required: true })
   message: string;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: [
-      'order', 'payment', 'delivery', 'verification', 'account', 
-      'promotion', 'system', 'security', 'review', 'dispute'
+      'order',
+      'payment',
+      'delivery',
+      'verification',
+      'account',
+      'promotion',
+      'system',
+      'security',
+      'review',
+      'dispute',
     ],
     required: true,
-    index: true,
   })
-  type: 'order' | 'payment' | 'delivery' | 'verification' | 'account' | 
-        'promotion' | 'system' | 'security' | 'review' | 'dispute';
+  type:
+    | 'order'
+    | 'payment'
+    | 'delivery'
+    | 'verification'
+    | 'account'
+    | 'promotion'
+    | 'system'
+    | 'security'
+    | 'review'
+    | 'dispute';
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['info', 'success', 'warning', 'error'],
     default: 'info',
   })
@@ -50,27 +66,34 @@ export class Notification {
   @Prop({ type: Types.ObjectId, refPath: 'relatedModel' })
   relatedId?: Types.ObjectId;
 
-  @Prop({ 
+  @Prop({
     type: String,
-    enum: ['Order', 'Payment', 'Product', 'Review', 'Dispute', 'VerificationRequest']
+    enum: [
+      'Order',
+      'Payment',
+      'Product',
+      'Review',
+      'Dispute',
+      'VerificationRequest',
+    ],
   })
   relatedModel?: string;
 
-  @Prop({ 
+  @Prop({
     type: [String],
     enum: ['push', 'email', 'sms', 'in_app'],
     default: ['in_app'],
   })
   channels: ('push' | 'email' | 'sms' | 'in_app')[];
 
-  @Prop({ 
+  @Prop({
     type: Object,
     default: {
       push: 'pending',
       email: 'pending',
       sms: 'pending',
       in_app: 'pending',
-    }
+    },
   })
   deliveryStatus: {
     push?: 'pending' | 'sent' | 'failed';
@@ -112,10 +135,9 @@ NotificationSchema.index({ expiresAt: 1 });
 
 // TTL index - automatically delete read notifications older than 90 days
 NotificationSchema.index(
-  { createdAt: 1 }, 
-  { 
+  { createdAt: 1 },
+  {
     expireAfterSeconds: 7776000, // 90 days
-    partialFilterExpression: { isRead: true }
-  }
+    partialFilterExpression: { isRead: true },
+  },
 );
-

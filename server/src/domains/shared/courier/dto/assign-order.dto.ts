@@ -7,4 +7,3 @@ export class AssignOrderDto {
   @IsMongoId()
   courierId: string;
 }
-

@@ -24,4 +24,3 @@ export interface ISmsService {
    */
   sendMessage(phoneNumber: string, message: string): Promise<boolean>;
 }
-

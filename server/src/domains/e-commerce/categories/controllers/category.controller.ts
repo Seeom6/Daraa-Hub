@@ -163,7 +163,10 @@ export class CategoryController {
     }
 
     // Upload to S3
-    const uploadResult = await this.storageService.uploadFile(file, 'categories');
+    const uploadResult = await this.storageService.uploadFile(
+      file,
+      'categories',
+    );
 
     // Update category with image URL
     const category = await this.categoryService.update(id, {
@@ -180,4 +183,3 @@ export class CategoryController {
     };
   }
 }
-

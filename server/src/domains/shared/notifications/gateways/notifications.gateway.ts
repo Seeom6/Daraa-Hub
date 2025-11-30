@@ -8,13 +8,13 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from '../services/notifications.service';
 
 /**
  * WebSocket Gateway for real-time notifications
- * 
+ *
  * Usage from client:
  * ```javascript
  * const socket = io('http://localhost:3001', {
@@ -22,7 +22,7 @@ import { NotificationsService } from '../services/notifications.service';
  *     token: 'your-jwt-token'
  *   }
  * });
- * 
+ *
  * socket.on('notification', (data) => {
  *   console.log('New notification:', data);
  * });
@@ -35,7 +35,9 @@ import { NotificationsService } from '../services/notifications.service';
   },
   namespace: '/notifications',
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -53,8 +55,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   async handleConnection(client: Socket) {
     try {
       // Extract and verify JWT token
-      const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
-      
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
+
       if (!token) {
         this.logger.warn(`Client ${client.id} connected without token`);
         client.disconnect();
@@ -79,11 +83,13 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.logger.log(`Client ${client.id} connected for user ${userId}`);
 
       // Send unread count on connection
-      const unreadCount = await this.notificationsService.getUnreadCount(userId);
+      const unreadCount =
+        await this.notificationsService.getUnreadCount(userId);
       client.emit('unread-count', { count: unreadCount });
-
     } catch (error) {
-      this.logger.error(`Authentication failed for client ${client.id}: ${error.message}`);
+      this.logger.error(
+        `Authentication failed for client ${client.id}: ${error.message}`,
+      );
       client.disconnect();
     }
   }
@@ -93,10 +99,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    */
   handleDisconnect(client: Socket) {
     const userId = client.data.userId;
-    
+
     if (userId && this.userSockets.has(userId)) {
       this.userSockets.get(userId)!.delete(client.id);
-      
+
       // Remove user entry if no more sockets
       if (this.userSockets.get(userId)!.size === 0) {
         this.userSockets.delete(userId);
@@ -127,14 +133,19 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     try {
       await this.notificationsService.markAsRead(data.notificationId);
       const userId = client.data.userId;
-      const unreadCount = await this.notificationsService.getUnreadCount(userId);
-      
+      const unreadCount =
+        await this.notificationsService.getUnreadCount(userId);
+
       // Emit updated unread count to all user's sockets
-      this.server.to(`user:${userId}`).emit('unread-count', { count: unreadCount });
-      
+      this.server
+        .to(`user:${userId}`)
+        .emit('unread-count', { count: unreadCount });
+
       return { event: 'marked-read', data: { success: true } };
     } catch (error) {
-      this.logger.error(`Failed to mark notification as read: ${error.message}`);
+      this.logger.error(
+        `Failed to mark notification as read: ${error.message}`,
+      );
       return { event: 'error', data: { message: error.message } };
     }
   }
@@ -167,7 +178,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Send notification to multiple users
    */
   sendNotificationToUsers(userIds: string[], notification: any) {
-    userIds.forEach(userId => {
+    userIds.forEach((userId) => {
       this.sendNotificationToUser(userId, notification);
     });
   }
@@ -183,7 +194,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Check if user is online
    */
   isUserOnline(userId: string): boolean {
-    return this.userSockets.has(userId) && this.userSockets.get(userId)!.size > 0;
+    return (
+      this.userSockets.has(userId) && this.userSockets.get(userId)!.size > 0
+    );
   }
 
   /**
@@ -193,4 +206,3 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     return this.userSockets.get(userId)?.size || 0;
   }
 }
-

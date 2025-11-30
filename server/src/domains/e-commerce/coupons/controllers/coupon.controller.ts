@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CouponService } from '../services/coupon.service';
 import { CouponValidationService } from '../services/coupon-validation.service';
 import { CouponUsageService } from '../services/coupon-usage.service';
@@ -26,9 +36,13 @@ export class CouponController {
    */
   @Post('validate')
   @Roles('customer')
-  async validateCoupon(@CurrentUser() user: any, @Body() validateDto: ValidateCouponDto) {
+  async validateCoupon(
+    @CurrentUser() user: any,
+    @Body() validateDto: ValidateCouponDto,
+  ) {
     validateDto.customerId = user.profileId;
-    const result = await this.couponValidationService.validateCoupon(validateDto);
+    const result =
+      await this.couponValidationService.validateCoupon(validateDto);
     return {
       success: result.valid,
       message: result.message,
@@ -48,7 +62,9 @@ export class CouponController {
   @Get('available')
   @Roles('customer')
   async getAvailableCoupons(@CurrentUser() user: any) {
-    const coupons = await this.couponValidationService.getAvailableCoupons(user.profileId);
+    const coupons = await this.couponValidationService.getAvailableCoupons(
+      user.profileId,
+    );
     return {
       success: true,
       data: coupons,
@@ -61,7 +77,10 @@ export class CouponController {
    */
   @Post('admin')
   @Roles('admin')
-  async createCoupon(@CurrentUser() user: any, @Body() createDto: CreateCouponDto) {
+  async createCoupon(
+    @CurrentUser() user: any,
+    @Body() createDto: CreateCouponDto,
+  ) {
     const coupon = await this.couponService.create(createDto, user.profileId);
     return {
       success: true,
@@ -104,7 +123,10 @@ export class CouponController {
    */
   @Put('admin/:id')
   @Roles('admin')
-  async updateCoupon(@Param('id') id: string, @Body() updateDto: UpdateCouponDto) {
+  async updateCoupon(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateCouponDto,
+  ) {
     const coupon = await this.couponService.update(id, updateDto);
     return {
       success: true,
@@ -141,4 +163,3 @@ export class CouponController {
     };
   }
 }
-

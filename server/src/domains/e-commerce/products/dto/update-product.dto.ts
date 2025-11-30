@@ -5,4 +5,3 @@ import { OmitType } from '@nestjs/mapped-types';
 export class UpdateProductDto extends PartialType(
   OmitType(CreateProductDto, ['storeId'] as const),
 ) {}
-

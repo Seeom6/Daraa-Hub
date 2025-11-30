@@ -34,7 +34,10 @@ export class SubscriptionController {
     @Body() createDto: CreateSubscriptionDto,
     @CurrentUser() user: any,
   ) {
-    const subscription = await this.subscriptionService.create(createDto, user.userId);
+    const subscription = await this.subscriptionService.create(
+      createDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Subscription created successfully',
@@ -97,7 +100,8 @@ export class SubscriptionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner', 'admin')
   async getActiveSubscription(@Param('storeId') storeId: string) {
-    const subscription = await this.subscriptionService.getActiveSubscription(storeId);
+    const subscription =
+      await this.subscriptionService.getActiveSubscription(storeId);
     return {
       success: true,
       data: subscription,
@@ -112,7 +116,8 @@ export class SubscriptionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('store_owner', 'admin')
   async getStoreSubscriptions(@Param('storeId') storeId: string) {
-    const subscriptions = await this.subscriptionService.getStoreSubscriptions(storeId);
+    const subscriptions =
+      await this.subscriptionService.getStoreSubscriptions(storeId);
     return {
       success: true,
       data: subscriptions,
@@ -131,7 +136,11 @@ export class SubscriptionController {
     @Body() updateDto: UpdateSubscriptionDto,
     @CurrentUser() user: any,
   ) {
-    const subscription = await this.subscriptionService.update(id, updateDto, user.userId);
+    const subscription = await this.subscriptionService.update(
+      id,
+      updateDto,
+      user.userId,
+    );
     return {
       success: true,
       message: 'Subscription updated successfully',
@@ -139,4 +148,3 @@ export class SubscriptionController {
     };
   }
 }
-
